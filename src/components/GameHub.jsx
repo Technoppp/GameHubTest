@@ -810,30 +810,6 @@ function AboutPage() {
               </div>
             </div>
           </div>
-
-          <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-xl p-8">
-            <h3 className="text-2xl font-bold mb-4">MVP Features</h3>
-            <p className="text-slate-300 mb-4">
-              This is our Minimum Viable Product (MVP) version, focusing on core functionality:
-            </p>
-            <ul className="space-y-2 text-slate-300">
-              <li className="flex items-center gap-2">
-                <span className="text-green-400">✓</span>
-                Browse and view detailed game information
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-green-400">✓</span>
-                Read the latest gaming news and updates
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-green-400">✓</span>
-                Explore tournament and competition details
-              </li>
-            </ul>
-            <p className="text-slate-400 text-sm mt-4">
-              Future versions will include user accounts, community features, and more interactive elements.
-            </p>
-          </div>
         </div>
       </div>
     </div>
