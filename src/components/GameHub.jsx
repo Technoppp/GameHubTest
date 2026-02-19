@@ -258,7 +258,7 @@ const GAMES_DATA = [
     title: 'Call of Duty: Warzone',
     category: 'fps',
     subcategory: 'Battle Royale',
-    image: 'https://media.rawg.io/media/games/4a0/4a0a1316102366260e6f38fd2a9cfdce.jpg',
+    image: 'https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1962663/54bd6a40eb3759aca46966aadd4c4d0d84b2713e/header.jpg?t=1770663938',
     description: 'The massive free-to-play Call of Duty battle royale. Drop into Verdansk with 150 players, survive the Gulag, and claim victory.',
     releaseDate: '2020-03-10',
     rating: 4.4,
