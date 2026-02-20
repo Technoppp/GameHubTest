@@ -1,5 +1,28 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronRight, ChevronLeft, Trophy, Calendar, Zap, Gamepad2, Newspaper, Info, Target, Swords, Users, Laugh, Crown, Brain, Car, Shield } from 'lucide-react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from 'firebase/auth';
+
+// ─────────────────────────────────────────────
+// FIREBASE AUTH
+// ─────────────────────────────────────────────
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBnZxbaVzPMLdRKtadjLfjyf8kt3UHb0mk",
+  authDomain: "gamehub26-940a5.firebaseapp.com",
+  projectId: "gamehub26-940a5",
+  storageBucket: "gamehub26-940a5.firebasestorage.app",
+  messagingSenderId: "246239295653",
+  appId: "1:246239295653:web:d7493e23030cdd6ccab54c",
+  measurementId: "G-L8V645LX74",
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+const auth = getAuth(firebaseApp);
+
+// Auth context — accessible anywhere in the app
+const AuthContext = React.createContext(null);
+const useAuth = () => React.useContext(AuthContext);
 
 // ─────────────────────────────────────────────
 // RAWG API
@@ -790,6 +813,116 @@ const TOURNAMENTS_DATA = [
 // MAIN APP
 // ─────────────────────────────────────────────
 
+// Wishlist nav button with live count badge
+function WishlistNavButton({ navigateTo, currentPage }) {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const r = await window.storage.get('wishlist');
+        if (r) setCount(JSON.parse(r.value).length);
+      } catch (_) {}
+    };
+    load();
+    const interval = setInterval(load, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <button
+      onClick={() => navigateTo('wishlist')}
+      className={`flex items-center gap-2 text-sm font-semibold transition-all duration-300 hover:text-red-400 relative ${currentPage === 'wishlist' ? 'text-red-400' : 'text-slate-400'}`}
+    >
+      ♥ Wishlist
+      {count > 0 && (
+        <span className="absolute -top-2 -right-3 bg-red-500 text-white text-xs font-black rounded-full w-4 h-4 flex items-center justify-center leading-none">
+          {count}
+        </span>
+      )}
+    </button>
+  );
+}
+
+// Auth button — shows login/register or user avatar+dropdown
+function AuthNavButton({ navigateTo, currentPage, user, authLoading }) {
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setDropdownOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  if (authLoading) return <div className="w-8 h-8 skeleton rounded-full flex-shrink-0" />;
+
+  if (!user) {
+    return (
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <button
+          onClick={() => navigateTo('login')}
+          className="text-sm font-bold text-slate-400 hover:text-white transition-colors px-3 py-1.5"
+        >Login</button>
+        <button
+          onClick={() => navigateTo('register')}
+          className="text-sm font-bold px-4 py-2 rounded-lg transition-all bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white"
+        >Sign Up</button>
+      </div>
+    );
+  }
+
+  const initials = user.displayName
+    ? user.displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    : user.email[0].toUpperCase();
+
+  return (
+    <div className="relative flex-shrink-0" ref={ref}>
+      <button
+        onClick={() => setDropdownOpen(!dropdownOpen)}
+        className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
+      >
+        {/* Avatar */}
+        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-black text-sm">
+          {initials}
+        </div>
+        <span className="text-sm font-bold text-white hidden md:block max-w-[100px] truncate">
+          {user.displayName || user.email.split('@')[0]}
+        </span>
+        <span className="text-slate-400 text-xs">▾</span>
+      </button>
+
+      {/* Dropdown */}
+      {dropdownOpen && (
+        <div className="absolute right-0 top-12 w-52 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl shadow-black/50 overflow-hidden z-50 fade-in-up">
+          <div className="px-4 py-3 border-b border-slate-800">
+            <p className="text-xs text-slate-500">Signed in as</p>
+            <p className="text-sm font-bold text-white truncate">{user.email}</p>
+          </div>
+          <div className="py-1">
+            {[
+              { label: '👤 My Profile', page: 'profile' },
+              { label: '♥ Wishlist', page: 'wishlist' },
+              { label: '🏆 Leaderboard', page: 'leaderboard' },
+            ].map(item => (
+              <button
+                key={item.page}
+                onClick={() => { navigateTo(item.page); setDropdownOpen(false); }}
+                className="w-full text-left px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
+              >{item.label}</button>
+            ))}
+          </div>
+          <div className="border-t border-slate-800 py-1">
+            <button
+              onClick={async () => { await signOut(auth); setDropdownOpen(false); navigateTo('home'); }}
+              className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-slate-800 transition-colors"
+            >🚪 Sign Out</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Context so all child components can access RAWG images without prop drilling
 const RawgImagesContext = React.createContext({});
 export const useGameImage = (game) => {
@@ -802,12 +935,23 @@ export default function GameHub() {
   const [selectedGame, setSelectedGame] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [scrolled, setScrolled] = useState(false);
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const rawgImages = useRawgImages();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Listen to Firebase auth state
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      setAuthLoading(false);
+    });
+    return () => unsub();
   }, []);
 
   const navigateTo = (page, data = null) => {
@@ -819,6 +963,7 @@ export default function GameHub() {
   };
 
   return (
+    <AuthContext.Provider value={{ user, auth }}>
     <RawgImagesContext.Provider value={rawgImages}>
     <div className="min-h-screen bg-slate-950 text-slate-100" style={{ fontFamily: "'Space Mono', monospace" }}>
       <style>{`
@@ -926,13 +1071,23 @@ export default function GameHub() {
 
         .breadcrumb-item { transition: color 0.2s; }
         .breadcrumb-item:hover { color: #93c5fd; }
+
+        .skeleton {
+          background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+          background-size: 200% 100%;
+          animation: skeleton-wave 1.5s infinite;
+        }
+        @keyframes skeleton-wave {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
       `}</style>
 
       {/* ── Header ── */}
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-slate-950/95 backdrop-blur-lg shadow-lg shadow-blue-500/10' : 'bg-transparent'}`}>
         <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigateTo('home')}>
+          <div className="flex items-center justify-between gap-6">
+            <div className="flex items-center gap-3 cursor-pointer flex-shrink-0" onClick={() => navigateTo('home')}>
               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center glow-effect">
                 <Gamepad2 className="w-6 h-6" />
               </div>
@@ -941,11 +1096,12 @@ export default function GameHub() {
                 <span className="text-white">HUB</span>
               </h1>
             </div>
-            <nav className="flex gap-8">
+            <nav className="flex gap-5 flex-wrap items-center flex-1 justify-center">
               {[
                 { name: 'Home', icon: Gamepad2, page: 'home' },
                 { name: 'Games', icon: Zap, page: 'games' },
                 { name: 'Tournaments', icon: Trophy, page: 'tournaments' },
+                { name: 'Leaderboard', icon: Crown, page: 'leaderboard' },
                 { name: 'News', icon: Newspaper, page: 'news' },
                 { name: 'About', icon: Info, page: 'about' },
               ].map((item) => (
@@ -958,7 +1114,10 @@ export default function GameHub() {
                   {item.name}
                 </button>
               ))}
+              <WishlistNavButton navigateTo={navigateTo} currentPage={currentPage} />
             </nav>
+            {/* ── Auth Button (right side) ── */}
+            <AuthNavButton navigateTo={navigateTo} currentPage={currentPage} user={user} authLoading={authLoading} />
           </div>
         </div>
       </header>
@@ -970,8 +1129,13 @@ export default function GameHub() {
         {currentPage === 'category' && selectedCategory && <CategoryPage category={selectedCategory} navigateTo={navigateTo} />}
         {currentPage === 'game-detail' && selectedGame && <GameDetailPage game={selectedGame} navigateTo={navigateTo} />}
         {currentPage === 'tournaments' && <TournamentsPage />}
+        {currentPage === 'leaderboard' && <LeaderboardPage navigateTo={navigateTo} />}
+        {currentPage === 'wishlist' && <WishlistPage navigateTo={navigateTo} />}
         {currentPage === 'news' && <NewsPage navigateTo={navigateTo} />}
         {currentPage === 'about' && <AboutPage />}
+        {currentPage === 'login' && <LoginPage navigateTo={navigateTo} />}
+        {currentPage === 'register' && <RegisterPage navigateTo={navigateTo} />}
+        {currentPage === 'profile' && <ProfilePage navigateTo={navigateTo} />}
       </main>
 
       {/* ── Footer ── */}
@@ -1014,6 +1178,7 @@ export default function GameHub() {
       </footer>
     </div>
     </RawgImagesContext.Provider>
+    </AuthContext.Provider>
   );
 }
 
@@ -1385,72 +1550,195 @@ function HomePage({ navigateTo }) {
 }
 
 // ─────────────────────────────────────────────
-// GAMES PAGE  — Category Grid
+// GAMES PAGE  — Category Grid + Search + Filter
 // ─────────────────────────────────────────────
 
 function GamesPage({ navigateTo }) {
+  const [search, setSearch] = useState('');
+  const [platformFilter, setPlatformFilter] = useState('All');
+  const [ratingFilter, setRatingFilter] = useState('All');
+  const [showSearch, setShowSearch] = useState(false);
+
+  const platforms = ['All', 'PC', 'PS5', 'Xbox Series X', 'Mobile', 'Switch'];
+  const ratings = ['All', '4.5+', '4.7+', '4.9+'];
+
+  // If searching, show matching games directly; otherwise show category grid
+  const searchResults = search.trim().length > 0
+    ? GAMES_DATA.filter(g => {
+        const matchSearch = g.title.toLowerCase().includes(search.toLowerCase()) ||
+          g.tags.some(t => t.toLowerCase().includes(search.toLowerCase()));
+        const matchPlatform = platformFilter === 'All' || g.platforms.includes(platformFilter);
+        const matchRating = ratingFilter === 'All' || g.rating >= parseFloat(ratingFilter);
+        return matchSearch && matchPlatform && matchRating;
+      })
+    : platformFilter !== 'All' || ratingFilter !== 'All'
+      ? GAMES_DATA.filter(g => {
+          const matchPlatform = platformFilter === 'All' || g.platforms.includes(platformFilter);
+          const matchRating = ratingFilter === 'All' || g.rating >= parseFloat(ratingFilter);
+          return matchPlatform && matchRating;
+        })
+      : null;
+
   return (
     <div className="container mx-auto px-6 py-20">
-      <div className="mb-14 fade-in-up">
-        <h2 className="text-4xl font-black mb-3" style={{ fontFamily: "'Orbitron', sans-serif" }}>
-          <span className="text-blue-400">BROWSE</span> BY GENRE
-        </h2>
-        <p className="text-slate-400">Select a category to explore games, subcategories, and detailed info</p>
-      </div>
+      <div className="mb-10 fade-in-up">
+        <div className="flex items-start justify-between flex-wrap gap-4 mb-6">
+          <div>
+            <h2 className="text-4xl font-black mb-3" style={{ fontFamily: "'Orbitron', sans-serif" }}>
+              <span className="text-blue-400">BROWSE</span> BY GENRE
+            </h2>
+            <p className="text-slate-400">Select a category to explore games, subcategories, and detailed info</p>
+          </div>
+          {/* Search toggle button */}
+          <button
+            onClick={() => setShowSearch(!showSearch)}
+            className="flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-sm transition-all duration-200"
+            style={{ background: showSearch ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.05)', color: showSearch ? '#60a5fa' : '#94a3b8', border: '1px solid', borderColor: showSearch ? 'rgba(59,130,246,0.4)' : 'rgba(255,255,255,0.1)' }}
+          >
+            🔍 Search & Filter
+          </button>
+        </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {CATEGORIES.map((cat, index) => {
-          const Icon = cat.icon;
-          const count = GAMES_DATA.filter(g => g.category === cat.id).length;
-          return (
-            <div
-              key={cat.id}
-              className="category-card bg-slate-900 rounded-2xl overflow-hidden fade-in-up"
-              style={{
-                animationDelay: `${index * 0.07}s`,
-                border: `1px solid ${cat.color}22`,
-              }}
-              onClick={() => navigateTo('category', cat)}
-              onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 20px 60px ${cat.glow}`; e.currentTarget.style.borderColor = `${cat.color}66`; }}
-              onMouseLeave={e => { e.currentTarget.style.boxShadow = ''; e.currentTarget.style.borderColor = `${cat.color}22`; }}
-            >
-              {/* Color stripe top */}
-              <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${cat.color}, transparent)` }} />
+        {/* Search + Filter Bar */}
+        {showSearch && (
+          <div className="bg-slate-900 rounded-2xl p-5 border border-slate-800 fade-in-up space-y-4">
+            {/* Search input */}
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
+              <input
+                type="text"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search games by title or tag..."
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+              />
+              {search && (
+                <button onClick={() => setSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 text-lg">×</button>
+              )}
+            </div>
 
-              <div className="p-8">
-                {/* Icon + label */}
-                <div className="flex items-start justify-between mb-6">
-                  <div className="w-14 h-14 rounded-xl flex items-center justify-center" style={{ background: `${cat.color}22` }}>
-                    <Icon className="w-7 h-7" style={{ color: cat.color }} />
-                  </div>
-                  <span className="text-xs font-bold px-3 py-1 rounded-full" style={{ background: `${cat.color}22`, color: cat.color }}>
-                    {count} {count === 1 ? 'GAME' : 'GAMES'}
-                  </span>
-                </div>
-
-                <h3 className="text-2xl font-black mb-1" style={{ fontFamily: "'Orbitron', sans-serif", color: cat.color }}>
-                  {cat.label}
-                </h3>
-                <p className="text-xs text-slate-500 mb-3 font-semibold tracking-widest uppercase">{cat.fullName}</p>
-                <p className="text-sm text-slate-400 leading-relaxed mb-6">{cat.description}</p>
-
-                {/* Subcategory pills preview */}
-                <div className="flex flex-wrap gap-2 mb-6">
-                  {cat.subcategories.filter(s => s !== 'All').map(sub => (
-                    <span key={sub} className="text-xs px-3 py-1 rounded-full border font-semibold" style={{ borderColor: `${cat.color}44`, color: `${cat.color}bb`, background: `${cat.color}11` }}>
-                      {sub}
-                    </span>
+            {/* Filters row */}
+            <div className="flex flex-wrap gap-6">
+              {/* Platform filter */}
+              <div>
+                <p className="text-xs text-slate-500 font-bold tracking-widest uppercase mb-2">Platform</p>
+                <div className="flex flex-wrap gap-2">
+                  {platforms.map(p => (
+                    <button
+                      key={p}
+                      onClick={() => setPlatformFilter(p)}
+                      className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all"
+                      style={{
+                        background: platformFilter === p ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.05)',
+                        color: platformFilter === p ? '#60a5fa' : '#64748b',
+                        border: `1px solid ${platformFilter === p ? 'rgba(59,130,246,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                      }}
+                    >{p}</button>
                   ))}
                 </div>
-
-                <div className="flex items-center gap-2 font-bold text-sm" style={{ color: cat.color }}>
-                  Explore {cat.label} <ChevronRight className="w-4 h-4" />
+              </div>
+              {/* Rating filter */}
+              <div>
+                <p className="text-xs text-slate-500 font-bold tracking-widest uppercase mb-2">Min Rating</p>
+                <div className="flex flex-wrap gap-2">
+                  {ratings.map(r => (
+                    <button
+                      key={r}
+                      onClick={() => setRatingFilter(r)}
+                      className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all"
+                      style={{
+                        background: ratingFilter === r ? 'rgba(234,179,8,0.15)' : 'rgba(255,255,255,0.05)',
+                        color: ratingFilter === r ? '#facc15' : '#64748b',
+                        border: `1px solid ${ratingFilter === r ? 'rgba(234,179,8,0.3)' : 'rgba(255,255,255,0.08)'}`,
+                      }}
+                    >{r === 'All' ? 'All' : `★ ${r}`}</button>
+                  ))}
                 </div>
               </div>
             </div>
-          );
-        })}
+          </div>
+        )}
       </div>
+
+      {/* Search Results */}
+      {searchResults !== null ? (
+        <div>
+          <p className="text-sm text-slate-500 mb-6">
+            {searchResults.length > 0
+              ? `Found ${searchResults.length} game${searchResults.length > 1 ? 's' : ''}`
+              : 'No games found — try a different search'}
+          </p>
+          {searchResults.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              {searchResults.map((game, i) => {
+                const cat = CATEGORIES.find(c => c.id === game.category);
+                return <GameCard key={game.id} game={game} index={i} navigateTo={navigateTo} accentColor={cat?.color} />;
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-24 text-slate-600">
+              <p className="text-6xl mb-4">🎮</p>
+              <p className="text-xl font-bold">No games found</p>
+              <p className="text-sm mt-2">Try adjusting your search or filters</p>
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Category Grid */
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {CATEGORIES.map((cat, index) => {
+            const Icon = cat.icon;
+            const count = GAMES_DATA.filter(g => g.category === cat.id).length;
+            return (
+              <div
+                key={cat.id}
+                className="category-card bg-slate-900 rounded-2xl overflow-hidden fade-in-up"
+                style={{
+                  animationDelay: `${index * 0.07}s`,
+                  border: `1px solid ${cat.color}22`,
+                }}
+                onClick={() => navigateTo('category', cat)}
+                onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 20px 60px ${cat.glow}`; e.currentTarget.style.borderColor = `${cat.color}66`; }}
+                onMouseLeave={e => { e.currentTarget.style.boxShadow = ''; e.currentTarget.style.borderColor = `${cat.color}22`; }}
+              >
+                {/* Color stripe top */}
+                <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${cat.color}, transparent)` }} />
+
+                <div className="p-8">
+                  {/* Icon + label */}
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="w-14 h-14 rounded-xl flex items-center justify-center" style={{ background: `${cat.color}22` }}>
+                      <Icon className="w-7 h-7" style={{ color: cat.color }} />
+                    </div>
+                    <span className="text-xs font-bold px-3 py-1 rounded-full" style={{ background: `${cat.color}22`, color: cat.color }}>
+                      {count} {count === 1 ? 'GAME' : 'GAMES'}
+                    </span>
+                  </div>
+
+                  <h3 className="text-2xl font-black mb-1" style={{ fontFamily: "'Orbitron', sans-serif", color: cat.color }}>
+                    {cat.label}
+                  </h3>
+                  <p className="text-xs text-slate-500 mb-3 font-semibold tracking-widest uppercase">{cat.fullName}</p>
+                  <p className="text-sm text-slate-400 leading-relaxed mb-6">{cat.description}</p>
+
+                  {/* Subcategory pills preview */}
+                  <div className="flex flex-wrap gap-2 mb-6">
+                    {cat.subcategories.filter(s => s !== 'All').map(sub => (
+                      <span key={sub} className="text-xs px-3 py-1 rounded-full border font-semibold" style={{ borderColor: `${cat.color}44`, color: `${cat.color}bb`, background: `${cat.color}11` }}>
+                        {sub}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center gap-2 font-bold text-sm" style={{ color: cat.color }}>
+                    Explore {cat.label} <ChevronRight className="w-4 h-4" />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -1546,6 +1834,7 @@ function GameCard({ game, index, navigateTo, accentColor = '#3b82f6' }) {
   const cat = CATEGORIES.find(c => c.id === game.category);
   const color = accentColor || cat?.color || '#3b82f6';
   const image = useGameImage(game);
+  const [imgLoaded, setImgLoaded] = useState(false);
 
   return (
     <div
@@ -1554,7 +1843,15 @@ function GameCard({ game, index, navigateTo, accentColor = '#3b82f6' }) {
       onClick={() => navigateTo('game-detail', game)}
     >
       <div className="relative h-52 overflow-hidden">
-        <img src={image} alt={game.title} className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" />
+        {/* Skeleton shown while image loads */}
+        {!imgLoaded && <div className="skeleton absolute inset-0" />}
+        <img
+          src={image}
+          alt={game.title}
+          onLoad={() => setImgLoaded(true)}
+          className="w-full h-full object-cover transition-all duration-500 hover:scale-105"
+          style={{ opacity: imgLoaded ? 1 : 0 }}
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/30 to-transparent" />
         <div className="absolute top-4 right-4 text-xs font-bold px-3 py-1 rounded-full" style={{ background: `${color}dd`, color: '#fff' }}>
           {game.subcategory}
@@ -1591,13 +1888,21 @@ function GameCard({ game, index, navigateTo, accentColor = '#3b82f6' }) {
 // Small card used in the "More X Games" section — needs its own hook call
 function RelatedGameCard({ game, navigateTo }) {
   const image = useGameImage(game);
+  const [loaded, setLoaded] = useState(false);
   return (
     <div
       className="game-card bg-slate-900 rounded-xl overflow-hidden cursor-pointer border border-slate-800 hover:border-slate-600"
       onClick={() => navigateTo('game-detail', game)}
     >
-      <div className="h-28 overflow-hidden">
-        <img src={image} alt={game.title} className="w-full h-full object-cover" />
+      <div className="h-28 overflow-hidden relative">
+        {!loaded && <div className="skeleton absolute inset-0" />}
+        <img
+          src={image}
+          alt={game.title}
+          onLoad={() => setLoaded(true)}
+          className="w-full h-full object-cover transition-opacity duration-500"
+          style={{ opacity: loaded ? 1 : 0 }}
+        />
       </div>
       <div className="p-3">
         <p className="font-bold text-sm truncate">{game.title}</p>
@@ -1611,7 +1916,7 @@ function RelatedGameCard({ game, navigateTo }) {
 }
 
 // ─────────────────────────────────────────────
-// GAME DETAIL PAGE
+// GAME DETAIL PAGE  — with Community Features
 // ─────────────────────────────────────────────
 
 function GameDetailPage({ game, navigateTo }) {
@@ -1619,15 +1924,115 @@ function GameDetailPage({ game, navigateTo }) {
   const color = cat?.color || '#3b82f6';
   const Icon = cat?.icon || Gamepad2;
   const heroImage = useGameImage(game);
+  const [heroLoaded, setHeroLoaded] = useState(false);
+
+  // Community state
+  const storageKey = `game-community-${game.id}`;
+  const [community, setCommunity] = useState({ reviews: [], discussions: [] });
+  const [wishlist, setWishlist] = useState([]);
+  const [activeTab, setActiveTab] = useState('about');
+
+  // Review form
+  const [reviewName, setReviewName] = useState('');
+  const [reviewText, setReviewText] = useState('');
+  const [reviewStars, setReviewStars] = useState(5);
+  const [hoverStar, setHoverStar] = useState(0);
+
+  // Discussion form
+  const [discussName, setDiscussName] = useState('');
+  const [discussText, setDiscussText] = useState('');
+
+  // Load from storage
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const result = await window.storage.get(storageKey);
+        if (result) setCommunity(JSON.parse(result.value));
+      } catch (_) {}
+      try {
+        const wl = await window.storage.get('wishlist');
+        if (wl) setWishlist(JSON.parse(wl.value));
+      } catch (_) {}
+    };
+    loadData();
+  }, [game.id]);
+
+  const isWishlisted = wishlist.includes(game.id);
+
+  const toggleWishlist = async () => {
+    const updated = isWishlisted
+      ? wishlist.filter(id => id !== game.id)
+      : [...wishlist, game.id];
+    setWishlist(updated);
+    try { await window.storage.set('wishlist', JSON.stringify(updated)); } catch (_) {}
+  };
+
+  const submitReview = async () => {
+    if (!reviewName.trim() || !reviewText.trim()) return;
+    const newReview = {
+      id: Date.now(),
+      name: reviewName.trim(),
+      text: reviewText.trim(),
+      stars: reviewStars,
+      date: new Date().toLocaleDateString('en-GB'),
+    };
+    const updated = { ...community, reviews: [newReview, ...community.reviews] };
+    setCommunity(updated);
+    try { await window.storage.set(storageKey, JSON.stringify(updated)); } catch (_) {}
+    setReviewName(''); setReviewText(''); setReviewStars(5);
+  };
+
+  const submitDiscussion = async () => {
+    if (!discussName.trim() || !discussText.trim()) return;
+    const newPost = {
+      id: Date.now(),
+      name: discussName.trim(),
+      text: discussText.trim(),
+      date: new Date().toLocaleDateString('en-GB'),
+      likes: 0,
+    };
+    const updated = { ...community, discussions: [newPost, ...community.discussions] };
+    setCommunity(updated);
+    try { await window.storage.set(storageKey, JSON.stringify(updated)); } catch (_) {}
+    setDiscussName(''); setDiscussText('');
+  };
+
+  const likePost = async (postId) => {
+    const updated = {
+      ...community,
+      discussions: community.discussions.map(p =>
+        p.id === postId ? { ...p, likes: (p.likes || 0) + 1 } : p
+      ),
+    };
+    setCommunity(updated);
+    try { await window.storage.set(storageKey, JSON.stringify(updated)); } catch (_) {}
+  };
+
+  const avgUserRating = community.reviews.length > 0
+    ? (community.reviews.reduce((sum, r) => sum + r.stars, 0) / community.reviews.length).toFixed(1)
+    : null;
 
   // Related games
   const related = GAMES_DATA.filter(g => g.category === game.category && g.id !== game.id).slice(0, 3);
+
+  const tabs = [
+    { id: 'about', label: 'About' },
+    { id: 'reviews', label: `Reviews ${community.reviews.length > 0 ? `(${community.reviews.length})` : ''}` },
+    { id: 'discussion', label: `Discussion ${community.discussions.length > 0 ? `(${community.discussions.length})` : ''}` },
+  ];
 
   return (
     <div className="fade-in-up">
       {/* Hero */}
       <div className="relative h-[480px] overflow-hidden">
-        <img src={heroImage} alt={game.title} className="w-full h-full object-cover" />
+        {!heroLoaded && <div className="skeleton absolute inset-0" />}
+        <img
+          src={heroImage}
+          alt={game.title}
+          onLoad={() => setHeroLoaded(true)}
+          className="w-full h-full object-cover transition-opacity duration-500"
+          style={{ opacity: heroLoaded ? 1 : 0 }}
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
         <div className="absolute inset-0 flex items-end">
           <div className="container mx-auto px-6 pb-14">
@@ -1639,77 +2044,248 @@ function GameDetailPage({ game, navigateTo }) {
               <ChevronRight className="w-4 h-4 text-slate-600" />
               <span className="text-slate-300">{game.title}</span>
             </div>
-
             <div className="max-w-3xl">
-              <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center gap-3 mb-4 flex-wrap">
                 <span className="text-xs font-bold px-4 py-2 rounded-full" style={{ background: `${color}dd`, color: '#fff' }}>
                   {game.subcategory}
                 </span>
                 {game.tags.map(tag => (
                   <span key={tag} className="tag-chip hidden sm:inline">{tag}</span>
                 ))}
+                {/* Wishlist button in hero */}
+                <button
+                  onClick={toggleWishlist}
+                  className="ml-auto flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm transition-all duration-200"
+                  style={{
+                    background: isWishlisted ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.1)',
+                    color: isWishlisted ? '#f87171' : '#94a3b8',
+                    border: `1px solid ${isWishlisted ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.2)'}`,
+                  }}
+                >
+                  {isWishlisted ? '♥ Wishlisted' : '♡ Add to Wishlist'}
+                </button>
               </div>
               <h2 className="text-5xl font-black mb-3" style={{ fontFamily: "'Orbitron', sans-serif" }}>{game.title}</h2>
-              <p className="text-lg text-slate-300">{game.description}</p>
+              <div className="flex items-center gap-4">
+                <p className="text-lg text-slate-300">{game.description}</p>
+              </div>
+              {avgUserRating && (
+                <div className="mt-3 flex items-center gap-2">
+                  <span className="text-yellow-400 text-sm">{'★'.repeat(Math.round(avgUserRating))}{'☆'.repeat(5 - Math.round(avgUserRating))}</span>
+                  <span className="text-white font-bold">{avgUserRating}</span>
+                  <span className="text-slate-400 text-sm">({community.reviews.length} user reviews)</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-6 py-16">
+      <div className="container mx-auto px-6 py-10">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
 
-          {/* ── Left: Main Content ── */}
-          <div className="lg:col-span-2 space-y-10">
-
-            {/* About */}
-            <div>
-              <h3 className="text-2xl font-bold mb-5" style={{ color }}>About This Game</h3>
-              <p className="text-slate-300 text-lg leading-relaxed">{game.details}</p>
+          {/* ── Left: Tabbed Content ── */}
+          <div className="lg:col-span-2">
+            {/* Tabs */}
+            <div className="flex gap-1 mb-8 bg-slate-900 rounded-xl p-1 border border-slate-800">
+              {tabs.map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className="flex-1 py-2.5 px-4 rounded-lg text-sm font-bold transition-all duration-200"
+                  style={{
+                    background: activeTab === tab.id ? color : 'transparent',
+                    color: activeTab === tab.id ? '#fff' : '#64748b',
+                  }}
+                >{tab.label}</button>
+              ))}
             </div>
 
-            {/* Features */}
-            <div className="bg-slate-900 rounded-2xl p-8 border border-slate-800">
-              <h4 className="text-xl font-bold mb-6">Key Features</h4>
-              <ul className="space-y-4">
-                {game.features.map((feat, i) => (
-                  <li key={i} className="flex items-start gap-4">
-                    <div className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: `${color}22` }}>
-                      <Zap className="w-3.5 h-3.5" style={{ color }} />
-                    </div>
-                    <span className="text-slate-300">{feat}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Platforms */}
-            <div>
-              <h4 className="text-lg font-bold mb-4 text-slate-300">Available On</h4>
-              <div className="flex flex-wrap gap-3">
-                {game.platforms.map(p => (
-                  <span key={p} className="px-4 py-2 rounded-lg text-sm font-bold bg-slate-800 border border-slate-700 text-slate-300">
-                    {p}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* Related Games */}
-            {related.length > 0 && (
-              <div>
-                <h4 className="text-lg font-bold mb-5 text-slate-300">More {cat?.label} Games</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  {related.map(rg => (
-                    <RelatedGameCard key={rg.id} game={rg} navigateTo={navigateTo} />
-                  ))}
+            {/* ── ABOUT TAB ── */}
+            {activeTab === 'about' && (
+              <div className="space-y-10">
+                <div>
+                  <h3 className="text-2xl font-bold mb-5" style={{ color }}>About This Game</h3>
+                  <p className="text-slate-300 text-lg leading-relaxed">{game.details}</p>
                 </div>
+                <div className="bg-slate-900 rounded-2xl p-8 border border-slate-800">
+                  <h4 className="text-xl font-bold mb-6">Key Features</h4>
+                  <ul className="space-y-4">
+                    {game.features.map((feat, i) => (
+                      <li key={i} className="flex items-start gap-4">
+                        <div className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: `${color}22` }}>
+                          <Zap className="w-3.5 h-3.5" style={{ color }} />
+                        </div>
+                        <span className="text-slate-300">{feat}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="text-lg font-bold mb-4 text-slate-300">Available On</h4>
+                  <div className="flex flex-wrap gap-3">
+                    {game.platforms.map(p => (
+                      <span key={p} className="px-4 py-2 rounded-lg text-sm font-bold bg-slate-800 border border-slate-700 text-slate-300">{p}</span>
+                    ))}
+                  </div>
+                </div>
+                {related.length > 0 && (
+                  <div>
+                    <h4 className="text-lg font-bold mb-5 text-slate-300">More {cat?.label} Games</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      {related.map(rg => (
+                        <RelatedGameCard key={rg.id} game={rg} navigateTo={navigateTo} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── REVIEWS TAB ── */}
+            {activeTab === 'reviews' && (
+              <div className="space-y-8">
+                {/* Write review */}
+                <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800">
+                  <h4 className="text-lg font-bold mb-5">Write a Review</h4>
+                  <div className="space-y-4">
+                    <input
+                      type="text"
+                      value={reviewName}
+                      onChange={e => setReviewName(e.target.value)}
+                      placeholder="Your name"
+                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                    />
+                    {/* Star picker */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-slate-400 mr-1">Rating:</span>
+                      {[1,2,3,4,5].map(s => (
+                        <button
+                          key={s}
+                          onMouseEnter={() => setHoverStar(s)}
+                          onMouseLeave={() => setHoverStar(0)}
+                          onClick={() => setReviewStars(s)}
+                          className="text-2xl transition-transform hover:scale-110"
+                          style={{ color: s <= (hoverStar || reviewStars) ? '#facc15' : '#334155' }}
+                        >★</button>
+                      ))}
+                      <span className="text-sm text-yellow-400 ml-1 font-bold">{reviewStars}/5</span>
+                    </div>
+                    <textarea
+                      value={reviewText}
+                      onChange={e => setReviewText(e.target.value)}
+                      placeholder="Share your thoughts about this game..."
+                      rows={3}
+                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors resize-none"
+                    />
+                    <button
+                      onClick={submitReview}
+                      disabled={!reviewName.trim() || !reviewText.trim()}
+                      className="px-6 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      style={{ background: color, color: '#fff' }}
+                    >Post Review</button>
+                  </div>
+                </div>
+
+                {/* Reviews list */}
+                {community.reviews.length === 0 ? (
+                  <div className="text-center py-16 text-slate-600">
+                    <p className="text-4xl mb-3">✍️</p>
+                    <p className="font-bold">No reviews yet — be the first!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {community.reviews.map(r => (
+                      <div key={r.id} className="bg-slate-900 rounded-xl p-5 border border-slate-800">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <span className="font-bold text-white">{r.name}</span>
+                            <span className="text-slate-500 text-xs ml-3">{r.date}</span>
+                          </div>
+                          <span className="text-yellow-400 text-sm font-bold">{'★'.repeat(r.stars)}{'☆'.repeat(5-r.stars)}</span>
+                        </div>
+                        <p className="text-slate-300 text-sm leading-relaxed">{r.text}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── DISCUSSION TAB ── */}
+            {activeTab === 'discussion' && (
+              <div className="space-y-8">
+                {/* New post form */}
+                <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800">
+                  <h4 className="text-lg font-bold mb-5">Start a Discussion</h4>
+                  <div className="space-y-4">
+                    <input
+                      type="text"
+                      value={discussName}
+                      onChange={e => setDiscussName(e.target.value)}
+                      placeholder="Your name"
+                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                    />
+                    <textarea
+                      value={discussText}
+                      onChange={e => setDiscussText(e.target.value)}
+                      placeholder="Ask a question, share a tip, or start a conversation..."
+                      rows={3}
+                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors resize-none"
+                    />
+                    <button
+                      onClick={submitDiscussion}
+                      disabled={!discussName.trim() || !discussText.trim()}
+                      className="px-6 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      style={{ background: color, color: '#fff' }}
+                    >Post</button>
+                  </div>
+                </div>
+
+                {/* Posts list */}
+                {community.discussions.length === 0 ? (
+                  <div className="text-center py-16 text-slate-600">
+                    <p className="text-4xl mb-3">💬</p>
+                    <p className="font-bold">No discussions yet — start one!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {community.discussions.map(p => (
+                      <div key={p.id} className="bg-slate-900 rounded-xl p-5 border border-slate-800">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-bold text-white">{p.name}</span>
+                          <span className="text-slate-500 text-xs">{p.date}</span>
+                        </div>
+                        <p className="text-slate-300 text-sm leading-relaxed mb-3">{p.text}</p>
+                        <button
+                          onClick={() => likePost(p.id)}
+                          className="text-xs text-slate-500 hover:text-blue-400 transition-colors flex items-center gap-1.5"
+                        >
+                          👍 {p.likes || 0} likes
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
 
           {/* ── Right: Sidebar ── */}
           <div className="space-y-6">
+            {/* Wishlist button */}
+            <button
+              onClick={toggleWishlist}
+              className="w-full py-3.5 rounded-xl font-bold text-sm transition-all duration-200 flex items-center justify-center gap-2"
+              style={{
+                background: isWishlisted ? 'rgba(239,68,68,0.15)' : `${color}22`,
+                color: isWishlisted ? '#f87171' : color,
+                border: `2px solid ${isWishlisted ? 'rgba(239,68,68,0.4)' : `${color}44`}`,
+              }}
+            >
+              {isWishlisted ? '♥ Remove from Wishlist' : '♡ Add to Wishlist'}
+            </button>
+
             {/* Info card */}
             <div className="cyber-border rounded-2xl">
               <div className="bg-slate-900 rounded-2xl p-6">
@@ -1734,6 +2310,16 @@ function GameDetailPage({ game, navigateTo }) {
                       <span className="text-slate-500">/ 5.0</span>
                     </div>
                   </div>
+                  {avgUserRating && (
+                    <div>
+                      <span className="text-slate-500 block mb-1">User Rating</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl text-yellow-400">★</span>
+                        <span className="text-white font-black text-lg">{avgUserRating}</span>
+                        <span className="text-slate-500 text-xs">({community.reviews.length} reviews)</span>
+                      </div>
+                    </div>
+                  )}
                   <div>
                     <span className="text-slate-500 block mb-2">Tags</span>
                     <div className="flex flex-wrap gap-2">
@@ -1773,6 +2359,506 @@ function GameDetailPage({ game, navigateTo }) {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// LOGIN PAGE
+// ─────────────────────────────────────────────
+
+function LoginPage({ navigateTo }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
+
+  useEffect(() => { if (user) navigateTo('home'); }, [user]);
+
+  const handleLogin = async () => {
+    if (!email || !password) return setError('Please fill in all fields.');
+    setLoading(true); setError('');
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      navigateTo('home');
+    } catch (e) {
+      setError(e.code === 'auth/invalid-credential' ? 'Incorrect email or password.' : e.message);
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center px-4 py-20">
+      <div className="w-full max-w-md fade-in-up">
+        {/* Logo */}
+        <div className="text-center mb-10">
+          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 glow-effect">
+            <Gamepad2 className="w-9 h-9 text-white" />
+          </div>
+          <h2 className="text-3xl font-black" style={{ fontFamily: "'Orbitron', sans-serif" }}>
+            <span className="text-blue-400">WELCOME</span> BACK
+          </h2>
+          <p className="text-slate-400 mt-2">Sign in to your GameHub account</p>
+        </div>
+
+        <div className="bg-slate-900 rounded-2xl p-8 border border-slate-800">
+          <div className="space-y-5">
+            <div>
+              <label className="block text-xs font-bold text-slate-400 mb-2 tracking-widest uppercase">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                placeholder="you@example.com"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-400 mb-2 tracking-widest uppercase">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                placeholder="••••••••"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+              />
+            </div>
+
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 text-sm text-red-400">
+                {error}
+              </div>
+            )}
+
+            <button
+              onClick={handleLogin}
+              disabled={loading}
+              className="w-full py-3.5 rounded-xl font-black text-white transition-all disabled:opacity-50 text-sm tracking-wider"
+              style={{ background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)' }}
+            >
+              {loading ? 'Signing in...' : 'SIGN IN'}
+            </button>
+          </div>
+
+          <div className="mt-6 text-center text-sm text-slate-500">
+            Don't have an account?{' '}
+            <button onClick={() => navigateTo('register')} className="text-blue-400 font-bold hover:underline">
+              Sign Up
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// REGISTER PAGE
+// ─────────────────────────────────────────────
+
+function RegisterPage({ navigateTo }) {
+  const [displayName, setDisplayName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
+
+  useEffect(() => { if (user) navigateTo('home'); }, [user]);
+
+  const handleRegister = async () => {
+    if (!displayName || !email || !password || !confirm) return setError('Please fill in all fields.');
+    if (password !== confirm) return setError('Passwords do not match.');
+    if (password.length < 6) return setError('Password must be at least 6 characters.');
+    setLoading(true); setError('');
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(cred.user, { displayName });
+      navigateTo('home');
+    } catch (e) {
+      setError(e.code === 'auth/email-already-in-use' ? 'This email is already registered.' : e.message);
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center px-4 py-20">
+      <div className="w-full max-w-md fade-in-up">
+        <div className="text-center mb-10">
+          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 glow-effect">
+            <Gamepad2 className="w-9 h-9 text-white" />
+          </div>
+          <h2 className="text-3xl font-black" style={{ fontFamily: "'Orbitron', sans-serif" }}>
+            <span className="text-purple-400">JOIN</span> GAMEHUB
+          </h2>
+          <p className="text-slate-400 mt-2">Create your free account</p>
+        </div>
+
+        <div className="bg-slate-900 rounded-2xl p-8 border border-slate-800">
+          <div className="space-y-5">
+            {[
+              { label: 'Display Name', value: displayName, setter: setDisplayName, type: 'text', placeholder: 'GamerTag123' },
+              { label: 'Email', value: email, setter: setEmail, type: 'email', placeholder: 'you@example.com' },
+              { label: 'Password', value: password, setter: setPassword, type: 'password', placeholder: '•••••••• (min 6 chars)' },
+              { label: 'Confirm Password', value: confirm, setter: setConfirm, type: 'password', placeholder: '••••••••' },
+            ].map(field => (
+              <div key={field.label}>
+                <label className="block text-xs font-bold text-slate-400 mb-2 tracking-widest uppercase">{field.label}</label>
+                <input
+                  type={field.type}
+                  value={field.value}
+                  onChange={e => field.setter(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleRegister()}
+                  placeholder={field.placeholder}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors"
+                />
+              </div>
+            ))}
+
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 text-sm text-red-400">
+                {error}
+              </div>
+            )}
+
+            <button
+              onClick={handleRegister}
+              disabled={loading}
+              className="w-full py-3.5 rounded-xl font-black text-white transition-all disabled:opacity-50 text-sm tracking-wider"
+              style={{ background: 'linear-gradient(135deg, #8b5cf6, #ec4899)' }}
+            >
+              {loading ? 'Creating account...' : 'CREATE ACCOUNT'}
+            </button>
+          </div>
+
+          <div className="mt-6 text-center text-sm text-slate-500">
+            Already have an account?{' '}
+            <button onClick={() => navigateTo('login')} className="text-purple-400 font-bold hover:underline">
+              Sign In
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// PROFILE PAGE
+// ─────────────────────────────────────────────
+
+function ProfilePage({ navigateTo }) {
+  const { user } = useAuth();
+  const [newName, setNewName] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [wishlistCount, setWishlistCount] = useState(0);
+
+  useEffect(() => {
+    if (!user) { navigateTo('login'); return; }
+    setNewName(user.displayName || '');
+    const loadWishlist = async () => {
+      try {
+        const r = await window.storage.get('wishlist');
+        if (r) setWishlistCount(JSON.parse(r.value).length);
+      } catch (_) {}
+    };
+    loadWishlist();
+  }, [user]);
+
+  const handleSaveName = async () => {
+    if (!newName.trim()) return;
+    setSaving(true);
+    try { await updateProfile(user, { displayName: newName.trim() }); setSaved(true); setTimeout(() => setSaved(false), 2000); } catch (_) {}
+    setSaving(false);
+  };
+
+  if (!user) return null;
+
+  const initials = user.displayName
+    ? user.displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    : user.email[0].toUpperCase();
+
+  const joinDate = user.metadata?.creationTime
+    ? new Date(user.metadata.creationTime).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' })
+    : 'Unknown';
+
+  return (
+    <div className="container mx-auto px-6 py-20 max-w-2xl fade-in-up">
+      <h2 className="text-4xl font-black mb-10" style={{ fontFamily: "'Orbitron', sans-serif" }}>
+        <span className="text-blue-400">MY</span> PROFILE
+      </h2>
+
+      {/* Avatar + info */}
+      <div className="bg-slate-900 rounded-2xl p-8 border border-slate-800 mb-6">
+        <div className="flex items-center gap-6 mb-8">
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-black text-3xl flex-shrink-0">
+            {initials}
+          </div>
+          <div>
+            <h3 className="text-2xl font-black">{user.displayName || 'Gamer'}</h3>
+            <p className="text-slate-400 text-sm mt-1">{user.email}</p>
+            <p className="text-slate-500 text-xs mt-1">Joined {joinDate}</p>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 gap-4 mb-8">
+          {[
+            { label: 'Wishlist', value: wishlistCount, icon: '♥', color: '#f87171', page: 'wishlist' },
+            { label: 'Leaderboard', value: '🏆', icon: '👑', color: '#facc15', page: 'leaderboard' },
+          ].map(stat => (
+            <button
+              key={stat.label}
+              onClick={() => navigateTo(stat.page)}
+              className="bg-slate-800 rounded-xl p-4 border border-slate-700 hover:border-blue-500/40 transition-all text-left"
+            >
+              <p className="text-2xl mb-1">{stat.icon}</p>
+              <p className="text-xl font-black" style={{ color: stat.color }}>{stat.value}</p>
+              <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">{stat.label}</p>
+            </button>
+          ))}
+        </div>
+
+        {/* Edit display name */}
+        <div>
+          <label className="block text-xs font-bold text-slate-400 mb-2 tracking-widest uppercase">Display Name</label>
+          <div className="flex gap-3">
+            <input
+              type="text"
+              value={newName}
+              onChange={e => setNewName(e.target.value)}
+              className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 focus:outline-none focus:border-blue-500 transition-colors"
+            />
+            <button
+              onClick={handleSaveName}
+              disabled={saving}
+              className="px-5 py-3 rounded-xl font-bold text-sm transition-all text-white"
+              style={{ background: saved ? '#22c55e' : 'linear-gradient(135deg, #3b82f6, #8b5cf6)' }}
+            >
+              {saved ? '✓ Saved!' : saving ? '...' : 'Save'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Sign out */}
+      <button
+        onClick={async () => { await signOut(auth); navigateTo('home'); }}
+        className="w-full py-3.5 rounded-xl font-bold text-red-400 border border-red-500/30 hover:bg-red-500/10 transition-all"
+      >
+        🚪 Sign Out
+      </button>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// LEADERBOARD PAGE
+// ─────────────────────────────────────────────
+
+function LeaderboardPage({ navigateTo }) {
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const buildLeaderboard = async () => {
+      // Aggregate reviews across all games to build ranking
+      const scores = [];
+      for (const game of GAMES_DATA) {
+        try {
+          const result = await window.storage.get(`game-community-${game.id}`);
+          if (result) {
+            const data = JSON.parse(result.value);
+            const reviews = data.reviews || [];
+            const discussions = data.discussions || [];
+            if (reviews.length > 0 || discussions.length > 0) {
+              const avgRating = reviews.length > 0
+                ? reviews.reduce((s, r) => s + r.stars, 0) / reviews.length
+                : null;
+              scores.push({
+                game,
+                reviews: reviews.length,
+                discussions: discussions.length,
+                avgRating,
+                score: reviews.length * 3 + discussions.length * 1,
+              });
+            }
+          }
+        } catch (_) {}
+      }
+      scores.sort((a, b) => b.score - a.score);
+      setLeaderboard(scores);
+      setLoading(false);
+    };
+    buildLeaderboard();
+  }, []);
+
+  // Top games by built-in rating as fallback
+  const topRated = [...GAMES_DATA].sort((a, b) => b.rating - a.rating).slice(0, 10);
+
+  return (
+    <div className="container mx-auto px-6 py-20">
+      <div className="mb-12 fade-in-up">
+        <h2 className="text-4xl font-black mb-3" style={{ fontFamily: "'Orbitron', sans-serif" }}>
+          <span className="text-yellow-400">LEADER</span>BOARD
+        </h2>
+        <p className="text-slate-400">Most reviewed and discussed games in the community</p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Community Activity Rankings */}
+        <div>
+          <h3 className="text-lg font-black mb-5 flex items-center gap-2">
+            <span className="text-blue-400">💬</span> Most Active Community
+          </h3>
+          {loading ? (
+            <div className="space-y-3">
+              {[1,2,3].map(i => <div key={i} className="skeleton h-20 rounded-xl" />)}
+            </div>
+          ) : leaderboard.length === 0 ? (
+            <div className="bg-slate-900 rounded-2xl p-10 border border-slate-800 text-center text-slate-500">
+              <p className="text-4xl mb-3">🏆</p>
+              <p className="font-bold">No community activity yet</p>
+              <p className="text-sm mt-1">Be the first to review or discuss a game!</p>
+              <button onClick={() => navigateTo('games')} className="mt-4 text-blue-400 text-sm font-bold hover:underline">Browse Games →</button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {leaderboard.map((entry, i) => {
+                const cat = CATEGORIES.find(c => c.id === entry.game.category);
+                const medal = ['🥇','🥈','🥉'][i] || `#${i+1}`;
+                return (
+                  <div
+                    key={entry.game.id}
+                    className="bg-slate-900 rounded-xl p-4 border border-slate-800 hover:border-blue-500/30 transition-all cursor-pointer flex items-center gap-4"
+                    onClick={() => navigateTo('game-detail', entry.game)}
+                  >
+                    <span className="text-2xl w-8 text-center">{medal}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold truncate">{entry.game.title}</p>
+                      <div className="flex items-center gap-3 text-xs text-slate-500 mt-0.5">
+                        <span style={{ color: cat?.color }}>●  {cat?.label}</span>
+                        <span>✍️ {entry.reviews} reviews</span>
+                        <span>💬 {entry.discussions} posts</span>
+                      </div>
+                    </div>
+                    {entry.avgRating && (
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-yellow-400 font-black">★ {entry.avgRating.toFixed(1)}</p>
+                        <p className="text-xs text-slate-500">user rating</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Top Rated by Score */}
+        <div>
+          <h3 className="text-lg font-black mb-5 flex items-center gap-2">
+            <span className="text-yellow-400">⭐</span> Top Rated Games
+          </h3>
+          <div className="space-y-3">
+            {topRated.map((game, i) => {
+              const cat = CATEGORIES.find(c => c.id === game.category);
+              const medal = ['🥇','🥈','🥉'][i] || `#${i+1}`;
+              return (
+                <div
+                  key={game.id}
+                  className="bg-slate-900 rounded-xl p-4 border border-slate-800 hover:border-yellow-500/30 transition-all cursor-pointer flex items-center gap-4"
+                  onClick={() => navigateTo('game-detail', game)}
+                >
+                  <span className="text-2xl w-8 text-center">{medal}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold truncate">{game.title}</p>
+                    <p className="text-xs mt-0.5" style={{ color: cat?.color }}>● {cat?.label} · {game.subcategory}</p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-yellow-400 font-black text-lg">★ {game.rating}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// WISHLIST PAGE
+// ─────────────────────────────────────────────
+
+function WishlistPage({ navigateTo }) {
+  const [wishlist, setWishlist] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const result = await window.storage.get('wishlist');
+        if (result) setWishlist(JSON.parse(result.value));
+      } catch (_) {}
+      setLoading(false);
+    };
+    load();
+  }, []);
+
+  const removeFromWishlist = async (gameId) => {
+    const updated = wishlist.filter(id => id !== gameId);
+    setWishlist(updated);
+    try { await window.storage.set('wishlist', JSON.stringify(updated)); } catch (_) {}
+  };
+
+  const wishlistedGames = GAMES_DATA.filter(g => wishlist.includes(g.id));
+
+  return (
+    <div className="container mx-auto px-6 py-20">
+      <div className="mb-12 fade-in-up">
+        <h2 className="text-4xl font-black mb-3" style={{ fontFamily: "'Orbitron', sans-serif" }}>
+          <span className="text-red-400">MY</span> WISHLIST
+        </h2>
+        <p className="text-slate-400">{wishlistedGames.length} game{wishlistedGames.length !== 1 ? 's' : ''} saved</p>
+      </div>
+
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {[1,2,3,4].map(i => <div key={i} className="skeleton h-64 rounded-xl" />)}
+        </div>
+      ) : wishlistedGames.length === 0 ? (
+        <div className="text-center py-32 text-slate-600">
+          <p className="text-6xl mb-4">♡</p>
+          <p className="text-xl font-bold">Your wishlist is empty</p>
+          <p className="text-sm mt-2 mb-6">Go to any game and click "Add to Wishlist"</p>
+          <button
+            onClick={() => navigateTo('games')}
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-colors"
+          >Browse Games</button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          {wishlistedGames.map((game, i) => {
+            const cat = CATEGORIES.find(c => c.id === game.category);
+            return (
+              <div key={game.id} className="relative group">
+                <GameCard game={game} index={i} navigateTo={navigateTo} accentColor={cat?.color} />
+                <button
+                  onClick={(e) => { e.stopPropagation(); removeFromWishlist(game.id); }}
+                  className="absolute top-3 left-3 bg-red-500/80 hover:bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                >✕ Remove</button>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
