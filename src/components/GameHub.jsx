@@ -1920,6 +1920,7 @@ function RelatedGameCard({ game, navigateTo }) {
 // ─────────────────────────────────────────────
 
 function GameDetailPage({ game, navigateTo }) {
+  const { user } = useAuth();
   const cat = CATEGORIES.find(c => c.id === game.category);
   const color = cat?.color || '#3b82f6';
   const Icon = cat?.icon || Gamepad2;
@@ -2052,18 +2053,6 @@ function GameDetailPage({ game, navigateTo }) {
                 {game.tags.map(tag => (
                   <span key={tag} className="tag-chip hidden sm:inline">{tag}</span>
                 ))}
-                {/* Wishlist button in hero */}
-                <button
-                  onClick={toggleWishlist}
-                  className="ml-auto flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm transition-all duration-200"
-                  style={{
-                    background: isWishlisted ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.1)',
-                    color: isWishlisted ? '#f87171' : '#94a3b8',
-                    border: `1px solid ${isWishlisted ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.2)'}`,
-                  }}
-                >
-                  {isWishlisted ? '♥ Wishlisted' : '♡ Add to Wishlist'}
-                </button>
               </div>
               <h2 className="text-5xl font-black mb-3" style={{ fontFamily: "'Orbitron', sans-serif" }}>{game.title}</h2>
               <div className="flex items-center gap-4">
