@@ -1920,43 +1920,25 @@ function RelatedGameCard({ game, navigateTo }) {
 // ─────────────────────────────────────────────
 
 function GameDetailPage({ game, navigateTo }) {
-  const { user } = useAuth();
   const cat = CATEGORIES.find(c => c.id === game.category);
   const color = cat?.color || '#3b82f6';
   const Icon = cat?.icon || Gamepad2;
   const heroImage = useGameImage(game);
   const [heroLoaded, setHeroLoaded] = useState(false);
 
-  // Community state
-  const storageKey = `game-community-${game.id}`;
-  const [community, setCommunity] = useState({ reviews: [], discussions: [] });
+  // Wishlist state
   const [wishlist, setWishlist] = useState([]);
-  const [activeTab, setActiveTab] = useState('about');
 
-  // Review form
-  const [reviewName, setReviewName] = useState('');
-  const [reviewText, setReviewText] = useState('');
-  const [reviewStars, setReviewStars] = useState(5);
-  const [hoverStar, setHoverStar] = useState(0);
-
-  // Discussion form
-  const [discussName, setDiscussName] = useState('');
-  const [discussText, setDiscussText] = useState('');
-
-  // Load from storage
   useEffect(() => {
-    const loadData = async () => {
+    const load = async () => {
       try {
-        const result = await window.storage.get(storageKey);
-        if (result) setCommunity(JSON.parse(result.value));
-      } catch (_) {}
-      try {
-        const wl = await window.storage.get('wishlist');
-        if (wl) setWishlist(JSON.parse(wl.value));
+        const result = await window.storage.get('wishlist');
+        if (result) setWishlist(JSON.parse(result.value));
       } catch (_) {}
     };
-    loadData();
+    load();
   }, [game.id]);
+
 
   const isWishlisted = wishlist.includes(game.id);
 
@@ -1968,59 +1950,9 @@ function GameDetailPage({ game, navigateTo }) {
     try { await window.storage.set('wishlist', JSON.stringify(updated)); } catch (_) {}
   };
 
-  const submitReview = async () => {
-    if (!reviewName.trim() || !reviewText.trim()) return;
-    const newReview = {
-      id: Date.now(),
-      name: reviewName.trim(),
-      text: reviewText.trim(),
-      stars: reviewStars,
-      date: new Date().toLocaleDateString('en-GB'),
-    };
-    const updated = { ...community, reviews: [newReview, ...community.reviews] };
-    setCommunity(updated);
-    try { await window.storage.set(storageKey, JSON.stringify(updated)); } catch (_) {}
-    setReviewName(''); setReviewText(''); setReviewStars(5);
-  };
-
-  const submitDiscussion = async () => {
-    if (!discussName.trim() || !discussText.trim()) return;
-    const newPost = {
-      id: Date.now(),
-      name: discussName.trim(),
-      text: discussText.trim(),
-      date: new Date().toLocaleDateString('en-GB'),
-      likes: 0,
-    };
-    const updated = { ...community, discussions: [newPost, ...community.discussions] };
-    setCommunity(updated);
-    try { await window.storage.set(storageKey, JSON.stringify(updated)); } catch (_) {}
-    setDiscussName(''); setDiscussText('');
-  };
-
-  const likePost = async (postId) => {
-    const updated = {
-      ...community,
-      discussions: community.discussions.map(p =>
-        p.id === postId ? { ...p, likes: (p.likes || 0) + 1 } : p
-      ),
-    };
-    setCommunity(updated);
-    try { await window.storage.set(storageKey, JSON.stringify(updated)); } catch (_) {}
-  };
-
-  const avgUserRating = community.reviews.length > 0
-    ? (community.reviews.reduce((sum, r) => sum + r.stars, 0) / community.reviews.length).toFixed(1)
-    : null;
-
   // Related games
   const related = GAMES_DATA.filter(g => g.category === game.category && g.id !== game.id).slice(0, 3);
 
-  const tabs = [
-    { id: 'about', label: 'About' },
-    { id: 'reviews', label: `Reviews ${community.reviews.length > 0 ? `(${community.reviews.length})` : ''}` },
-    { id: 'discussion', label: `Discussion ${community.discussions.length > 0 ? `(${community.discussions.length})` : ''}` },
-  ];
 
   return (
     <div className="fade-in-up">
@@ -2053,18 +1985,23 @@ function GameDetailPage({ game, navigateTo }) {
                 {game.tags.map(tag => (
                   <span key={tag} className="tag-chip hidden sm:inline">{tag}</span>
                 ))}
+                {/* Wishlist button in hero */}
+                <button
+                  onClick={toggleWishlist}
+                  className="ml-auto flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm transition-all duration-200"
+                  style={{
+                    background: isWishlisted ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.1)',
+                    color: isWishlisted ? '#f87171' : '#94a3b8',
+                    border: `1px solid ${isWishlisted ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.2)'}`,
+                  }}
+                >
+                  {isWishlisted ? '♥ Wishlisted' : '♡ Add to Wishlist'}
+                </button>
               </div>
               <h2 className="text-5xl font-black mb-3" style={{ fontFamily: "'Orbitron', sans-serif" }}>{game.title}</h2>
               <div className="flex items-center gap-4">
                 <p className="text-lg text-slate-300">{game.description}</p>
               </div>
-              {avgUserRating && (
-                <div className="mt-3 flex items-center gap-2">
-                  <span className="text-yellow-400 text-sm">{'★'.repeat(Math.round(avgUserRating))}{'☆'.repeat(5 - Math.round(avgUserRating))}</span>
-                  <span className="text-white font-bold">{avgUserRating}</span>
-                  <span className="text-slate-400 text-sm">({community.reviews.length} user reviews)</span>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -2075,24 +2012,8 @@ function GameDetailPage({ game, navigateTo }) {
 
           {/* ── Left: Tabbed Content ── */}
           <div className="lg:col-span-2">
-            {/* Tabs */}
-            <div className="flex gap-1 mb-8 bg-slate-900 rounded-xl p-1 border border-slate-800">
-              {tabs.map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className="flex-1 py-2.5 px-4 rounded-lg text-sm font-bold transition-all duration-200"
-                  style={{
-                    background: activeTab === tab.id ? color : 'transparent',
-                    color: activeTab === tab.id ? '#fff' : '#64748b',
-                  }}
-                >{tab.label}</button>
-              ))}
-            </div>
 
-            {/* ── ABOUT TAB ── */}
-            {activeTab === 'about' && (
-              <div className="space-y-10">
+            <div className="space-y-10">
                 <div>
                   <h3 className="text-2xl font-bold mb-5" style={{ color }}>About This Game</h3>
                   <p className="text-slate-300 text-lg leading-relaxed">{game.details}</p>
@@ -2128,136 +2049,7 @@ function GameDetailPage({ game, navigateTo }) {
                     </div>
                   </div>
                 )}
-              </div>
-            )}
-
-            {/* ── REVIEWS TAB ── */}
-            {activeTab === 'reviews' && (
-              <div className="space-y-8">
-                {/* Write review */}
-                <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800">
-                  <h4 className="text-lg font-bold mb-5">Write a Review</h4>
-                  <div className="space-y-4">
-                    <input
-                      type="text"
-                      value={reviewName}
-                      onChange={e => setReviewName(e.target.value)}
-                      placeholder="Your name"
-                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
-                    />
-                    {/* Star picker */}
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-slate-400 mr-1">Rating:</span>
-                      {[1,2,3,4,5].map(s => (
-                        <button
-                          key={s}
-                          onMouseEnter={() => setHoverStar(s)}
-                          onMouseLeave={() => setHoverStar(0)}
-                          onClick={() => setReviewStars(s)}
-                          className="text-2xl transition-transform hover:scale-110"
-                          style={{ color: s <= (hoverStar || reviewStars) ? '#facc15' : '#334155' }}
-                        >★</button>
-                      ))}
-                      <span className="text-sm text-yellow-400 ml-1 font-bold">{reviewStars}/5</span>
-                    </div>
-                    <textarea
-                      value={reviewText}
-                      onChange={e => setReviewText(e.target.value)}
-                      placeholder="Share your thoughts about this game..."
-                      rows={3}
-                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors resize-none"
-                    />
-                    <button
-                      onClick={submitReview}
-                      disabled={!reviewName.trim() || !reviewText.trim()}
-                      className="px-6 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                      style={{ background: color, color: '#fff' }}
-                    >Post Review</button>
-                  </div>
-                </div>
-
-                {/* Reviews list */}
-                {community.reviews.length === 0 ? (
-                  <div className="text-center py-16 text-slate-600">
-                    <p className="text-4xl mb-3">✍️</p>
-                    <p className="font-bold">No reviews yet — be the first!</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {community.reviews.map(r => (
-                      <div key={r.id} className="bg-slate-900 rounded-xl p-5 border border-slate-800">
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <span className="font-bold text-white">{r.name}</span>
-                            <span className="text-slate-500 text-xs ml-3">{r.date}</span>
-                          </div>
-                          <span className="text-yellow-400 text-sm font-bold">{'★'.repeat(r.stars)}{'☆'.repeat(5-r.stars)}</span>
-                        </div>
-                        <p className="text-slate-300 text-sm leading-relaxed">{r.text}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* ── DISCUSSION TAB ── */}
-            {activeTab === 'discussion' && (
-              <div className="space-y-8">
-                {/* New post form */}
-                <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800">
-                  <h4 className="text-lg font-bold mb-5">Start a Discussion</h4>
-                  <div className="space-y-4">
-                    <input
-                      type="text"
-                      value={discussName}
-                      onChange={e => setDiscussName(e.target.value)}
-                      placeholder="Your name"
-                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
-                    />
-                    <textarea
-                      value={discussText}
-                      onChange={e => setDiscussText(e.target.value)}
-                      placeholder="Ask a question, share a tip, or start a conversation..."
-                      rows={3}
-                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors resize-none"
-                    />
-                    <button
-                      onClick={submitDiscussion}
-                      disabled={!discussName.trim() || !discussText.trim()}
-                      className="px-6 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                      style={{ background: color, color: '#fff' }}
-                    >Post</button>
-                  </div>
-                </div>
-
-                {/* Posts list */}
-                {community.discussions.length === 0 ? (
-                  <div className="text-center py-16 text-slate-600">
-                    <p className="text-4xl mb-3">💬</p>
-                    <p className="font-bold">No discussions yet — start one!</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {community.discussions.map(p => (
-                      <div key={p.id} className="bg-slate-900 rounded-xl p-5 border border-slate-800">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-bold text-white">{p.name}</span>
-                          <span className="text-slate-500 text-xs">{p.date}</span>
-                        </div>
-                        <p className="text-slate-300 text-sm leading-relaxed mb-3">{p.text}</p>
-                        <button
-                          onClick={() => likePost(p.id)}
-                          className="text-xs text-slate-500 hover:text-blue-400 transition-colors flex items-center gap-1.5"
-                        >
-                          👍 {p.likes || 0} likes
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+            </div>
           </div>
 
           {/* ── Right: Sidebar ── */}
@@ -2299,16 +2091,6 @@ function GameDetailPage({ game, navigateTo }) {
                       <span className="text-slate-500">/ 5.0</span>
                     </div>
                   </div>
-                  {avgUserRating && (
-                    <div>
-                      <span className="text-slate-500 block mb-1">User Rating</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl text-yellow-400">★</span>
-                        <span className="text-white font-black text-lg">{avgUserRating}</span>
-                        <span className="text-slate-500 text-xs">({community.reviews.length} reviews)</span>
-                      </div>
-                    </div>
-                  )}
                   <div>
                     <span className="text-slate-500 block mb-2">Tags</span>
                     <div className="flex flex-wrap gap-2">
