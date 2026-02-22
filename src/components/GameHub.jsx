@@ -957,8 +957,12 @@ export default function GameHub() {
     return () => unsub();
   }, []);
 
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  // Close menu on page navigate
   const navigateTo = (page, data = null) => {
     setCurrentPage(page);
+    setMenuOpen(false);
     if (page === 'game-detail') setSelectedGame(data);
     else if (page === 'category') setSelectedCategory(data);
     else if (page === 'games') { setSelectedCategory(null); setSelectedGame(null); }
@@ -1089,7 +1093,8 @@ export default function GameHub() {
       {/* ── Header ── */}
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-slate-950/95 backdrop-blur-lg shadow-lg shadow-blue-500/10' : 'bg-transparent'}`}>
         <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between gap-6">
+          <div className="flex items-center justify-between">
+            {/* Logo */}
             <div className="flex items-center gap-3 cursor-pointer flex-shrink-0" onClick={() => navigateTo('home')}>
               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center glow-effect">
                 <Gamepad2 className="w-6 h-6" />
@@ -1099,7 +1104,9 @@ export default function GameHub() {
                 <span className="text-white">HUB</span>
               </h1>
             </div>
-            <nav className="flex gap-5 flex-wrap items-center flex-1 justify-center">
+
+            {/* Desktop Nav */}
+            <nav className="hidden lg:flex gap-5 items-center flex-1 justify-center">
               {[
                 { name: 'Home', icon: Gamepad2, page: 'home' },
                 { name: 'Games', icon: Zap, page: 'games' },
@@ -1119,10 +1126,92 @@ export default function GameHub() {
               ))}
               <WishlistNavButton navigateTo={navigateTo} currentPage={currentPage} />
             </nav>
-            {/* ── Auth Button (right side) ── */}
-            <AuthNavButton navigateTo={navigateTo} currentPage={currentPage} user={user} authLoading={authLoading} />
+
+            {/* Desktop Auth */}
+            <div className="hidden lg:flex items-center">
+              <AuthNavButton navigateTo={navigateTo} currentPage={currentPage} user={user} authLoading={authLoading} />
+            </div>
+
+            {/* Mobile Right: Auth + Hamburger */}
+            <div className="flex lg:hidden items-center gap-3">
+              <AuthNavButton navigateTo={navigateTo} currentPage={currentPage} user={user} authLoading={authLoading} />
+              <button
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="flex flex-col justify-center items-center w-10 h-10 rounded-lg bg-slate-800 border border-slate-700 gap-1.5 transition-all hover:bg-slate-700"
+              >
+                <span className={`block w-5 h-0.5 bg-white transition-all duration-300 ${menuOpen ? 'rotate-45 translate-y-2' : ''}`} />
+                <span className={`block w-5 h-0.5 bg-white transition-all duration-300 ${menuOpen ? 'opacity-0' : ''}`} />
+                <span className={`block w-5 h-0.5 bg-white transition-all duration-300 ${menuOpen ? '-rotate-45 -translate-y-2' : ''}`} />
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* Mobile Menu Dropdown */}
+        {menuOpen && (
+          <div className="lg:hidden bg-slate-950/98 backdrop-blur-lg border-t border-slate-800 px-6 py-4 fade-in-up">
+            <div className="flex flex-col gap-1">
+              {[
+                { name: 'Home', icon: Gamepad2, page: 'home' },
+                { name: 'Games', icon: Zap, page: 'games' },
+                { name: 'Tournaments', icon: Trophy, page: 'tournaments' },
+                { name: 'Leaderboard', icon: Crown, page: 'leaderboard' },
+                { name: 'News', icon: Newspaper, page: 'news' },
+                { name: 'About', icon: Info, page: 'about' },
+              ].map((item) => (
+                <button
+                  key={item.page}
+                  onClick={() => navigateTo(item.page)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all text-left ${
+                    currentPage === item.page || (currentPage === 'category' && item.page === 'games') || (currentPage === 'game-detail' && item.page === 'games')
+                      ? 'bg-blue-500/15 text-blue-400'
+                      : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                  }`}
+                >
+                  <item.icon className="w-5 h-5 flex-shrink-0" />
+                  {item.name}
+                </button>
+              ))}
+              {/* Wishlist in mobile menu */}
+              <button
+                onClick={() => navigateTo('wishlist')}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all text-left ${
+                  currentPage === 'wishlist' ? 'bg-red-500/15 text-red-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                }`}
+              >
+                <span className="text-base">♥</span>
+                Wishlist
+              </button>
+              {/* Auth actions in mobile menu */}
+              {!user ? (
+                <div className="flex gap-3 mt-3 pt-3 border-t border-slate-800">
+                  <button
+                    onClick={() => navigateTo('login')}
+                    className="flex-1 py-3 rounded-xl text-sm font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors"
+                  >Login</button>
+                  <button
+                    onClick={() => navigateTo('register')}
+                    className="flex-1 py-3 rounded-xl text-sm font-bold text-white transition-colors"
+                    style={{ background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)' }}
+                  >Sign Up</button>
+                </div>
+              ) : (
+                <div className="mt-3 pt-3 border-t border-slate-800 flex items-center justify-between px-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-black text-xs">
+                      {user.displayName ? user.displayName[0].toUpperCase() : user.email[0].toUpperCase()}
+                    </div>
+                    <span className="text-sm font-bold text-white">{user.displayName || user.email.split('@')[0]}</span>
+                  </div>
+                  <button
+                    onClick={() => { signOut(auth); navigateTo('home'); }}
+                    className="text-sm text-red-400 font-bold hover:text-red-300 transition-colors"
+                  >Sign Out</button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </header>
 
       {/* ── Main Content ── */}
