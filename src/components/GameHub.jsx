@@ -1310,7 +1310,7 @@ function HomePage({ navigateTo }) {
         setHeroIndex(prev => (prev + 1) % FEATURED_GAMES.length);
         setTransitioning(false);
       }, 300);
-    }, 5000);
+    }, 8000);
     return () => clearInterval(timer);
   }, []);
 
