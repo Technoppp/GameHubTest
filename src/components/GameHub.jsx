@@ -817,10 +817,11 @@ const TOURNAMENTS_DATA = [
 function WishlistNavButton({ navigateTo, currentPage }) {
   const [count, setCount] = useState(0);
   useEffect(() => {
-    const load = async () => {
+    const load = () => {
       try {
-        const r = await window.storage.get('wishlist');
-        if (r) setCount(JSON.parse(r.value).length);
+        const raw = localStorage.getItem('wishlist');
+        if (raw) setCount(JSON.parse(raw).length);
+        // loaded from localStorage
       } catch (_) {}
     };
     load();
@@ -1930,10 +1931,11 @@ function GameDetailPage({ game, navigateTo }) {
   const [wishlist, setWishlist] = useState([]);
 
   useEffect(() => {
-    const load = async () => {
+    const load = () => {
       try {
-        const result = await window.storage.get('wishlist');
-        if (result) setWishlist(JSON.parse(result.value));
+        const raw = localStorage.getItem('wishlist');
+        if (raw) setWishlist(JSON.parse(raw));
+        // loaded from localStorage
       } catch (_) {}
     };
     load();
@@ -1947,7 +1949,7 @@ function GameDetailPage({ game, navigateTo }) {
       ? wishlist.filter(id => id !== game.id)
       : [...wishlist, game.id];
     setWishlist(updated);
-    try { await window.storage.set('wishlist', JSON.stringify(updated)); } catch (_) {}
+    localStorage.setItem('wishlist', JSON.stringify(updated));
   };
 
   // Related games
@@ -2320,10 +2322,11 @@ function ProfilePage({ navigateTo }) {
   useEffect(() => {
     if (!user) { navigateTo('login'); return; }
     setNewName(user.displayName || '');
-    const loadWishlist = async () => {
+    const loadWishlist = () => {
       try {
-        const r = await window.storage.get('wishlist');
-        if (r) setWishlistCount(JSON.parse(r.value).length);
+        const raw = localStorage.getItem('wishlist');
+        if (raw) setWishlistCount(JSON.parse(raw).length);
+        // loaded from localStorage
       } catch (_) {}
     };
     loadWishlist();
@@ -2430,9 +2433,10 @@ function LeaderboardPage({ navigateTo }) {
       const scores = [];
       for (const game of GAMES_DATA) {
         try {
-          const result = await window.storage.get(`game-community-${game.id}`);
-          if (result) {
-            const data = JSON.parse(result.value);
+          const raw = localStorage.getItem(`game-community-${game.id}`);
+          if (raw) {
+
+            const data = JSON.parse(raw);
             const reviews = data.reviews || [];
             const discussions = data.discussions || [];
             if (reviews.length > 0 || discussions.length > 0) {
@@ -2561,20 +2565,18 @@ function WishlistPage({ navigateTo }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const result = await window.storage.get('wishlist');
-        if (result) setWishlist(JSON.parse(result.value));
-      } catch (_) {}
+    const load = () => {
+      const raw = localStorage.getItem('wishlist');
+      if (raw) setWishlist(JSON.parse(raw));
       setLoading(false);
     };
     load();
   }, []);
 
-  const removeFromWishlist = async (gameId) => {
+  const removeFromWishlist = (gameId) => {
     const updated = wishlist.filter(id => id !== gameId);
     setWishlist(updated);
-    try { await window.storage.set('wishlist', JSON.stringify(updated)); } catch (_) {}
+    localStorage.setItem('wishlist', JSON.stringify(updated));
   };
 
   const wishlistedGames = GAMES_DATA.filter(g => wishlist.includes(g.id));
