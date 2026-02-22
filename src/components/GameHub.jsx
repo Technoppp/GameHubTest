@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ChevronRight, ChevronLeft, Trophy, Calendar, Zap, Gamepad2, Newspaper, Info, Target, Swords, Users, Laugh, Crown, Brain, Car, Shield } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from 'firebase/auth';
+import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 
 // ─────────────────────────────────────────────
 // FIREBASE AUTH
@@ -19,6 +20,7 @@ const firebaseConfig = {
 
 const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
+const db = getFirestore(firebaseApp);
 
 // Auth context — accessible anywhere in the app
 const AuthContext = React.createContext(null);
@@ -817,11 +819,11 @@ const TOURNAMENTS_DATA = [
 function WishlistNavButton({ navigateTo, currentPage }) {
   const [count, setCount] = useState(0);
   useEffect(() => {
-    const load = () => {
+    const load = async () => {
       try {
-        const raw = localStorage.getItem('wishlist');
-        if (raw) setCount(JSON.parse(raw).length);
-        // loaded from localStorage
+        if (!auth.currentUser) { setCount(0); return; }
+        const snap = await getDoc(doc(db, 'wishlists', auth.currentUser.uid));
+        if (snap.exists()) setCount((snap.data().games || []).length);
       } catch (_) {}
     };
     load();
@@ -1931,11 +1933,11 @@ function GameDetailPage({ game, navigateTo }) {
   const [wishlist, setWishlist] = useState([]);
 
   useEffect(() => {
-    const load = () => {
+    const load = async () => {
       try {
-        const raw = localStorage.getItem('wishlist');
-        if (raw) setWishlist(JSON.parse(raw));
-        // loaded from localStorage
+        if (!auth.currentUser) return;
+        const snap = await getDoc(doc(db, 'wishlists', auth.currentUser.uid));
+        if (snap.exists()) setWishlist(snap.data().games || []);
       } catch (_) {}
     };
     load();
@@ -1949,7 +1951,9 @@ function GameDetailPage({ game, navigateTo }) {
       ? wishlist.filter(id => id !== game.id)
       : [...wishlist, game.id];
     setWishlist(updated);
-    localStorage.setItem('wishlist', JSON.stringify(updated));
+    if (auth.currentUser) {
+      await setDoc(doc(db, 'wishlists', auth.currentUser.uid), { games: updated });
+    }
   };
 
   // Related games
@@ -2322,11 +2326,11 @@ function ProfilePage({ navigateTo }) {
   useEffect(() => {
     if (!user) { navigateTo('login'); return; }
     setNewName(user.displayName || '');
-    const loadWishlist = () => {
+    const loadWishlist = async () => {
       try {
-        const raw = localStorage.getItem('wishlist');
-        if (raw) setWishlistCount(JSON.parse(raw).length);
-        // loaded from localStorage
+        if (!auth.currentUser) return;
+        const snap = await getDoc(doc(db, 'wishlists', auth.currentUser.uid));
+        if (snap.exists()) setWishlistCount((snap.data().games || []).length);
       } catch (_) {}
     };
     loadWishlist();
@@ -2565,18 +2569,21 @@ function WishlistPage({ navigateTo }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const load = () => {
-      const raw = localStorage.getItem('wishlist');
-      if (raw) setWishlist(JSON.parse(raw));
+    const load = async () => {
+      if (!auth.currentUser) { setLoading(false); return; }
+      const snap = await getDoc(doc(db, 'wishlists', auth.currentUser.uid));
+      if (snap.exists()) setWishlist(snap.data().games || []);
       setLoading(false);
     };
     load();
   }, []);
 
-  const removeFromWishlist = (gameId) => {
+  const removeFromWishlist = async (gameId) => {
     const updated = wishlist.filter(id => id !== gameId);
     setWishlist(updated);
-    localStorage.setItem('wishlist', JSON.stringify(updated));
+    if (auth.currentUser) {
+      await setDoc(doc(db, 'wishlists', auth.currentUser.uid), { games: updated });
+    }
   };
 
   const wishlistedGames = GAMES_DATA.filter(g => wishlist.includes(g.id));
