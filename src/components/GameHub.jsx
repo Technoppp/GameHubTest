@@ -1132,9 +1132,17 @@ export default function GameHub() {
               <AuthNavButton navigateTo={navigateTo} currentPage={currentPage} user={user} authLoading={authLoading} />
             </div>
 
-            {/* Mobile Right: Auth + Hamburger */}
+            {/* Mobile Right: Avatar (if logged in) + Hamburger */}
             <div className="flex lg:hidden items-center gap-3">
-              <AuthNavButton navigateTo={navigateTo} currentPage={currentPage} user={user} authLoading={authLoading} />
+              {/* Only show avatar on mobile when logged in, login/signup goes inside menu */}
+              {user && !authLoading && (
+                <button
+                  onClick={() => navigateTo('profile')}
+                  className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-black text-sm flex-shrink-0"
+                >
+                  {user.displayName ? user.displayName[0].toUpperCase() : user.email[0].toUpperCase()}
+                </button>
+              )}
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
                 className="flex flex-col justify-center items-center w-10 h-10 rounded-lg bg-slate-800 border border-slate-700 gap-1.5 transition-all hover:bg-slate-700"
@@ -1357,7 +1365,7 @@ function HomePage({ navigateTo }) {
               </div>
 
               {/* Title */}
-              <h2 className="text-6xl md:text-7xl font-black mb-4 leading-none" style={{ fontFamily: "'Orbitron', sans-serif" }}>
+              <h2 className="text-4xl sm:text-6xl md:text-7xl font-black mb-4 leading-none pr-4 sm:pr-0" style={{ fontFamily: "'Orbitron', sans-serif" }}>
                 {hero.title}
               </h2>
 
@@ -1401,7 +1409,7 @@ function HomePage({ navigateTo }) {
         </div>
 
         {/* ── Hero Selector — right side thumbnails ── */}
-        <div className="absolute right-8 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-3">
+        <div className="hidden sm:flex absolute right-8 top-1/2 -translate-y-1/2 z-20 flex-col gap-3">
           {FEATURED_GAMES.map((g, i) => {
             const c = CATEGORIES.find(cat => cat.id === g.category);
             const thumbImg = rawgImages[g.title] || g.image;
