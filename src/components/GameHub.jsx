@@ -1083,69 +1083,74 @@ function IntroScreen({ onComplete }) {
         <div
           className="intro-controller"
           style={{
-            width: 220, height: 160, margin: '0 auto 36px',
+            width: 260, height: 180, margin: '0 auto 36px',
             opacity: phase === 'enter' ? 0 : 1,
             transform: phase === 'enter' ? 'translateY(40px) scale(0.85)' : 'translateY(0) scale(1)',
             transition: 'all 1.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
           }}
         >
-          <svg viewBox="0 0 220 160" fill="none" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+          <svg viewBox="0 0 260 180" fill="none" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
             {/* Rotating outer ring */}
-            <g className="intro-ring" style={{ transformBox: 'fill-box' }}>
-              <circle cx="110" cy="80" r="72" stroke="url(#ringGrad)" strokeWidth="1" strokeDasharray="8 6" opacity="0.4"/>
+            <g style={{ transformOrigin: '130px 90px' }} className="intro-ring">
+              <circle cx="130" cy="90" r="82" stroke="url(#ringGrad)" strokeWidth="1" strokeDasharray="8 6" opacity="0.35"/>
             </g>
 
             {/* Controller body */}
-            <path d="M45 65 Q40 55 50 50 L80 48 Q90 44 110 44 Q130 44 140 48 L170 50 Q180 55 175 65 L168 105 Q164 125 148 130 L130 135 Q120 140 110 140 Q100 140 90 135 L72 130 Q56 125 52 105 Z"
+            <path d="M55 78 Q50 65 60 58 L95 54 Q110 50 130 50 Q150 50 165 54 L200 58 Q210 65 205 78 L196 120 Q191 140 173 146 L152 151 Q141 156 130 156 Q119 156 108 151 L87 146 Q69 140 64 120 Z"
               fill="#0f0a1e" stroke="#7c3aed" strokeWidth="2"/>
 
             {/* Left grip */}
-            <path d="M45 75 Q35 80 32 100 Q30 118 42 128 Q52 136 62 130 Q56 118 52 105 Q48 90 45 75Z"
+            <path d="M55 88 Q43 95 40 116 Q38 136 52 146 Q63 154 74 147 Q67 132 64 120 Q60 104 55 88Z"
               fill="#0a0618" stroke="#6d28d9" strokeWidth="1.5"/>
             {/* Right grip */}
-            <path d="M175 75 Q185 80 188 100 Q190 118 178 128 Q168 136 158 130 Q164 118 168 105 Q172 90 175 75Z"
+            <path d="M205 88 Q217 95 220 116 Q222 136 208 146 Q197 154 186 147 Q193 132 196 120 Q200 104 205 88Z"
               fill="#0a0618" stroke="#6d28d9" strokeWidth="1.5"/>
 
-            {/* D-pad */}
-            <rect x="68" y="76" width="10" height="28" rx="2" fill="#1e1035" stroke="#a855f7" strokeWidth="1.2"/>
-            <rect x="60" y="84" width="26" height="10" rx="2" fill="#1e1035" stroke="#a855f7" strokeWidth="1.2"/>
-            <circle cx="73" cy="90" r="4" fill="#a855f7" opacity="0.5"/>
+            {/* D-pad — ซ้ายบน ไม่ทับอะไร */}
+            <rect x="77" y="82" width="11" height="32" rx="3" fill="#1e1035" stroke="#a855f7" strokeWidth="1.2"/>
+            <rect x="68" y="91" width="29" height="11" rx="3" fill="#1e1035" stroke="#a855f7" strokeWidth="1.2"/>
+            <circle cx="82" cy="97" r="4" fill="#a855f7" opacity="0.4"/>
 
-            {/* ABXY Buttons */}
-            <circle cx="148" cy="83" r="7" fill="#3b82f6" stroke="#93c5fd" strokeWidth="1.5"/>{/* X */}
-            <circle cx="162" cy="90" r="7" fill="#ef4444" stroke="#fca5a5" strokeWidth="1.5"/>{/* B */}
-            <circle cx="134" cy="90" r="7" fill="#facc15" stroke="#fde68a" strokeWidth="1.5"/>{/* Y */}
-            <circle cx="148" cy="97" r="7" fill="#10b981" stroke="#6ee7b7" strokeWidth="1.5"/>{/* A */}
-            <text x="148" y="87" textAnchor="middle" fill="white" fontSize="7" fontWeight="bold">X</text>
-            <text x="162" y="94" textAnchor="middle" fill="white" fontSize="7" fontWeight="bold">B</text>
-            <text x="134" y="94" textAnchor="middle" fill="white" fontSize="7" fontWeight="bold">Y</text>
-            <text x="148" y="101" textAnchor="middle" fill="white" fontSize="7" fontWeight="bold">A</text>
+            {/* ABXY Buttons — ขวาบน ห่างกันชัดเจน */}
+            {/* Y - top */}
+            <circle cx="172" cy="80" r="8" fill="#facc15" stroke="#fde68a" strokeWidth="1.5"/>
+            <text x="172" y="84" textAnchor="middle" fill="#1a1a1a" fontSize="8" fontWeight="bold">Y</text>
+            {/* X - left */}
+            <circle cx="156" cy="95" r="8" fill="#3b82f6" stroke="#93c5fd" strokeWidth="1.5"/>
+            <text x="156" y="99" textAnchor="middle" fill="white" fontSize="8" fontWeight="bold">X</text>
+            {/* B - right */}
+            <circle cx="188" cy="95" r="8" fill="#ef4444" stroke="#fca5a5" strokeWidth="1.5"/>
+            <text x="188" y="99" textAnchor="middle" fill="white" fontSize="8" fontWeight="bold">B</text>
+            {/* A - bottom */}
+            <circle cx="172" cy="110" r="8" fill="#10b981" stroke="#6ee7b7" strokeWidth="1.5"/>
+            <text x="172" y="114" textAnchor="middle" fill="white" fontSize="8" fontWeight="bold">A</text>
 
-            {/* Analog sticks */}
-            <circle cx="85" cy="108" r="11" fill="#150d28" stroke="#6d28d9" strokeWidth="1.5"/>
-            <circle cx="85" cy="108" r="7" fill="#1e1035" stroke="#a855f7" strokeWidth="1"/>
-            <circle cx="85" cy="108" r="3" fill="#a855f7" opacity="0.7"/>
+            {/* Analog sticks — ซ้ายล่าง ขวาล่าง ห่างกัน */}
+            <circle cx="100" cy="122" r="13" fill="#150d28" stroke="#6d28d9" strokeWidth="1.5"/>
+            <circle cx="100" cy="122" r="9" fill="#1e1035" stroke="#a855f7" strokeWidth="1"/>
+            <circle cx="100" cy="122" r="4" fill="#a855f7" opacity="0.7"/>
 
-            <circle cx="135" cy="108" r="11" fill="#150d28" stroke="#6d28d9" strokeWidth="1.5"/>
-            <circle cx="135" cy="108" r="7" fill="#1e1035" stroke="#a855f7" strokeWidth="1"/>
-            <circle cx="135" cy="108" r="3" fill="#a855f7" opacity="0.7"/>
+            <circle cx="160" cy="122" r="13" fill="#150d28" stroke="#6d28d9" strokeWidth="1.5"/>
+            <circle cx="160" cy="122" r="9" fill="#1e1035" stroke="#a855f7" strokeWidth="1"/>
+            <circle cx="160" cy="122" r="4" fill="#a855f7" opacity="0.7"/>
 
-            {/* Center buttons */}
-            <rect x="98" y="72" width="10" height="6" rx="3" fill="#1e1035" stroke="#6d28d9" strokeWidth="1"/>
-            <rect x="112" y="72" width="10" height="6" rx="3" fill="#1e1035" stroke="#6d28d9" strokeWidth="1"/>
+            {/* Center menu buttons */}
+            <rect x="113" y="80" width="12" height="7" rx="3.5" fill="#1e1035" stroke="#6d28d9" strokeWidth="1"/>
+            <rect x="135" y="80" width="12" height="7" rx="3.5" fill="#1e1035" stroke="#6d28d9" strokeWidth="1"/>
 
-            {/* Center logo area */}
-            <circle cx="110" cy="85" r="10" fill="#1a0a2e" stroke="#a855f7" strokeWidth="1.5" className="intro-neon"/>
-            <text x="110" y="89" textAnchor="middle" fill="#a855f7" fontSize="8" fontWeight="bold" className="intro-neon">GH</text>
+            {/* Center GH logo */}
+            <circle cx="130" cy="97" r="12" fill="#1a0a2e" stroke="#a855f7" strokeWidth="1.5" className="intro-neon"/>
+            <text x="130" y="101" textAnchor="middle" fill="#a855f7" fontSize="9" fontWeight="bold" className="intro-neon">GH</text>
 
-            {/* Shoulder buttons */}
-            <rect x="52" y="52" width="36" height="10" rx="5" fill="#150d28" stroke="#7c3aed" strokeWidth="1.5"/>
-            <rect x="132" y="52" width="36" height="10" rx="5" fill="#150d28" stroke="#7c3aed" strokeWidth="1.5"/>
+            {/* Shoulder buttons L/R */}
+            <rect x="62" y="58" width="40" height="11" rx="5.5" fill="#150d28" stroke="#7c3aed" strokeWidth="1.5"/>
+            <text x="82" y="67" textAnchor="middle" fill="#a855f7" fontSize="7">LB</text>
+            <rect x="158" y="58" width="40" height="11" rx="5.5" fill="#150d28" stroke="#7c3aed" strokeWidth="1.5"/>
+            <text x="178" y="67" textAnchor="middle" fill="#a855f7" fontSize="7">RB</text>
 
-            {/* Neon accent lines */}
-            <line x1="70" y1="62" x2="150" y2="62" stroke="#8b5cf6" strokeWidth="0.8" opacity="0.4" className="intro-neon"/>
+            {/* Neon accent line */}
+            <line x1="85" y1="70" x2="175" y2="70" stroke="#8b5cf6" strokeWidth="0.8" opacity="0.3" className="intro-neon"/>
 
-            {/* Gradients */}
             <defs>
               <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stopColor="#a855f7"/>
