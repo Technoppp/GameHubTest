@@ -959,125 +959,200 @@ export const useGameImage = (game) => {
 // ─────────────────────────────────────────────
 
 function IntroScreen({ onComplete }) {
-  const [phase, setPhase] = useState('enter'); // enter → idle → exit
+  const [phase, setPhase] = useState('enter');
+  const [exiting, setExiting] = useState(false);
+  const [showButton, setShowButton] = useState(false);
 
   useEffect(() => {
-    const t1 = setTimeout(() => setPhase('idle'), 600);
-    const t2 = setTimeout(() => setPhase('exit'), 3800);
-    const t3 = setTimeout(() => onComplete(), 4600);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+    const t1 = setTimeout(() => setPhase('idle'), 400);
+    const t2 = setTimeout(() => setShowButton(true), 2500);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
+
+  const handleStart = () => {
+    if (exiting) return;
+    setExiting(true);
+    setTimeout(() => onComplete(), 1000);
+  };
 
   return (
     <div
+      onClick={showButton ? handleStart : undefined}
       style={{
         position: 'fixed', inset: 0, zIndex: 9999,
         background: '#020617',
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        opacity: phase === 'exit' ? 0 : 1,
-        transition: phase === 'exit' ? 'opacity 0.8s ease' : 'none',
+        cursor: showButton ? 'pointer' : 'default',
+        opacity: exiting ? 0 : 1,
+        transition: exiting ? 'opacity 1s ease' : 'none',
       }}
     >
       <style>{`
         @keyframes introGlow {
-          0%, 100% { filter: drop-shadow(0 0 18px #a855f7) drop-shadow(0 0 40px #3b82f6); }
-          50% { filter: drop-shadow(0 0 35px #ec4899) drop-shadow(0 0 70px #8b5cf6); }
+          0%, 100% { filter: drop-shadow(0 0 20px #a855f7) drop-shadow(0 0 50px #3b82f6); }
+          50% { filter: drop-shadow(0 0 45px #ec4899) drop-shadow(0 0 90px #8b5cf6); }
+        }
+        @keyframes introFloat {
+          0%, 100% { transform: translateY(0px) scale(1); }
+          50% { transform: translateY(-12px) scale(1.02); }
         }
         @keyframes neonFlicker {
-          0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
-          20%, 24%, 55% { opacity: 0.6; }
+          0%, 18%, 22%, 25%, 53%, 57%, 100% { opacity: 1; }
+          20%, 24%, 55% { opacity: 0.5; }
         }
         @keyframes scanline {
           0% { transform: translateY(-100%); }
           100% { transform: translateY(100vh); }
         }
         @keyframes introSlideUp {
-          from { opacity: 0; transform: translateY(40px); }
+          from { opacity: 0; transform: translateY(50px); }
           to { opacity: 1; transform: translateY(0); }
         }
         @keyframes introPulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.3; }
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.2; transform: scale(0.97); }
         }
-        @keyframes coinSpin {
-          0% { transform: rotateY(0deg); }
-          100% { transform: rotateY(360deg); }
+        @keyframes introReveal {
+          from { opacity: 0; letter-spacing: 0.5em; }
+          to { opacity: 1; letter-spacing: 0.15em; }
         }
-        .intro-arcade { animation: introGlow 2s ease-in-out infinite; }
-        .intro-title { animation: introSlideUp 0.7s ease-out 0.8s both; }
-        .intro-subtitle { animation: introSlideUp 0.7s ease-out 1.2s both; }
-        .intro-press { animation: introPulse 1s ease-in-out infinite 1.6s; }
-        .intro-neon { animation: neonFlicker 3s linear infinite; }
+        @keyframes starTwinkle {
+          0%, 100% { opacity: 0.2; transform: scale(0.8); }
+          50% { opacity: 1; transform: scale(1.2); }
+        }
+        @keyframes ringRotate {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .intro-controller {
+          animation: introGlow 2.5s ease-in-out infinite, introFloat 3.5s ease-in-out infinite;
+        }
+        .intro-title { animation: introSlideUp 1s ease-out 1s both; }
+        .intro-subtitle { animation: introReveal 1.2s ease-out 1.8s both; }
+        .intro-press { animation: introPulse 1.2s ease-in-out infinite; }
+        .intro-neon { animation: neonFlicker 4s linear infinite; }
+        .intro-ring { animation: ringRotate 8s linear infinite; transform-origin: center; }
+        .star-1 { animation: starTwinkle 1.5s ease-in-out infinite 0s; }
+        .star-2 { animation: starTwinkle 1.5s ease-in-out infinite 0.4s; }
+        .star-3 { animation: starTwinkle 1.5s ease-in-out infinite 0.8s; }
+        .star-4 { animation: starTwinkle 1.5s ease-in-out infinite 1.2s; }
+        .star-5 { animation: starTwinkle 1.5s ease-in-out infinite 0.2s; }
       `}</style>
 
-      {/* Scanline effect */}
-      <div style={{
-        position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden', zIndex: 1,
-      }}>
+      {/* Scanline */}
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden', zIndex: 1 }}>
         <div style={{
-          position: 'absolute', left: 0, right: 0, height: '3px',
-          background: 'linear-gradient(transparent, rgba(168,85,247,0.15), transparent)',
-          animation: 'scanline 3s linear infinite',
+          position: 'absolute', left: 0, right: 0, height: '2px',
+          background: 'linear-gradient(transparent, rgba(168,85,247,0.2), transparent)',
+          animation: 'scanline 4s linear infinite',
         }} />
       </div>
 
-      {/* Grid bg */}
+      {/* Grid background */}
       <div style={{
         position: 'absolute', inset: 0, zIndex: 0,
-        backgroundImage: 'linear-gradient(rgba(59,130,246,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.06) 1px, transparent 1px)',
-        backgroundSize: '40px 40px',
+        backgroundImage: 'linear-gradient(rgba(59,130,246,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.05) 1px, transparent 1px)',
+        backgroundSize: '50px 50px',
       }} />
+
+      {/* Radial glow bg */}
+      <div style={{
+        position: 'absolute', inset: 0, zIndex: 0,
+        background: 'radial-gradient(ellipse 60% 50% at 50% 50%, rgba(139,92,246,0.12) 0%, transparent 70%)',
+      }} />
+
+      {/* Stars */}
+      {[
+        { cx: '15%', cy: '20%', r: 2, cls: 'star-1' }, { cx: '85%', cy: '15%', r: 1.5, cls: 'star-2' },
+        { cx: '10%', cy: '70%', r: 2.5, cls: 'star-3' }, { cx: '90%', cy: '75%', r: 2, cls: 'star-4' },
+        { cx: '75%', cy: '30%', r: 1.5, cls: 'star-5' }, { cx: '25%', cy: '85%', r: 2, cls: 'star-1' },
+        { cx: '60%', cy: '10%', r: 1.5, cls: 'star-3' }, { cx: '40%', cy: '90%', r: 2, cls: 'star-2' },
+      ].map((s, i) => (
+        <div key={i} className={s.cls} style={{
+          position: 'absolute', left: s.cx, top: s.cy, zIndex: 1,
+          width: s.r * 2, height: s.r * 2, borderRadius: '50%',
+          background: '#a855f7', boxShadow: `0 0 6px #a855f7`,
+        }} />
+      ))}
 
       {/* Main content */}
       <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', padding: '0 24px' }}>
 
-        {/* Arcade Machine SVG */}
+        {/* Controller SVG */}
         <div
-          className="intro-arcade"
+          className="intro-controller"
           style={{
-            width: 180, height: 220, margin: '0 auto 28px',
+            width: 220, height: 160, margin: '0 auto 36px',
             opacity: phase === 'enter' ? 0 : 1,
-            transform: phase === 'enter' ? 'translateY(30px) scale(0.9)' : 'translateY(0) scale(1)',
-            transition: 'all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)',
+            transform: phase === 'enter' ? 'translateY(40px) scale(0.85)' : 'translateY(0) scale(1)',
+            transition: 'all 1.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
           }}
         >
-          <svg viewBox="0 0 180 220" fill="none" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
-            {/* Cabinet body */}
-            <rect x="20" y="50" width="140" height="155" rx="12" fill="#0f0f1a" stroke="#a855f7" strokeWidth="2.5"/>
-            {/* Top curved part */}
-            <path d="M30 50 Q90 15 150 50" stroke="#a855f7" strokeWidth="2.5" fill="#0a0a14"/>
-            {/* Screen bezel */}
-            <rect x="35" y="62" width="110" height="78" rx="6" fill="#1a0a2e" stroke="#7c3aed" strokeWidth="2"/>
-            {/* Screen glow */}
-            <rect x="38" y="65" width="104" height="72" rx="4" fill="#0d0628"/>
-            {/* Screen content - GAME HUB text */}
-            <text x="90" y="95" textAnchor="middle" fill="#a855f7" fontSize="11" fontFamily="monospace" fontWeight="bold" className="intro-neon">GAME HUB</text>
-            <text x="90" y="112" textAnchor="middle" fill="#ec4899" fontSize="8" fontFamily="monospace">INSERT COIN</text>
-            {/* Screen scanlines */}
-            {[0,1,2,3,4,5,6,7,8].map(i => (
-              <line key={i} x1="38" y1={69 + i*8} x2="142" y2={69 + i*8} stroke="rgba(168,85,247,0.08)" strokeWidth="1"/>
-            ))}
-            {/* Neon trim top */}
-            <path d="M32 52 Q90 18 148 52" stroke="#ec4899" strokeWidth="1.5" fill="none" className="intro-neon"/>
-            {/* Control panel */}
-            <rect x="30" y="148" width="120" height="45" rx="6" fill="#110822" stroke="#6d28d9" strokeWidth="1.5"/>
-            {/* Joystick */}
-            <circle cx="65" cy="170" r="10" fill="#1e1035" stroke="#a855f7" strokeWidth="1.5"/>
-            <circle cx="65" cy="167" r="5" fill="#a855f7"/>
-            <line x1="65" y1="167" x2="65" y2="180" stroke="#7c3aed" strokeWidth="3" strokeLinecap="round"/>
-            {/* Buttons */}
-            {[{x:105,y:163,c:'#ef4444'},{x:120,y:158,c:'#3b82f6'},{x:120,y:172,c:'#facc15'},{x:105,y:177,c:'#10b981'}].map((b,i) => (
-              <circle key={i} cx={b.x} cy={b.y} r="6" fill={b.c} opacity="0.9"/>
-            ))}
-            {/* Coin slot */}
-            <rect x="78" y="140" width="24" height="5" rx="2.5" fill="#6d28d9"/>
-            {/* Legs */}
-            <rect x="35" y="200" width="15" height="18" rx="3" fill="#0a0a14" stroke="#6d28d9" strokeWidth="1.5"/>
-            <rect x="130" y="200" width="15" height="18" rx="3" fill="#0a0a14" stroke="#6d28d9" strokeWidth="1.5"/>
-            {/* Side neon strips */}
-            <line x1="20" y1="80" x2="20" y2="190" stroke="#3b82f6" strokeWidth="2" className="intro-neon" opacity="0.7"/>
-            <line x1="160" y1="80" x2="160" y2="190" stroke="#3b82f6" strokeWidth="2" className="intro-neon" opacity="0.7"/>
+          <svg viewBox="0 0 220 160" fill="none" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+            {/* Rotating outer ring */}
+            <g className="intro-ring" style={{ transformBox: 'fill-box' }}>
+              <circle cx="110" cy="80" r="72" stroke="url(#ringGrad)" strokeWidth="1" strokeDasharray="8 6" opacity="0.4"/>
+            </g>
+
+            {/* Controller body */}
+            <path d="M45 65 Q40 55 50 50 L80 48 Q90 44 110 44 Q130 44 140 48 L170 50 Q180 55 175 65 L168 105 Q164 125 148 130 L130 135 Q120 140 110 140 Q100 140 90 135 L72 130 Q56 125 52 105 Z"
+              fill="#0f0a1e" stroke="#7c3aed" strokeWidth="2"/>
+
+            {/* Left grip */}
+            <path d="M45 75 Q35 80 32 100 Q30 118 42 128 Q52 136 62 130 Q56 118 52 105 Q48 90 45 75Z"
+              fill="#0a0618" stroke="#6d28d9" strokeWidth="1.5"/>
+            {/* Right grip */}
+            <path d="M175 75 Q185 80 188 100 Q190 118 178 128 Q168 136 158 130 Q164 118 168 105 Q172 90 175 75Z"
+              fill="#0a0618" stroke="#6d28d9" strokeWidth="1.5"/>
+
+            {/* D-pad */}
+            <rect x="68" y="76" width="10" height="28" rx="2" fill="#1e1035" stroke="#a855f7" strokeWidth="1.2"/>
+            <rect x="60" y="84" width="26" height="10" rx="2" fill="#1e1035" stroke="#a855f7" strokeWidth="1.2"/>
+            <circle cx="73" cy="90" r="4" fill="#a855f7" opacity="0.5"/>
+
+            {/* ABXY Buttons */}
+            <circle cx="148" cy="83" r="7" fill="#3b82f6" stroke="#93c5fd" strokeWidth="1.5"/>{/* X */}
+            <circle cx="162" cy="90" r="7" fill="#ef4444" stroke="#fca5a5" strokeWidth="1.5"/>{/* B */}
+            <circle cx="134" cy="90" r="7" fill="#facc15" stroke="#fde68a" strokeWidth="1.5"/>{/* Y */}
+            <circle cx="148" cy="97" r="7" fill="#10b981" stroke="#6ee7b7" strokeWidth="1.5"/>{/* A */}
+            <text x="148" y="87" textAnchor="middle" fill="white" fontSize="7" fontWeight="bold">X</text>
+            <text x="162" y="94" textAnchor="middle" fill="white" fontSize="7" fontWeight="bold">B</text>
+            <text x="134" y="94" textAnchor="middle" fill="white" fontSize="7" fontWeight="bold">Y</text>
+            <text x="148" y="101" textAnchor="middle" fill="white" fontSize="7" fontWeight="bold">A</text>
+
+            {/* Analog sticks */}
+            <circle cx="85" cy="108" r="11" fill="#150d28" stroke="#6d28d9" strokeWidth="1.5"/>
+            <circle cx="85" cy="108" r="7" fill="#1e1035" stroke="#a855f7" strokeWidth="1"/>
+            <circle cx="85" cy="108" r="3" fill="#a855f7" opacity="0.7"/>
+
+            <circle cx="135" cy="108" r="11" fill="#150d28" stroke="#6d28d9" strokeWidth="1.5"/>
+            <circle cx="135" cy="108" r="7" fill="#1e1035" stroke="#a855f7" strokeWidth="1"/>
+            <circle cx="135" cy="108" r="3" fill="#a855f7" opacity="0.7"/>
+
+            {/* Center buttons */}
+            <rect x="98" y="72" width="10" height="6" rx="3" fill="#1e1035" stroke="#6d28d9" strokeWidth="1"/>
+            <rect x="112" y="72" width="10" height="6" rx="3" fill="#1e1035" stroke="#6d28d9" strokeWidth="1"/>
+
+            {/* Center logo area */}
+            <circle cx="110" cy="85" r="10" fill="#1a0a2e" stroke="#a855f7" strokeWidth="1.5" className="intro-neon"/>
+            <text x="110" y="89" textAnchor="middle" fill="#a855f7" fontSize="8" fontWeight="bold" className="intro-neon">GH</text>
+
+            {/* Shoulder buttons */}
+            <rect x="52" y="52" width="36" height="10" rx="5" fill="#150d28" stroke="#7c3aed" strokeWidth="1.5"/>
+            <rect x="132" y="52" width="36" height="10" rx="5" fill="#150d28" stroke="#7c3aed" strokeWidth="1.5"/>
+
+            {/* Neon accent lines */}
+            <line x1="70" y1="62" x2="150" y2="62" stroke="#8b5cf6" strokeWidth="0.8" opacity="0.4" className="intro-neon"/>
+
+            {/* Gradients */}
+            <defs>
+              <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#a855f7"/>
+                <stop offset="50%" stopColor="#3b82f6"/>
+                <stop offset="100%" stopColor="#ec4899"/>
+              </linearGradient>
+            </defs>
           </svg>
         </div>
 
@@ -1085,44 +1160,58 @@ function IntroScreen({ onComplete }) {
         <div className="intro-title">
           <h1 style={{
             fontFamily: "'Orbitron', sans-serif",
-            fontSize: '3rem',
+            fontSize: 'clamp(2.2rem, 6vw, 3.5rem)',
             fontWeight: 900,
             letterSpacing: '0.1em',
             lineHeight: 1,
-            marginBottom: 8,
-            background: 'linear-gradient(135deg, #a855f7, #3b82f6, #ec4899)',
+            marginBottom: 10,
+            background: 'linear-gradient(135deg, #a855f7 0%, #3b82f6 50%, #ec4899 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
-            filter: 'drop-shadow(0 0 20px rgba(168,85,247,0.5))',
+            filter: 'drop-shadow(0 0 30px rgba(168,85,247,0.6))',
           }}>
-            GAME<span style={{ color: '#fff', WebkitTextFillColor: '#fff' }}>HUB</span>
+            GAME<span style={{ WebkitTextFillColor: 'white', filter: 'none' }}>HUB</span>
           </h1>
         </div>
 
         {/* Subtitle */}
         <div className="intro-subtitle">
-          <p style={{ color: '#64748b', fontSize: '0.75rem', letterSpacing: '0.25em', marginBottom: 32 }}>
+          <p style={{
+            color: '#475569', fontSize: '0.7rem',
+            letterSpacing: '0.25em', marginBottom: 48,
+            fontFamily: "'Space Mono', monospace",
+          }}>
             YOUR ULTIMATE GAMING UNIVERSE
           </p>
         </div>
 
-        {/* Press Start */}
-        <div className="intro-press" style={{ color: '#a855f7', fontSize: '0.8rem', letterSpacing: '0.2em', fontWeight: 700 }}>
-          ▶ PRESS START
-        </div>
-
-        {/* Skip button */}
-        <button
-          onClick={onComplete}
-          style={{
-            position: 'absolute', bottom: -80, left: '50%', transform: 'translateX(-50%)',
-            color: '#334155', fontSize: '0.7rem', letterSpacing: '0.1em',
-            background: 'none', border: 'none', cursor: 'pointer',
-            animation: 'introSlideUp 0.7s ease-out 2s both',
-          }}
-        >
-          SKIP INTRO
-        </button>
+        {/* Press Start button */}
+        {showButton && (
+          <button
+            onClick={handleStart}
+            className="intro-press"
+            style={{
+              background: 'none', border: '2px solid #a855f7',
+              borderRadius: '8px',
+              color: '#a855f7', fontSize: '0.85rem',
+              letterSpacing: '0.25em', fontWeight: 700,
+              padding: '12px 32px', cursor: 'pointer',
+              fontFamily: "'Space Mono', monospace",
+              boxShadow: '0 0 20px rgba(168,85,247,0.3), inset 0 0 20px rgba(168,85,247,0.05)',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = 'rgba(168,85,247,0.15)';
+              e.currentTarget.style.boxShadow = '0 0 40px rgba(168,85,247,0.6), inset 0 0 30px rgba(168,85,247,0.1)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'none';
+              e.currentTarget.style.boxShadow = '0 0 20px rgba(168,85,247,0.3), inset 0 0 20px rgba(168,85,247,0.05)';
+            }}
+          >
+            ▶ &nbsp; PRESS START
+          </button>
+        )}
       </div>
     </div>
   );
