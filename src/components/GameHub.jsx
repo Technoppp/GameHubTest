@@ -954,6 +954,180 @@ export const useGameImage = (game) => {
   return images[game.title] || game.image;
 };
 
+// ─────────────────────────────────────────────
+// INTRO SCREEN
+// ─────────────────────────────────────────────
+
+function IntroScreen({ onComplete }) {
+  const [phase, setPhase] = useState('enter'); // enter → idle → exit
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase('idle'), 600);
+    const t2 = setTimeout(() => setPhase('exit'), 3800);
+    const t3 = setTimeout(() => onComplete(), 4600);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, []);
+
+  return (
+    <div
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9999,
+        background: '#020617',
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        opacity: phase === 'exit' ? 0 : 1,
+        transition: phase === 'exit' ? 'opacity 0.8s ease' : 'none',
+      }}
+    >
+      <style>{`
+        @keyframes introGlow {
+          0%, 100% { filter: drop-shadow(0 0 18px #a855f7) drop-shadow(0 0 40px #3b82f6); }
+          50% { filter: drop-shadow(0 0 35px #ec4899) drop-shadow(0 0 70px #8b5cf6); }
+        }
+        @keyframes neonFlicker {
+          0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
+          20%, 24%, 55% { opacity: 0.6; }
+        }
+        @keyframes scanline {
+          0% { transform: translateY(-100%); }
+          100% { transform: translateY(100vh); }
+        }
+        @keyframes introSlideUp {
+          from { opacity: 0; transform: translateY(40px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes introPulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.3; }
+        }
+        @keyframes coinSpin {
+          0% { transform: rotateY(0deg); }
+          100% { transform: rotateY(360deg); }
+        }
+        .intro-arcade { animation: introGlow 2s ease-in-out infinite; }
+        .intro-title { animation: introSlideUp 0.7s ease-out 0.8s both; }
+        .intro-subtitle { animation: introSlideUp 0.7s ease-out 1.2s both; }
+        .intro-press { animation: introPulse 1s ease-in-out infinite 1.6s; }
+        .intro-neon { animation: neonFlicker 3s linear infinite; }
+      `}</style>
+
+      {/* Scanline effect */}
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden', zIndex: 1,
+      }}>
+        <div style={{
+          position: 'absolute', left: 0, right: 0, height: '3px',
+          background: 'linear-gradient(transparent, rgba(168,85,247,0.15), transparent)',
+          animation: 'scanline 3s linear infinite',
+        }} />
+      </div>
+
+      {/* Grid bg */}
+      <div style={{
+        position: 'absolute', inset: 0, zIndex: 0,
+        backgroundImage: 'linear-gradient(rgba(59,130,246,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.06) 1px, transparent 1px)',
+        backgroundSize: '40px 40px',
+      }} />
+
+      {/* Main content */}
+      <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', padding: '0 24px' }}>
+
+        {/* Arcade Machine SVG */}
+        <div
+          className="intro-arcade"
+          style={{
+            width: 180, height: 220, margin: '0 auto 28px',
+            opacity: phase === 'enter' ? 0 : 1,
+            transform: phase === 'enter' ? 'translateY(30px) scale(0.9)' : 'translateY(0) scale(1)',
+            transition: 'all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)',
+          }}
+        >
+          <svg viewBox="0 0 180 220" fill="none" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+            {/* Cabinet body */}
+            <rect x="20" y="50" width="140" height="155" rx="12" fill="#0f0f1a" stroke="#a855f7" strokeWidth="2.5"/>
+            {/* Top curved part */}
+            <path d="M30 50 Q90 15 150 50" stroke="#a855f7" strokeWidth="2.5" fill="#0a0a14"/>
+            {/* Screen bezel */}
+            <rect x="35" y="62" width="110" height="78" rx="6" fill="#1a0a2e" stroke="#7c3aed" strokeWidth="2"/>
+            {/* Screen glow */}
+            <rect x="38" y="65" width="104" height="72" rx="4" fill="#0d0628"/>
+            {/* Screen content - GAME HUB text */}
+            <text x="90" y="95" textAnchor="middle" fill="#a855f7" fontSize="11" fontFamily="monospace" fontWeight="bold" className="intro-neon">GAME HUB</text>
+            <text x="90" y="112" textAnchor="middle" fill="#ec4899" fontSize="8" fontFamily="monospace">INSERT COIN</text>
+            {/* Screen scanlines */}
+            {[0,1,2,3,4,5,6,7,8].map(i => (
+              <line key={i} x1="38" y1={69 + i*8} x2="142" y2={69 + i*8} stroke="rgba(168,85,247,0.08)" strokeWidth="1"/>
+            ))}
+            {/* Neon trim top */}
+            <path d="M32 52 Q90 18 148 52" stroke="#ec4899" strokeWidth="1.5" fill="none" className="intro-neon"/>
+            {/* Control panel */}
+            <rect x="30" y="148" width="120" height="45" rx="6" fill="#110822" stroke="#6d28d9" strokeWidth="1.5"/>
+            {/* Joystick */}
+            <circle cx="65" cy="170" r="10" fill="#1e1035" stroke="#a855f7" strokeWidth="1.5"/>
+            <circle cx="65" cy="167" r="5" fill="#a855f7"/>
+            <line x1="65" y1="167" x2="65" y2="180" stroke="#7c3aed" strokeWidth="3" strokeLinecap="round"/>
+            {/* Buttons */}
+            {[{x:105,y:163,c:'#ef4444'},{x:120,y:158,c:'#3b82f6'},{x:120,y:172,c:'#facc15'},{x:105,y:177,c:'#10b981'}].map((b,i) => (
+              <circle key={i} cx={b.x} cy={b.y} r="6" fill={b.c} opacity="0.9"/>
+            ))}
+            {/* Coin slot */}
+            <rect x="78" y="140" width="24" height="5" rx="2.5" fill="#6d28d9"/>
+            {/* Legs */}
+            <rect x="35" y="200" width="15" height="18" rx="3" fill="#0a0a14" stroke="#6d28d9" strokeWidth="1.5"/>
+            <rect x="130" y="200" width="15" height="18" rx="3" fill="#0a0a14" stroke="#6d28d9" strokeWidth="1.5"/>
+            {/* Side neon strips */}
+            <line x1="20" y1="80" x2="20" y2="190" stroke="#3b82f6" strokeWidth="2" className="intro-neon" opacity="0.7"/>
+            <line x1="160" y1="80" x2="160" y2="190" stroke="#3b82f6" strokeWidth="2" className="intro-neon" opacity="0.7"/>
+          </svg>
+        </div>
+
+        {/* Title */}
+        <div className="intro-title">
+          <h1 style={{
+            fontFamily: "'Orbitron', sans-serif",
+            fontSize: '3rem',
+            fontWeight: 900,
+            letterSpacing: '0.1em',
+            lineHeight: 1,
+            marginBottom: 8,
+            background: 'linear-gradient(135deg, #a855f7, #3b82f6, #ec4899)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            filter: 'drop-shadow(0 0 20px rgba(168,85,247,0.5))',
+          }}>
+            GAME<span style={{ color: '#fff', WebkitTextFillColor: '#fff' }}>HUB</span>
+          </h1>
+        </div>
+
+        {/* Subtitle */}
+        <div className="intro-subtitle">
+          <p style={{ color: '#64748b', fontSize: '0.75rem', letterSpacing: '0.25em', marginBottom: 32 }}>
+            YOUR ULTIMATE GAMING UNIVERSE
+          </p>
+        </div>
+
+        {/* Press Start */}
+        <div className="intro-press" style={{ color: '#a855f7', fontSize: '0.8rem', letterSpacing: '0.2em', fontWeight: 700 }}>
+          ▶ PRESS START
+        </div>
+
+        {/* Skip button */}
+        <button
+          onClick={onComplete}
+          style={{
+            position: 'absolute', bottom: -80, left: '50%', transform: 'translateX(-50%)',
+            color: '#334155', fontSize: '0.7rem', letterSpacing: '0.1em',
+            background: 'none', border: 'none', cursor: 'pointer',
+            animation: 'introSlideUp 0.7s ease-out 2s both',
+          }}
+        >
+          SKIP INTRO
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function GameHub() {
   const [currentPage, setCurrentPage] = useState('home');
   const [selectedGame, setSelectedGame] = useState(null);
@@ -961,18 +1135,8 @@ export default function GameHub() {
   const [scrolled, setScrolled] = useState(false);
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [darkMode, setDarkMode] = useState(() => {
-    const saved = localStorage.getItem('darkMode');
-    return saved !== null ? JSON.parse(saved) : true;
-  });
+  const [showIntro, setShowIntro] = useState(() => !sessionStorage.getItem('introSeen'));
   const rawgImages = useRawgImages();
-
-  const toggleDarkMode = () => {
-    setDarkMode(prev => {
-      localStorage.setItem('darkMode', JSON.stringify(!prev));
-      return !prev;
-    });
-  };
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -989,9 +1153,13 @@ export default function GameHub() {
     return () => unsub();
   }, []);
 
+  const handleIntroComplete = () => {
+    sessionStorage.setItem('introSeen', '1');
+    setShowIntro(false);
+  };
+
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // Close menu on page navigate
   const navigateTo = (page, data = null) => {
     setCurrentPage(page);
     setMenuOpen(false);
@@ -1001,17 +1169,12 @@ export default function GameHub() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  if (showIntro) return <IntroScreen onComplete={handleIntroComplete} />;
+
   return (
     <AuthContext.Provider value={{ user, auth }}>
     <RawgImagesContext.Provider value={rawgImages}>
-    <div
-      className={`min-h-screen text-slate-100 transition-colors duration-300 ${!darkMode ? 'light' : ''}`}
-      style={{
-        fontFamily: "'Space Mono', monospace",
-        background: darkMode ? '#020617' : '#f1f5f9',
-        color: darkMode ? '#f1f5f9' : '#0f172a',
-      }}
-    >
+    <div className="min-h-screen bg-slate-950 text-slate-100" style={{ fontFamily: "'Space Mono', monospace" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Orbitron:wght@700;900&display=swap');
 
@@ -1128,18 +1291,6 @@ export default function GameHub() {
           100% { background-position: -200% 0; }
         }
 
-        /* Light mode overrides */
-        .light .bg-slate-950 { background-color: #f1f5f9 !important; }
-        .light .bg-slate-900 { background-color: #e2e8f0 !important; }
-        .light .bg-slate-800 { background-color: #cbd5e1 !important; }
-        .light .bg-slate-700 { background-color: #94a3b8 !important; }
-        .light .text-slate-100 { color: #0f172a !important; }
-        .light .text-slate-300 { color: #1e293b !important; }
-        .light .text-slate-400 { color: #334155 !important; }
-        .light .text-slate-500 { color: #475569 !important; }
-        .light .border-slate-800 { border-color: #cbd5e1 !important; }
-        .light .border-slate-700 { border-color: #94a3b8 !important; }
-        .light .tag-chip { background: rgba(0,0,0,0.08) !important; color: #334155 !important; }
       `}</style>
 
       {/* ── Header ── */}
@@ -1180,19 +1331,7 @@ export default function GameHub() {
             </nav>
 
             {/* Desktop Auth */}
-            <div className="hidden lg:flex items-center gap-3">
-              {/* Dark/Light Mode Toggle */}
-              <button
-                onClick={toggleDarkMode}
-                className="w-9 h-9 rounded-lg flex items-center justify-center transition-all border"
-                style={{
-                  background: darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
-                  borderColor: darkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)',
-                }}
-                title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-              >
-                {darkMode ? '☀️' : '🌙'}
-              </button>
+            <div className="hidden lg:flex items-center">
               <AuthNavButton navigateTo={navigateTo} currentPage={currentPage} user={user} authLoading={authLoading} />
             </div>
 
@@ -1245,14 +1384,6 @@ export default function GameHub() {
                   {item.name}
                 </button>
               ))}
-              {/* Dark/Light Mode Toggle in mobile menu */}
-              <button
-                onClick={toggleDarkMode}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all text-left text-slate-400 hover:bg-slate-800 hover:text-white w-full"
-              >
-                <span className="text-base">{darkMode ? '☀️' : '🌙'}</span>
-                {darkMode ? 'Light Mode' : 'Dark Mode'}
-              </button>
               {/* Wishlist in mobile menu */}
               <button
                 onClick={() => navigateTo('wishlist')}
