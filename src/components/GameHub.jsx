@@ -849,6 +849,8 @@ function WishlistNavButton({ navigateTo, currentPage }) {
 // Auth button — shows login/register or user avatar+dropdown
 function AuthNavButton({ navigateTo, currentPage, user, authLoading }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [avatarEmoji, setAvatarEmoji] = useState(null);
+  const [avatarColor, setAvatarColor] = useState(0);
   const ref = useRef(null);
 
   useEffect(() => {
@@ -856,6 +858,21 @@ function AuthNavButton({ navigateTo, currentPage, user, authLoading }) {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  // Load avatar when user logs in
+  useEffect(() => {
+    if (!user) { setAvatarEmoji(null); return; }
+    const loadAvatar = async () => {
+      try {
+        const snap = await getDoc(doc(db, 'avatars', user.uid));
+        if (snap.exists()) {
+          setAvatarEmoji(snap.data().emoji || null);
+          setAvatarColor(snap.data().colorIndex ?? 0);
+        }
+      } catch (_) {}
+    };
+    loadAvatar();
+  }, [user]);
 
   if (authLoading) return <div className="w-8 h-8 skeleton rounded-full flex-shrink-0" />;
 
@@ -874,6 +891,7 @@ function AuthNavButton({ navigateTo, currentPage, user, authLoading }) {
     );
   }
 
+  const color = AVATAR_COLORS[avatarColor];
   const initials = user.displayName
     ? user.displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     : user.email[0].toUpperCase();
@@ -885,8 +903,11 @@ function AuthNavButton({ navigateTo, currentPage, user, authLoading }) {
         className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
       >
         {/* Avatar */}
-        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-black text-sm">
-          {initials}
+        <div
+          className="w-9 h-9 rounded-full flex items-center justify-center font-black text-sm"
+          style={{ background: avatarEmoji ? `linear-gradient(135deg, ${color.from}, ${color.to})` : 'linear-gradient(135deg, #3b82f6, #8b5cf6)' }}
+        >
+          {avatarEmoji || initials}
         </div>
         <span className="text-sm font-bold text-white hidden md:block max-w-[100px] truncate">
           {user.displayName || user.email.split('@')[0]}
@@ -1138,7 +1159,8 @@ export default function GameHub() {
               {user && !authLoading && (
                 <button
                   onClick={() => navigateTo('profile')}
-                  className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-black text-sm flex-shrink-0"
+                  className="w-9 h-9 rounded-full flex items-center justify-center font-black text-sm flex-shrink-0"
+                style={{ background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)' }}
                 >
                   {user.displayName ? user.displayName[0].toUpperCase() : user.email[0].toUpperCase()}
                 </button>
@@ -1206,7 +1228,7 @@ export default function GameHub() {
               ) : (
                 <div className="mt-3 pt-3 border-t border-slate-800 flex items-center justify-between px-2">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-black text-xs">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center font-black text-xs">
                       {user.displayName ? user.displayName[0].toUpperCase() : user.email[0].toUpperCase()}
                     </div>
                     <span className="text-sm font-bold text-white">{user.displayName || user.email.split('@')[0]}</span>
@@ -1310,7 +1332,7 @@ function HomePage({ navigateTo }) {
         setHeroIndex(prev => (prev + 1) % FEATURED_GAMES.length);
         setTransitioning(false);
       }, 300);
-    }, 8000);
+    }, 5000);
     return () => clearInterval(timer);
   }, []);
 
@@ -2413,6 +2435,18 @@ function RegisterPage({ navigateTo }) {
 // PROFILE PAGE
 // ─────────────────────────────────────────────
 
+const AVATAR_EMOJIS = ['🎮', '🕹️', '👾', '🏆', '⚔️', '🔥', '💀', '🎯', '🛡️', '🚀', '🐉', '⚡', '🎲', '🦊', '🤖', '👑'];
+const AVATAR_COLORS = [
+  { from: '#3b82f6', to: '#8b5cf6' }, // blue-purple
+  { from: '#ef4444', to: '#f97316' }, // red-orange
+  { from: '#10b981', to: '#06b6d4' }, // green-cyan
+  { from: '#f59e0b', to: '#ef4444' }, // yellow-red
+  { from: '#8b5cf6', to: '#ec4899' }, // purple-pink
+  { from: '#06b6d4', to: '#3b82f6' }, // cyan-blue
+  { from: '#84cc16', to: '#10b981' }, // lime-green
+  { from: '#f97316', to: '#f59e0b' }, // orange-yellow
+];
+
 function ProfilePage({ navigateTo }) {
   const { user } = useAuth();
   const [newName, setNewName] = useState('');
@@ -2420,32 +2454,61 @@ function ProfilePage({ navigateTo }) {
   const [saved, setSaved] = useState(false);
   const [wishlistCount, setWishlistCount] = useState(0);
 
+  // Avatar state
+  const [selectedEmoji, setSelectedEmoji] = useState('🎮');
+  const [selectedColor, setSelectedColor] = useState(0);
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [avatarSaved, setAvatarSaved] = useState(false);
+
   useEffect(() => {
     if (!user) { navigateTo('login'); return; }
     setNewName(user.displayName || '');
-    const loadWishlist = async () => {
+    const loadData = async () => {
       try {
-        if (!auth.currentUser) return;
-        const snap = await getDoc(doc(db, 'wishlists', auth.currentUser.uid));
-        if (snap.exists()) setWishlistCount((snap.data().games || []).length);
+        // Load wishlist count
+        if (auth.currentUser) {
+          const snap = await getDoc(doc(db, 'wishlists', auth.currentUser.uid));
+          if (snap.exists()) setWishlistCount((snap.data().games || []).length);
+        }
+        // Load avatar from Firestore
+        if (auth.currentUser) {
+          const avatarSnap = await getDoc(doc(db, 'avatars', auth.currentUser.uid));
+          if (avatarSnap.exists()) {
+            setSelectedEmoji(avatarSnap.data().emoji || '🎮');
+            setSelectedColor(avatarSnap.data().colorIndex ?? 0);
+          }
+        }
       } catch (_) {}
     };
-    loadWishlist();
+    loadData();
   }, [user]);
 
   const handleSaveName = async () => {
     if (!newName.trim()) return;
     setSaving(true);
-    try { await updateProfile(user, { displayName: newName.trim() }); setSaved(true); setTimeout(() => setSaved(false), 2000); } catch (_) {}
+    try {
+      await updateProfile(user, { displayName: newName.trim() });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (_) {}
     setSaving(false);
+  };
+
+  const handleSaveAvatar = async () => {
+    try {
+      await setDoc(doc(db, 'avatars', auth.currentUser.uid), {
+        emoji: selectedEmoji,
+        colorIndex: selectedColor,
+      });
+      setAvatarSaved(true);
+      setShowAvatarPicker(false);
+      setTimeout(() => setAvatarSaved(false), 2000);
+    } catch (_) {}
   };
 
   if (!user) return null;
 
-  const initials = user.displayName
-    ? user.displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-    : user.email[0].toUpperCase();
-
+  const color = AVATAR_COLORS[selectedColor];
   const joinDate = user.metadata?.creationTime
     ? new Date(user.metadata.creationTime).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' })
     : 'Unknown';
@@ -2459,15 +2522,84 @@ function ProfilePage({ navigateTo }) {
       {/* Avatar + info */}
       <div className="bg-slate-900 rounded-2xl p-8 border border-slate-800 mb-6">
         <div className="flex items-center gap-6 mb-8">
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-black text-3xl flex-shrink-0">
-            {initials}
+          {/* Avatar */}
+          <div className="relative flex-shrink-0">
+            <div
+              className="w-20 h-20 rounded-2xl flex items-center justify-center text-4xl cursor-pointer hover:scale-105 transition-transform"
+              style={{ background: `linear-gradient(135deg, ${color.from}, ${color.to})` }}
+              onClick={() => setShowAvatarPicker(!showAvatarPicker)}
+            >
+              {selectedEmoji}
+            </div>
+            <div
+              className="absolute -bottom-1 -right-1 w-6 h-6 bg-slate-700 border border-slate-600 rounded-full flex items-center justify-center text-xs cursor-pointer hover:bg-slate-600 transition-colors"
+              onClick={() => setShowAvatarPicker(!showAvatarPicker)}
+            >✏️</div>
           </div>
           <div>
             <h3 className="text-2xl font-black">{user.displayName || 'Gamer'}</h3>
             <p className="text-slate-400 text-sm mt-1">{user.email}</p>
             <p className="text-slate-500 text-xs mt-1">Joined {joinDate}</p>
+            {avatarSaved && <p className="text-green-400 text-xs mt-1 font-bold">✓ Avatar saved!</p>}
           </div>
         </div>
+
+        {/* Avatar Picker */}
+        {showAvatarPicker && (
+          <div className="bg-slate-800 rounded-2xl p-5 border border-slate-700 mb-6 fade-in-up">
+            <p className="text-xs font-bold text-slate-400 mb-3 tracking-widest uppercase">Choose Emoji</p>
+            <div className="grid grid-cols-8 gap-2 mb-5">
+              {AVATAR_EMOJIS.map(emoji => (
+                <button
+                  key={emoji}
+                  onClick={() => setSelectedEmoji(emoji)}
+                  className="w-10 h-10 rounded-xl text-xl flex items-center justify-center transition-all hover:scale-110"
+                  style={{
+                    background: selectedEmoji === emoji ? `linear-gradient(135deg, ${color.from}, ${color.to})` : 'rgba(255,255,255,0.05)',
+                    border: selectedEmoji === emoji ? `2px solid ${color.from}` : '2px solid transparent',
+                  }}
+                >{emoji}</button>
+              ))}
+            </div>
+
+            <p className="text-xs font-bold text-slate-400 mb-3 tracking-widest uppercase">Choose Color</p>
+            <div className="flex flex-wrap gap-2 mb-5">
+              {AVATAR_COLORS.map((c, i) => (
+                <button
+                  key={i}
+                  onClick={() => setSelectedColor(i)}
+                  className="w-8 h-8 rounded-full transition-all hover:scale-110"
+                  style={{
+                    background: `linear-gradient(135deg, ${c.from}, ${c.to})`,
+                    border: selectedColor === i ? '3px solid white' : '3px solid transparent',
+                    boxShadow: selectedColor === i ? `0 0 12px ${c.from}` : 'none',
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* Preview */}
+            <div className="flex items-center gap-3 mb-4">
+              <p className="text-xs text-slate-500">Preview:</p>
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
+                style={{ background: `linear-gradient(135deg, ${color.from}, ${color.to})` }}
+              >{selectedEmoji}</div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleSaveAvatar}
+                className="flex-1 py-2.5 rounded-xl font-bold text-sm text-white transition-all"
+                style={{ background: `linear-gradient(135deg, ${color.from}, ${color.to})` }}
+              >Save Avatar</button>
+              <button
+                onClick={() => setShowAvatarPicker(false)}
+                className="px-4 py-2.5 rounded-xl font-bold text-sm text-slate-400 bg-slate-700 hover:bg-slate-600 transition-colors"
+              >Cancel</button>
+            </div>
+          </div>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-2 gap-4 mb-8">
