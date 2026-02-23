@@ -961,7 +961,18 @@ export default function GameHub() {
   const [scrolled, setScrolled] = useState(false);
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
   const rawgImages = useRawgImages();
+
+  const toggleDarkMode = () => {
+    setDarkMode(prev => {
+      localStorage.setItem('darkMode', JSON.stringify(!prev));
+      return !prev;
+    });
+  };
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -993,7 +1004,14 @@ export default function GameHub() {
   return (
     <AuthContext.Provider value={{ user, auth }}>
     <RawgImagesContext.Provider value={rawgImages}>
-    <div className="min-h-screen bg-slate-950 text-slate-100" style={{ fontFamily: "'Space Mono', monospace" }}>
+    <div
+      className={`min-h-screen text-slate-100 transition-colors duration-300 ${!darkMode ? 'light' : ''}`}
+      style={{
+        fontFamily: "'Space Mono', monospace",
+        background: darkMode ? '#020617' : '#f1f5f9',
+        color: darkMode ? '#f1f5f9' : '#0f172a',
+      }}
+    >
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Orbitron:wght@700;900&display=swap');
 
@@ -1109,6 +1127,19 @@ export default function GameHub() {
           0% { background-position: 200% 0; }
           100% { background-position: -200% 0; }
         }
+
+        /* Light mode overrides */
+        .light .bg-slate-950 { background-color: #f1f5f9 !important; }
+        .light .bg-slate-900 { background-color: #e2e8f0 !important; }
+        .light .bg-slate-800 { background-color: #cbd5e1 !important; }
+        .light .bg-slate-700 { background-color: #94a3b8 !important; }
+        .light .text-slate-100 { color: #0f172a !important; }
+        .light .text-slate-300 { color: #1e293b !important; }
+        .light .text-slate-400 { color: #334155 !important; }
+        .light .text-slate-500 { color: #475569 !important; }
+        .light .border-slate-800 { border-color: #cbd5e1 !important; }
+        .light .border-slate-700 { border-color: #94a3b8 !important; }
+        .light .tag-chip { background: rgba(0,0,0,0.08) !important; color: #334155 !important; }
       `}</style>
 
       {/* ── Header ── */}
@@ -1149,7 +1180,19 @@ export default function GameHub() {
             </nav>
 
             {/* Desktop Auth */}
-            <div className="hidden lg:flex items-center">
+            <div className="hidden lg:flex items-center gap-3">
+              {/* Dark/Light Mode Toggle */}
+              <button
+                onClick={toggleDarkMode}
+                className="w-9 h-9 rounded-lg flex items-center justify-center transition-all border"
+                style={{
+                  background: darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                  borderColor: darkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)',
+                }}
+                title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              >
+                {darkMode ? '☀️' : '🌙'}
+              </button>
               <AuthNavButton navigateTo={navigateTo} currentPage={currentPage} user={user} authLoading={authLoading} />
             </div>
 
@@ -1202,6 +1245,14 @@ export default function GameHub() {
                   {item.name}
                 </button>
               ))}
+              {/* Dark/Light Mode Toggle in mobile menu */}
+              <button
+                onClick={toggleDarkMode}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all text-left text-slate-400 hover:bg-slate-800 hover:text-white w-full"
+              >
+                <span className="text-base">{darkMode ? '☀️' : '🌙'}</span>
+                {darkMode ? 'Light Mode' : 'Dark Mode'}
+              </button>
               {/* Wishlist in mobile menu */}
               <button
                 onClick={() => navigateTo('wishlist')}
@@ -2047,9 +2098,20 @@ function GameDetailPage({ game, navigateTo }) {
   const Icon = cat?.icon || Gamepad2;
   const heroImage = useGameImage(game);
   const [heroLoaded, setHeroLoaded] = useState(false);
+  const { user } = useAuth();
 
   // Wishlist state
   const [wishlist, setWishlist] = useState([]);
+
+  // Share state
+  const [shareCopied, setShareCopied] = useState(false);
+
+  // User rating state
+  const [userRating, setUserRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [ratingCount, setRatingCount] = useState(0);
+  const [avgRating, setAvgRating] = useState(null);
+  const [ratingSubmitted, setRatingSubmitted] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -2060,12 +2122,34 @@ function GameDetailPage({ game, navigateTo }) {
       } catch (_) {}
     };
     load();
-  }, [game.id]);
 
+    // Load ratings for this game
+    const loadRatings = async () => {
+      try {
+        const snap = await getDoc(doc(db, 'ratings', `game-${game.id}`));
+        if (snap.exists()) {
+          const data = snap.data();
+          const ratings = data.ratings || {};
+          const values = Object.values(ratings);
+          if (values.length > 0) {
+            setRatingCount(values.length);
+            setAvgRating((values.reduce((a, b) => a + b, 0) / values.length).toFixed(1));
+          }
+          // Load current user's rating
+          if (auth.currentUser && ratings[auth.currentUser.uid]) {
+            setUserRating(ratings[auth.currentUser.uid]);
+            setRatingSubmitted(true);
+          }
+        }
+      } catch (_) {}
+    };
+    loadRatings();
+  }, [game.id]);
 
   const isWishlisted = wishlist.includes(game.id);
 
   const toggleWishlist = async () => {
+    if (!auth.currentUser) { navigateTo('login'); return; }
     const updated = isWishlisted
       ? wishlist.filter(id => id !== game.id)
       : [...wishlist, game.id];
@@ -2073,6 +2157,34 @@ function GameDetailPage({ game, navigateTo }) {
     if (auth.currentUser) {
       await setDoc(doc(db, 'wishlists', auth.currentUser.uid), { games: updated });
     }
+  };
+
+  const handleShare = () => {
+    const url = `${window.location.origin}?game=${game.id}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    }).catch(() => {
+      // fallback
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    });
+  };
+
+  const handleRating = async (stars) => {
+    if (!auth.currentUser) { navigateTo('login'); return; }
+    setUserRating(stars);
+    setRatingSubmitted(true);
+    try {
+      const ref = doc(db, 'ratings', `game-${game.id}`);
+      const snap = await getDoc(ref);
+      const existing = snap.exists() ? (snap.data().ratings || {}) : {};
+      const updated = { ...existing, [auth.currentUser.uid]: stars };
+      await setDoc(ref, { ratings: updated });
+      const values = Object.values(updated);
+      setRatingCount(values.length);
+      setAvgRating((values.reduce((a, b) => a + b, 0) / values.length).toFixed(1));
+    } catch (_) {}
   };
 
   // Related games
