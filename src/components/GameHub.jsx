@@ -959,14 +959,85 @@ export const useGameImage = (game) => {
 // ─────────────────────────────────────────────
 
 function IntroScreen({ onComplete }) {
-  const [phase, setPhase] = useState('enter');
-  const [exiting, setExiting] = useState(false);
+  const [phase, setPhase] = useState('idle');
+  // phases: idle → assemble → power → rgb → glitch → logo → done
+  const [asmPhase, setAsmPhase] = useState(0);
+  const [showGlitch, setShowGlitch] = useState(false);
+  const [showLogo, setShowLogo] = useState(false);
+  const [typedText, setTypedText] = useState('');
+  const [showCursor, setShowCursor] = useState(true);
   const [showButton, setShowButton] = useState(false);
+  const [exiting, setExiting] = useState(false);
+  const [rgbColor, setRgbColor] = useState(0);
+  const [particles, setParticles] = useState([]);
+  const [showWarp, setShowWarp] = useState(false);
+
+  const fullText = 'GAMEHUB';
+  const rgbColors = ['#ef4444','#f97316','#facc15','#10b981','#3b82f6','#8b5cf6','#ec4899'];
 
   useEffect(() => {
-    const t1 = setTimeout(() => setPhase('idle'), 400);
-    const t2 = setTimeout(() => setShowButton(true), 2500);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    // Generate particles
+    const pts = Array.from({ length: 30 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: Math.random() * 3 + 1,
+      delay: Math.random() * 0.8,
+      color: rgbColors[Math.floor(Math.random() * rgbColors.length)],
+    }));
+    setParticles(pts);
+
+    // Animation timeline
+    const timers = [
+      setTimeout(() => setShowWarp(true), 200),
+      setTimeout(() => setAsmPhase(1), 600),   // ABXY fly in
+      setTimeout(() => setAsmPhase(2), 1200),  // Body appears
+      setTimeout(() => setAsmPhase(3), 1800),  // D-pad + sticks
+      setTimeout(() => setAsmPhase(4), 2400),  // Power charge
+      setTimeout(() => setShowWarp(false), 2600),
+    ];
+
+    // RGB cycle
+    let rgbIdx = 0;
+    const rgbTimer = setInterval(() => {
+      rgbIdx = (rgbIdx + 1) % rgbColors.length;
+      setRgbColor(rgbIdx);
+    }, 180);
+
+    // Glitch after 3.2s
+    const glitchTimer = setTimeout(() => {
+      setShowGlitch(true);
+      setTimeout(() => setShowGlitch(false), 150);
+      setTimeout(() => setShowGlitch(true), 280);
+      setTimeout(() => setShowGlitch(false), 400);
+      setTimeout(() => setShowGlitch(true), 480);
+      setTimeout(() => {
+        setShowGlitch(false);
+        setAsmPhase(5); // hide controller
+        setShowLogo(true);
+        clearInterval(rgbTimer);
+        // Typewriter
+        let i = 0;
+        const typeTimer = setInterval(() => {
+          i++;
+          setTypedText(fullText.slice(0, i));
+          if (i >= fullText.length) {
+            clearInterval(typeTimer);
+            setTimeout(() => setShowButton(true), 600);
+          }
+        }, 120);
+      }, 600);
+    }, 3200);
+
+    // Cursor blink
+    const cursorTimer = setInterval(() => setShowCursor(p => !p), 500);
+
+    return () => {
+      timers.forEach(clearTimeout);
+      clearInterval(rgbTimer);
+      clearTimeout(glitchTimer);
+      clearInterval(cursorTimer);
+    };
   }, []);
 
   const handleStart = () => {
@@ -974,6 +1045,8 @@ function IntroScreen({ onComplete }) {
     setExiting(true);
     setTimeout(() => onComplete(), 1000);
   };
+
+  const currentRgb = rgbColors[rgbColor];
 
   return (
     <div
@@ -986,241 +1059,256 @@ function IntroScreen({ onComplete }) {
         cursor: showButton ? 'pointer' : 'default',
         opacity: exiting ? 0 : 1,
         transition: exiting ? 'opacity 1s ease' : 'none',
+        overflow: 'hidden',
       }}
     >
       <style>{`
-        @keyframes introGlow {
-          0%, 100% { filter: drop-shadow(0 0 20px #a855f7) drop-shadow(0 0 50px #3b82f6); }
-          50% { filter: drop-shadow(0 0 45px #ec4899) drop-shadow(0 0 90px #8b5cf6); }
+        @keyframes particleFly {
+          0% { opacity: 1; transform: translate(0,0) scale(1); }
+          100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0); }
         }
-        @keyframes introFloat {
-          0%, 100% { transform: translateY(0px) scale(1); }
-          50% { transform: translateY(-12px) scale(1.02); }
+        @keyframes flyFromTop { from { opacity:0; transform: translateY(-80px) scale(0.5); } to { opacity:1; transform: translateY(0) scale(1); } }
+        @keyframes flyFromLeft { from { opacity:0; transform: translateX(-80px) scale(0.5); } to { opacity:1; transform: translateX(0) scale(1); } }
+        @keyframes flyFromRight { from { opacity:0; transform: translateX(80px) scale(0.5); } to { opacity:1; transform: translateX(0) scale(1); } }
+        @keyframes flyFromBottom { from { opacity:0; transform: translateY(80px) scale(0.5); } to { opacity:1; transform: translateY(0) scale(1); } }
+        @keyframes bodyAppear { from { opacity:0; transform: scale(0.6); } to { opacity:1; transform: scale(1); } }
+        @keyframes powerCharge {
+          0% { box-shadow: 0 0 0px transparent; }
+          50% { box-shadow: 0 0 60px rgba(168,85,247,0.8), 0 0 120px rgba(59,130,246,0.4); }
+          100% { box-shadow: 0 0 30px rgba(168,85,247,0.5); }
         }
-        @keyframes neonFlicker {
-          0%, 18%, 22%, 25%, 53%, 57%, 100% { opacity: 1; }
-          20%, 24%, 55% { opacity: 0.5; }
+        @keyframes rgbGlow {
+          0%,100% { filter: drop-shadow(0 0 12px var(--rgb)); }
+          50% { filter: drop-shadow(0 0 28px var(--rgb)) drop-shadow(0 0 50px var(--rgb)); }
         }
-        @keyframes scanline {
-          0% { transform: translateY(-100%); }
-          100% { transform: translateY(100vh); }
+        @keyframes warpPulse {
+          0%,100% { transform: scale(1); opacity: 0.4; }
+          50% { transform: scale(1.08); opacity: 0.8; }
         }
-        @keyframes introSlideUp {
-          from { opacity: 0; transform: translateY(50px); }
-          to { opacity: 1; transform: translateY(0); }
+        @keyframes glitchShift {
+          0% { transform: translateX(0); filter: none; }
+          20% { transform: translateX(-4px); filter: hue-rotate(90deg); }
+          40% { transform: translateX(4px); filter: hue-rotate(180deg); }
+          60% { transform: translateX(-2px); filter: hue-rotate(270deg); }
+          80% { transform: translateX(2px); filter: hue-rotate(45deg); }
+          100% { transform: translateX(0); filter: none; }
         }
-        @keyframes introPulse {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.2; transform: scale(0.97); }
+        @keyframes logoReveal {
+          from { opacity:0; transform: scale(0.7) translateY(20px); filter: blur(12px); }
+          to { opacity:1; transform: scale(1) translateY(0); filter: blur(0); }
         }
-        @keyframes introReveal {
-          from { opacity: 0; letter-spacing: 0.5em; }
-          to { opacity: 1; letter-spacing: 0.15em; }
+        @keyframes scanline { 0% { transform: translateY(-100%); } 100% { transform: translateY(100vh); } }
+        @keyframes starTwinkle { 0%,100% { opacity:0.2; transform:scale(0.8); } 50% { opacity:1; transform:scale(1.3); } }
+        @keyframes pressPulse { 0%,100% { opacity:1; box-shadow:0 0 20px rgba(168,85,247,0.4); } 50% { opacity:0.4; box-shadow:0 0 5px rgba(168,85,247,0.1); } }
+        @keyframes ringRotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes ringRotateRev { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
+        @keyframes warpGrid {
+          0% { transform: perspective(400px) rotateX(0deg); opacity: 0.05; }
+          50% { transform: perspective(400px) rotateX(8deg); opacity: 0.15; }
+          100% { transform: perspective(400px) rotateX(0deg); opacity: 0.05; }
         }
-        @keyframes starTwinkle {
-          0%, 100% { opacity: 0.2; transform: scale(0.8); }
-          50% { opacity: 1; transform: scale(1.2); }
-        }
-        @keyframes ringRotate {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        .intro-controller {
-          animation: introGlow 2.5s ease-in-out infinite, introFloat 3.5s ease-in-out infinite;
-        }
-        .intro-title { animation: introSlideUp 1s ease-out 1s both; }
-        .intro-subtitle { animation: introReveal 1.2s ease-out 1.8s both; }
-        .intro-press { animation: introPulse 1.2s ease-in-out infinite; }
-        .intro-neon { animation: neonFlicker 4s linear infinite; }
-        .intro-ring { animation: ringRotate 8s linear infinite; transform-origin: center; }
-        .star-1 { animation: starTwinkle 1.5s ease-in-out infinite 0s; }
-        .star-2 { animation: starTwinkle 1.5s ease-in-out infinite 0.4s; }
-        .star-3 { animation: starTwinkle 1.5s ease-in-out infinite 0.8s; }
-        .star-4 { animation: starTwinkle 1.5s ease-in-out infinite 1.2s; }
-        .star-5 { animation: starTwinkle 1.5s ease-in-out infinite 0.2s; }
+        .ring-fwd { animation: ringRotate 6s linear infinite; transform-origin: 130px 90px; }
+        .ring-rev { animation: ringRotateRev 9s linear infinite; transform-origin: 130px 90px; }
+        .intro-press { animation: pressPulse 1.1s ease-in-out infinite; }
+        .star-a { animation: starTwinkle 1.4s ease-in-out infinite 0s; }
+        .star-b { animation: starTwinkle 1.4s ease-in-out infinite 0.5s; }
+        .star-c { animation: starTwinkle 1.4s ease-in-out infinite 1s; }
       `}</style>
 
       {/* Scanline */}
-      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden', zIndex: 1 }}>
-        <div style={{
-          position: 'absolute', left: 0, right: 0, height: '2px',
-          background: 'linear-gradient(transparent, rgba(168,85,247,0.2), transparent)',
-          animation: 'scanline 4s linear infinite',
-        }} />
+      <div style={{ position:'absolute', inset:0, overflow:'hidden', pointerEvents:'none', zIndex:1 }}>
+        <div style={{ position:'absolute', left:0, right:0, height:'2px', background:'linear-gradient(transparent,rgba(168,85,247,0.25),transparent)', animation:'scanline 3.5s linear infinite' }}/>
       </div>
 
-      {/* Grid background */}
+      {/* Warp grid bg */}
       <div style={{
-        position: 'absolute', inset: 0, zIndex: 0,
-        backgroundImage: 'linear-gradient(rgba(59,130,246,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.05) 1px, transparent 1px)',
-        backgroundSize: '50px 50px',
-      }} />
+        position:'absolute', inset:0, zIndex:0,
+        backgroundImage:'linear-gradient(rgba(59,130,246,0.07) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,0.07) 1px,transparent 1px)',
+        backgroundSize:'45px 45px',
+        animation: showWarp ? 'warpGrid 0.8s ease-in-out infinite' : 'none',
+        transition: 'opacity 0.5s',
+      }}/>
 
-      {/* Radial glow bg */}
-      <div style={{
-        position: 'absolute', inset: 0, zIndex: 0,
-        background: 'radial-gradient(ellipse 60% 50% at 50% 50%, rgba(139,92,246,0.12) 0%, transparent 70%)',
-      }} />
+      {/* Radial glow */}
+      <div style={{ position:'absolute', inset:0, zIndex:0, background:'radial-gradient(ellipse 55% 45% at 50% 48%, rgba(139,92,246,0.14) 0%,transparent 70%)' }}/>
+
+      {/* Particles */}
+      {asmPhase >= 1 && particles.map(p => (
+        <div key={p.id} style={{
+          position:'absolute', left:`${p.x}%`, top:`${p.y}%`,
+          width: p.size, height: p.size, borderRadius:'50%',
+          background: p.color, boxShadow:`0 0 6px ${p.color}`,
+          animation:`particleFly 1.2s ease-out ${p.delay}s both`,
+          '--tx': `${(Math.random()-0.5)*120}px`,
+          '--ty': `${(Math.random()-0.5)*120}px`,
+          zIndex:1,
+        }}/>
+      ))}
 
       {/* Stars */}
-      {[
-        { cx: '15%', cy: '20%', r: 2, cls: 'star-1' }, { cx: '85%', cy: '15%', r: 1.5, cls: 'star-2' },
-        { cx: '10%', cy: '70%', r: 2.5, cls: 'star-3' }, { cx: '90%', cy: '75%', r: 2, cls: 'star-4' },
-        { cx: '75%', cy: '30%', r: 1.5, cls: 'star-5' }, { cx: '25%', cy: '85%', r: 2, cls: 'star-1' },
-        { cx: '60%', cy: '10%', r: 1.5, cls: 'star-3' }, { cx: '40%', cy: '90%', r: 2, cls: 'star-2' },
-      ].map((s, i) => (
-        <div key={i} className={s.cls} style={{
-          position: 'absolute', left: s.cx, top: s.cy, zIndex: 1,
-          width: s.r * 2, height: s.r * 2, borderRadius: '50%',
-          background: '#a855f7', boxShadow: `0 0 6px #a855f7`,
-        }} />
+      {[{l:'12%',t:'18%',c:'star-a'},{l:'86%',t:'14%',c:'star-b'},{l:'8%',t:'72%',c:'star-c'},
+        {l:'91%',t:'78%',c:'star-a'},{l:'78%',t:'28%',c:'star-b'},{l:'22%',t:'86%',c:'star-c'},
+        {l:'55%',t:'8%',c:'star-a'},{l:'38%',t:'92%',c:'star-b'}].map((s,i)=>(
+        <div key={i} className={s.c} style={{ position:'absolute', left:s.l, top:s.t, width:3, height:3, borderRadius:'50%', background:'#a855f7', boxShadow:'0 0 6px #a855f7', zIndex:1 }}/>
       ))}
 
       {/* Main content */}
-      <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', padding: '0 24px' }}>
+      <div style={{ position:'relative', zIndex:2, textAlign:'center', padding:'0 24px' }}>
 
-        {/* Controller SVG */}
-        <div
-          className="intro-controller"
-          style={{
-            width: 260, height: 180, margin: '0 auto 36px',
-            opacity: phase === 'enter' ? 0 : 1,
-            transform: phase === 'enter' ? 'translateY(40px) scale(0.85)' : 'translateY(0) scale(1)',
-            transition: 'all 1.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
-          }}
-        >
-          <svg viewBox="0 0 260 180" fill="none" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
-            {/* Rotating outer ring */}
-            <g style={{ transformOrigin: '130px 90px' }} className="intro-ring">
-              <circle cx="130" cy="90" r="82" stroke="url(#ringGrad)" strokeWidth="1" strokeDasharray="8 6" opacity="0.35"/>
-            </g>
-
-            {/* Controller body */}
-            <path d="M55 78 Q50 65 60 58 L95 54 Q110 50 130 50 Q150 50 165 54 L200 58 Q210 65 205 78 L196 120 Q191 140 173 146 L152 151 Q141 156 130 156 Q119 156 108 151 L87 146 Q69 140 64 120 Z"
-              fill="#0f0a1e" stroke="#7c3aed" strokeWidth="2"/>
-
-            {/* Left grip */}
-            <path d="M55 88 Q43 95 40 116 Q38 136 52 146 Q63 154 74 147 Q67 132 64 120 Q60 104 55 88Z"
-              fill="#0a0618" stroke="#6d28d9" strokeWidth="1.5"/>
-            {/* Right grip */}
-            <path d="M205 88 Q217 95 220 116 Q222 136 208 146 Q197 154 186 147 Q193 132 196 120 Q200 104 205 88Z"
-              fill="#0a0618" stroke="#6d28d9" strokeWidth="1.5"/>
-
-            {/* D-pad — ซ้ายบน ไม่ทับอะไร */}
-            <rect x="77" y="82" width="11" height="32" rx="3" fill="#1e1035" stroke="#a855f7" strokeWidth="1.2"/>
-            <rect x="68" y="91" width="29" height="11" rx="3" fill="#1e1035" stroke="#a855f7" strokeWidth="1.2"/>
-            <circle cx="82" cy="97" r="4" fill="#a855f7" opacity="0.4"/>
-
-            {/* ABXY Buttons — ขวาบน ห่างกันชัดเจน */}
-            {/* Y - top */}
-            <circle cx="172" cy="80" r="8" fill="#facc15" stroke="#fde68a" strokeWidth="1.5"/>
-            <text x="172" y="84" textAnchor="middle" fill="#1a1a1a" fontSize="8" fontWeight="bold">Y</text>
-            {/* X - left */}
-            <circle cx="156" cy="95" r="8" fill="#3b82f6" stroke="#93c5fd" strokeWidth="1.5"/>
-            <text x="156" y="99" textAnchor="middle" fill="white" fontSize="8" fontWeight="bold">X</text>
-            {/* B - right */}
-            <circle cx="188" cy="95" r="8" fill="#ef4444" stroke="#fca5a5" strokeWidth="1.5"/>
-            <text x="188" y="99" textAnchor="middle" fill="white" fontSize="8" fontWeight="bold">B</text>
-            {/* A - bottom */}
-            <circle cx="172" cy="110" r="8" fill="#10b981" stroke="#6ee7b7" strokeWidth="1.5"/>
-            <text x="172" y="114" textAnchor="middle" fill="white" fontSize="8" fontWeight="bold">A</text>
-
-            {/* Analog sticks — ซ้ายล่าง ขวาล่าง ห่างกัน */}
-            <circle cx="100" cy="122" r="13" fill="#150d28" stroke="#6d28d9" strokeWidth="1.5"/>
-            <circle cx="100" cy="122" r="9" fill="#1e1035" stroke="#a855f7" strokeWidth="1"/>
-            <circle cx="100" cy="122" r="4" fill="#a855f7" opacity="0.7"/>
-
-            <circle cx="160" cy="122" r="13" fill="#150d28" stroke="#6d28d9" strokeWidth="1.5"/>
-            <circle cx="160" cy="122" r="9" fill="#1e1035" stroke="#a855f7" strokeWidth="1"/>
-            <circle cx="160" cy="122" r="4" fill="#a855f7" opacity="0.7"/>
-
-            {/* Center menu buttons */}
-            <rect x="113" y="80" width="12" height="7" rx="3.5" fill="#1e1035" stroke="#6d28d9" strokeWidth="1"/>
-            <rect x="135" y="80" width="12" height="7" rx="3.5" fill="#1e1035" stroke="#6d28d9" strokeWidth="1"/>
-
-            {/* Center GH logo */}
-            <circle cx="130" cy="97" r="12" fill="#1a0a2e" stroke="#a855f7" strokeWidth="1.5" className="intro-neon"/>
-            <text x="130" y="101" textAnchor="middle" fill="#a855f7" fontSize="9" fontWeight="bold" className="intro-neon">GH</text>
-
-            {/* Shoulder buttons L/R */}
-            <rect x="62" y="58" width="40" height="11" rx="5.5" fill="#150d28" stroke="#7c3aed" strokeWidth="1.5"/>
-            <text x="82" y="67" textAnchor="middle" fill="#a855f7" fontSize="7">LB</text>
-            <rect x="158" y="58" width="40" height="11" rx="5.5" fill="#150d28" stroke="#7c3aed" strokeWidth="1.5"/>
-            <text x="178" y="67" textAnchor="middle" fill="#a855f7" fontSize="7">RB</text>
-
-            {/* Neon accent line */}
-            <line x1="85" y1="70" x2="175" y2="70" stroke="#8b5cf6" strokeWidth="0.8" opacity="0.3" className="intro-neon"/>
-
-            <defs>
-              <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#a855f7"/>
-                <stop offset="50%" stopColor="#3b82f6"/>
-                <stop offset="100%" stopColor="#ec4899"/>
-              </linearGradient>
-            </defs>
-          </svg>
-        </div>
-
-        {/* Title */}
-        <div className="intro-title">
-          <h1 style={{
-            fontFamily: "'Orbitron', sans-serif",
-            fontSize: 'clamp(2.2rem, 6vw, 3.5rem)',
-            fontWeight: 900,
-            letterSpacing: '0.1em',
-            lineHeight: 1,
-            marginBottom: 10,
-            background: 'linear-gradient(135deg, #a855f7 0%, #3b82f6 50%, #ec4899 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            filter: 'drop-shadow(0 0 30px rgba(168,85,247,0.6))',
+        {/* Controller Assembly */}
+        {asmPhase < 5 && (
+          <div style={{
+            width:280, height:200, margin:'0 auto 32px', position:'relative',
+            animation: asmPhase >= 4 ? 'powerCharge 0.6s ease-out forwards' : 'none',
+            filter: showGlitch ? 'hue-rotate(180deg)' : 'none',
+            transform: showGlitch ? 'translateX(4px)' : 'none',
+            transition: showGlitch ? 'none' : 'filter 0.1s, transform 0.1s',
+            '--rgb': currentRgb,
           }}>
-            GAME<span style={{ WebkitTextFillColor: 'white', filter: 'none' }}>HUB</span>
-          </h1>
-        </div>
+            <svg viewBox="0 0 260 180" fill="none" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+              {/* Outer rings - show after power */}
+              {asmPhase >= 4 && <>
+                <g className="ring-fwd">
+                  <circle cx="130" cy="90" r="88" stroke={currentRgb} strokeWidth="1" strokeDasharray="10 8" opacity="0.5"/>
+                </g>
+                <g className="ring-rev">
+                  <circle cx="130" cy="90" r="76" stroke={currentRgb} strokeWidth="0.8" strokeDasharray="5 10" opacity="0.3"/>
+                </g>
+              </>}
 
-        {/* Subtitle */}
-        <div className="intro-subtitle">
-          <p style={{
-            color: '#475569', fontSize: '0.7rem',
-            letterSpacing: '0.25em', marginBottom: 48,
-            fontFamily: "'Space Mono', monospace",
-          }}>
-            YOUR ULTIMATE GAMING UNIVERSE
-          </p>
-        </div>
+              {/* Controller body - phase 2 */}
+              {asmPhase >= 2 && (
+                <g style={{ animation:'bodyAppear 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards' }}>
+                  <path d="M55 78 Q50 65 60 58 L95 54 Q110 50 130 50 Q150 50 165 54 L200 58 Q210 65 205 78 L196 120 Q191 140 173 146 L152 151 Q141 156 130 156 Q119 156 108 151 L87 146 Q69 140 64 120 Z"
+                    fill="#0f0a1e" stroke={asmPhase>=4 ? currentRgb : '#7c3aed'} strokeWidth="2"
+                    style={{ transition:'stroke 0.1s' }}/>
+                  {/* Left grip */}
+                  <path d="M55 88 Q43 95 40 116 Q38 136 52 146 Q63 154 74 147 Q67 132 64 120 Q60 104 55 88Z" fill="#0a0618" stroke={asmPhase>=4 ? currentRgb : '#6d28d9'} strokeWidth="1.5"/>
+                  {/* Right grip */}
+                  <path d="M205 88 Q217 95 220 116 Q222 136 208 146 Q197 154 186 147 Q193 132 196 120 Q200 104 205 88Z" fill="#0a0618" stroke={asmPhase>=4 ? currentRgb : '#6d28d9'} strokeWidth="1.5"/>
+                  {/* Shoulder L */}
+                  <rect x="62" y="58" width="42" height="12" rx="6" fill="#150d28" stroke={asmPhase>=4 ? currentRgb : '#7c3aed'} strokeWidth="1.5"/>
+                  <text x="83" y="68" textAnchor="middle" fill="#a855f7" fontSize="7" fontWeight="bold">LB</text>
+                  {/* Shoulder R */}
+                  <rect x="156" y="58" width="42" height="12" rx="6" fill="#150d28" stroke={asmPhase>=4 ? currentRgb : '#7c3aed'} strokeWidth="1.5"/>
+                  <text x="177" y="68" textAnchor="middle" fill="#a855f7" fontSize="7" fontWeight="bold">RB</text>
+                  {/* Metallic reflection */}
+                  <path d="M75 58 Q130 48 185 58" stroke="rgba(255,255,255,0.12)" strokeWidth="3" strokeLinecap="round"/>
+                  {/* Center GH */}
+                  <circle cx="130" cy="95" r="13" fill="#1a0a2e" stroke={asmPhase>=4 ? currentRgb : '#a855f7'} strokeWidth="1.5"/>
+                  <text x="130" y="99" textAnchor="middle" fill={asmPhase>=4 ? currentRgb : '#a855f7'} fontSize="9" fontWeight="bold">GH</text>
+                  {/* Center menu buttons */}
+                  <rect x="110" y="78" width="12" height="7" rx="3.5" fill="#1e1035" stroke="#6d28d9" strokeWidth="1"/>
+                  <rect x="138" y="78" width="12" height="7" rx="3.5" fill="#1e1035" stroke="#6d28d9" strokeWidth="1"/>
+                </g>
+              )}
 
-        {/* Press Start button */}
+              {/* D-pad + sticks - phase 3 */}
+              {asmPhase >= 3 && (
+                <g style={{ animation:'flyFromLeft 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards' }}>
+                  <rect x="75" y="82" width="11" height="32" rx="3" fill="#1e1035" stroke="#a855f7" strokeWidth="1.2"/>
+                  <rect x="66" y="91" width="29" height="11" rx="3" fill="#1e1035" stroke="#a855f7" strokeWidth="1.2"/>
+                  <circle cx="80" cy="97" r="4" fill="#a855f7" opacity="0.4"/>
+                </g>
+              )}
+              {asmPhase >= 3 && (
+                <>
+                  <g style={{ animation:'flyFromBottom 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.1s both' }}>
+                    <circle cx="98" cy="124" r="14" fill="#150d28" stroke={asmPhase>=4 ? currentRgb : '#6d28d9'} strokeWidth="1.5"/>
+                    <circle cx="98" cy="124" r="9" fill="#1e1035" stroke="#a855f7" strokeWidth="1"/>
+                    <circle cx="98" cy="124" r="4" fill="#a855f7" opacity="0.8"/>
+                  </g>
+                  <g style={{ animation:'flyFromBottom 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.2s both' }}>
+                    <circle cx="162" cy="124" r="14" fill="#150d28" stroke={asmPhase>=4 ? currentRgb : '#6d28d9'} strokeWidth="1.5"/>
+                    <circle cx="162" cy="124" r="9" fill="#1e1035" stroke="#a855f7" strokeWidth="1"/>
+                    <circle cx="162" cy="124" r="4" fill="#a855f7" opacity="0.8"/>
+                  </g>
+                </>
+              )}
+
+              {/* ABXY - phase 1 */}
+              {asmPhase >= 1 && (
+                <>
+                  <g style={{ animation:'flyFromTop 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards' }}>
+                    <circle cx="172" cy="78" r="9" fill="#facc15" stroke="#fde68a" strokeWidth="1.5"/>
+                    <text x="172" y="82" textAnchor="middle" fill="#1a1a1a" fontSize="8" fontWeight="bold">Y</text>
+                  </g>
+                  <g style={{ animation:'flyFromLeft 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.1s both' }}>
+                    <circle cx="155" cy="94" r="9" fill="#3b82f6" stroke="#93c5fd" strokeWidth="1.5"/>
+                    <text x="155" y="98" textAnchor="middle" fill="white" fontSize="8" fontWeight="bold">X</text>
+                  </g>
+                  <g style={{ animation:'flyFromRight 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.1s both' }}>
+                    <circle cx="189" cy="94" r="9" fill="#ef4444" stroke="#fca5a5" strokeWidth="1.5"/>
+                    <text x="189" y="98" textAnchor="middle" fill="white" fontSize="8" fontWeight="bold">B</text>
+                  </g>
+                  <g style={{ animation:'flyFromBottom 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.2s both' }}>
+                    <circle cx="172" cy="110" r="9" fill="#10b981" stroke="#6ee7b7" strokeWidth="1.5"/>
+                    <text x="172" y="114" textAnchor="middle" fill="white" fontSize="8" fontWeight="bold">A</text>
+                  </g>
+                </>
+              )}
+
+              {/* RGB power lines */}
+              {asmPhase >= 4 && (
+                <>
+                  <line x1="64" y1="120" x2="196" y2="120" stroke={currentRgb} strokeWidth="1" opacity="0.4"/>
+                  <line x1="85" y1="70" x2="175" y2="70" stroke={currentRgb} strokeWidth="0.8" opacity="0.3"/>
+                </>
+              )}
+            </svg>
+          </div>
+        )}
+
+        {/* Logo reveal */}
+        {showLogo && (
+          <div style={{ animation:'logoReveal 0.8s cubic-bezier(0.34,1.56,0.64,1) forwards', marginBottom:32 }}>
+            <h1 style={{
+              fontFamily:"'Orbitron',sans-serif",
+              fontSize:'clamp(2.4rem,7vw,4rem)',
+              fontWeight:900,
+              letterSpacing:'0.08em',
+              lineHeight:1,
+              marginBottom:10,
+              filter:'drop-shadow(0 0 30px rgba(168,85,247,0.7))',
+            }}>
+              <span style={{ background:'linear-gradient(135deg,#a855f7,#3b82f6)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>
+                {typedText.slice(0,4)}
+              </span>
+              <span style={{ color:'white' }}>
+                {typedText.slice(4)}
+              </span>
+              {showCursor && !showButton && (
+                <span style={{ color:'#a855f7', WebkitTextFillColor:'#a855f7' }}>|</span>
+              )}
+            </h1>
+            <p style={{ color:'#475569', fontSize:'0.68rem', letterSpacing:'0.28em', fontFamily:"'Space Mono',monospace" }}>
+              YOUR ULTIMATE GAMING UNIVERSE
+            </p>
+          </div>
+        )}
+
+        {/* Press Start */}
         {showButton && (
           <button
             onClick={handleStart}
             className="intro-press"
             style={{
-              background: 'none', border: '2px solid #a855f7',
-              borderRadius: '8px',
-              color: '#a855f7', fontSize: '0.85rem',
-              letterSpacing: '0.25em', fontWeight: 700,
-              padding: '12px 32px', cursor: 'pointer',
-              fontFamily: "'Space Mono', monospace",
-              boxShadow: '0 0 20px rgba(168,85,247,0.3), inset 0 0 20px rgba(168,85,247,0.05)',
-              transition: 'all 0.2s',
+              background:'none', border:'2px solid #a855f7', borderRadius:'8px',
+              color:'#a855f7', fontSize:'0.85rem', letterSpacing:'0.25em', fontWeight:700,
+              padding:'12px 36px', cursor:'pointer',
+              fontFamily:"'Space Mono',monospace",
             }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = 'rgba(168,85,247,0.15)';
-              e.currentTarget.style.boxShadow = '0 0 40px rgba(168,85,247,0.6), inset 0 0 30px rgba(168,85,247,0.1)';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = 'none';
-              e.currentTarget.style.boxShadow = '0 0 20px rgba(168,85,247,0.3), inset 0 0 20px rgba(168,85,247,0.05)';
-            }}
+            onMouseEnter={e => { e.currentTarget.style.background='rgba(168,85,247,0.15)'; e.currentTarget.style.boxShadow='0 0 40px rgba(168,85,247,0.5)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background='none'; e.currentTarget.style.boxShadow='none'; }}
           >
-            ▶ &nbsp; PRESS START
+            ▶ &nbsp;PRESS START
           </button>
         )}
       </div>
     </div>
   );
 }
+
 
 export default function GameHub() {
   const [currentPage, setCurrentPage] = useState('home');
