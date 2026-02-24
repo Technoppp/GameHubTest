@@ -959,351 +959,540 @@ export const useGameImage = (game) => {
 // ─────────────────────────────────────────────
 
 function IntroScreen({ onComplete }) {
-  const [phase, setPhase] = useState('idle');
-  // phases: idle → assemble → power → rgb → glitch → logo → done
-  const [asmPhase, setAsmPhase] = useState(0);
-  const [showGlitch, setShowGlitch] = useState(false);
-  const [showLogo, setShowLogo] = useState(false);
+  const [phase, setPhase] = useState(0);
+  const [exiting, setExiting] = useState(false);
   const [typedText, setTypedText] = useState('');
   const [showCursor, setShowCursor] = useState(true);
-  const [showButton, setShowButton] = useState(false);
-  const [exiting, setExiting] = useState(false);
-  const [rgbColor, setRgbColor] = useState(0);
-  const [particles, setParticles] = useState([]);
-  const [showWarp, setShowWarp] = useState(false);
-
+  const [shakeScreen, setShakeScreen] = useState(false);
+  const [whiteFlash, setWhiteFlash] = useState(false);
+  const [portalRotation, setPortalRotation] = useState(0);
+  const [cameraScale, setCameraScale] = useState(1);
+  const [camX, setCamX] = useState(0);
+  const [camY, setCamY] = useState(0);
   const fullText = 'GAMEHUB';
-  const rgbColors = ['#ef4444','#f97316','#facc15','#10b981','#3b82f6','#8b5cf6','#ec4899'];
+
+  // Ambient particles
+  const ambientParticles = Array.from({ length: 40 }, (_, i) => ({
+    id: i, x: Math.random()*100, y: Math.random()*100,
+    size: Math.random()*2+1, speed: Math.random()*3+2,
+    color: ['#a855f7','#3b82f6','#ec4899','#8b5cf6'][Math.floor(Math.random()*4)],
+    delay: Math.random()*5,
+  }));
+
+  // Stars parallax layers
+  const stars = Array.from({ length: 60 }, (_, i) => ({
+    id: i, x: Math.random()*100, y: Math.random()*100,
+    size: Math.random()*2+0.5, layer: Math.floor(Math.random()*3),
+    twinkleDelay: Math.random()*3,
+  }));
+
+  // Game objects for phase 2
+  const gameObjects = [
+    { emoji: '⚔️', startX: -120, startY: -80, delay: 0 },
+    { emoji: '🔫', startX: 120, startY: -60, delay: 0.1 },
+    { emoji: '🎮', startX: -100, startY: 60, delay: 0.2 },
+    { emoji: '🛡️', startX: 100, startY: 80, delay: 0.3 },
+    { emoji: '🧱', startX: 0, startY: -120, delay: 0.15 },
+  ];
+
+  // Explosion particles for phase 5
+  const explosionParticles = Array.from({ length: 50 }, (_, i) => ({
+    id: i,
+    angle: (i / 50) * 360,
+    distance: Math.random()*200+80,
+    size: Math.random()*6+2,
+    color: ['#fff','#a855f7','#3b82f6','#ec4899','#facc15','#f97316'][Math.floor(Math.random()*6)],
+    speed: Math.random()*0.8+0.5,
+  }));
 
   useEffect(() => {
-    // Generate particles
-    const pts = Array.from({ length: 30 }, (_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      size: Math.random() * 3 + 1,
-      delay: Math.random() * 0.8,
-      color: rgbColors[Math.floor(Math.random() * rgbColors.length)],
-    }));
-    setParticles(pts);
+    // Portal rotation
+    const rotTimer = setInterval(() => {
+      setPortalRotation(r => r + 1.5);
+    }, 16);
 
-    // Animation timeline
-    const timers = [
-      setTimeout(() => setShowWarp(true), 200),
-      setTimeout(() => setAsmPhase(1), 600),   // ABXY fly in
-      setTimeout(() => setAsmPhase(2), 1200),  // Body appears
-      setTimeout(() => setAsmPhase(3), 1800),  // D-pad + sticks
-      setTimeout(() => setAsmPhase(4), 2400),  // Power charge
-      setTimeout(() => setShowWarp(false), 2600),
+    // Parallax slow drift
+    let driftY = 0;
+    const driftTimer = setInterval(() => {
+      driftY += 0.02;
+      setCamY(Math.sin(driftY) * 5);
+    }, 16);
+
+    // Timeline
+    const t = [
+      setTimeout(() => setPhase(1), 500),   // portal
+      setTimeout(() => { setPhase(2); setCameraScale(1.03); }, 1200), // gathering
+      setTimeout(() => { setPhase(3); setShakeScreen(true); setCameraScale(1.06); }, 2400), // compression
+      setTimeout(() => { setPhase(4); setShakeScreen(false); setCameraScale(1.08); }, 3000), // freeze
+      setTimeout(() => {                      // explosion
+        setPhase(5);
+        setWhiteFlash(true);
+        setShakeScreen(true);
+        setCameraScale(0.95);
+        setTimeout(() => setWhiteFlash(false), 300);
+        setTimeout(() => setShakeScreen(false), 400);
+      }, 3150),
+      setTimeout(() => { setPhase(6); setCameraScale(1.02); setShakeScreen(false); }, 3600), // logo
+      setTimeout(() => setPhase(7), 4600),   // hero
+      setTimeout(() => setPhase(8), 5500),   // cta
     ];
-
-    // RGB cycle
-    let rgbIdx = 0;
-    const rgbTimer = setInterval(() => {
-      rgbIdx = (rgbIdx + 1) % rgbColors.length;
-      setRgbColor(rgbIdx);
-    }, 180);
-
-    // Glitch after 3.2s
-    const glitchTimer = setTimeout(() => {
-      setShowGlitch(true);
-      setTimeout(() => setShowGlitch(false), 150);
-      setTimeout(() => setShowGlitch(true), 280);
-      setTimeout(() => setShowGlitch(false), 400);
-      setTimeout(() => setShowGlitch(true), 480);
-      setTimeout(() => {
-        setShowGlitch(false);
-        setAsmPhase(5); // hide controller
-        setShowLogo(true);
-        clearInterval(rgbTimer);
-        // Typewriter
-        let i = 0;
-        const typeTimer = setInterval(() => {
-          i++;
-          setTypedText(fullText.slice(0, i));
-          if (i >= fullText.length) {
-            clearInterval(typeTimer);
-            setTimeout(() => setShowButton(true), 600);
-          }
-        }, 120);
-      }, 600);
-    }, 3200);
 
     // Cursor blink
     const cursorTimer = setInterval(() => setShowCursor(p => !p), 500);
 
+    // Typewriter starts at phase 6 (3.6s)
+    let typeTimer = null;
+    const startType = setTimeout(() => {
+      let i = 0;
+      typeTimer = setInterval(() => {
+        i++;
+        setTypedText(fullText.slice(0, i));
+        if (i >= fullText.length) clearInterval(typeTimer);
+      }, 110);
+    }, 3700);
+
     return () => {
-      timers.forEach(clearTimeout);
-      clearInterval(rgbTimer);
-      clearTimeout(glitchTimer);
+      t.forEach(clearTimeout);
+      clearInterval(rotTimer);
+      clearInterval(driftTimer);
       clearInterval(cursorTimer);
+      clearTimeout(startType);
+      if (typeTimer) clearInterval(typeTimer);
     };
   }, []);
 
   const handleStart = () => {
-    if (exiting) return;
+    if (exiting || phase < 8) return;
     setExiting(true);
     setTimeout(() => onComplete(), 1000);
   };
 
-  const currentRgb = rgbColors[rgbColor];
+  const handleKey = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') handleStart();
+  };
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [phase, exiting]);
 
   return (
     <div
-      onClick={showButton ? handleStart : undefined}
+      onClick={handleStart}
       style={{
         position: 'fixed', inset: 0, zIndex: 9999,
-        background: '#020617',
-        display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center',
-        cursor: showButton ? 'pointer' : 'default',
+        background: '#000008',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        cursor: phase >= 8 ? 'pointer' : 'default',
         opacity: exiting ? 0 : 1,
         transition: exiting ? 'opacity 1s ease' : 'none',
         overflow: 'hidden',
       }}
     >
       <style>{`
-        @keyframes particleFly {
-          0% { opacity: 1; transform: translate(0,0) scale(1); }
-          100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0); }
+        @keyframes voidPulse {
+          0%,100% { opacity:0.3; transform:scale(1); }
+          50% { opacity:1; transform:scale(1.5); }
         }
-        @keyframes flyFromTop { from { opacity:0; transform: translateY(-80px) scale(0.5); } to { opacity:1; transform: translateY(0) scale(1); } }
-        @keyframes flyFromLeft { from { opacity:0; transform: translateX(-80px) scale(0.5); } to { opacity:1; transform: translateX(0) scale(1); } }
-        @keyframes flyFromRight { from { opacity:0; transform: translateX(80px) scale(0.5); } to { opacity:1; transform: translateX(0) scale(1); } }
-        @keyframes flyFromBottom { from { opacity:0; transform: translateY(80px) scale(0.5); } to { opacity:1; transform: translateY(0) scale(1); } }
-        @keyframes bodyAppear { from { opacity:0; transform: scale(0.6); } to { opacity:1; transform: scale(1); } }
-        @keyframes powerCharge {
-          0% { box-shadow: 0 0 0px transparent; }
-          50% { box-shadow: 0 0 60px rgba(168,85,247,0.8), 0 0 120px rgba(59,130,246,0.4); }
-          100% { box-shadow: 0 0 30px rgba(168,85,247,0.5); }
+        @keyframes crackGrow {
+          from { stroke-dashoffset: 200; opacity:0; }
+          to { stroke-dashoffset: 0; opacity:1; }
         }
-        @keyframes rgbGlow {
-          0%,100% { filter: drop-shadow(0 0 12px var(--rgb)); }
-          50% { filter: drop-shadow(0 0 28px var(--rgb)) drop-shadow(0 0 50px var(--rgb)); }
+        @keyframes starTwinkle {
+          0%,100% { opacity:0.15; } 50% { opacity:1; }
         }
-        @keyframes warpPulse {
-          0%,100% { transform: scale(1); opacity: 0.4; }
-          50% { transform: scale(1.08); opacity: 0.8; }
+        @keyframes ambientFloat {
+          0% { transform:translateY(0px) translateX(0px); opacity:0.7; }
+          25% { transform:translateY(-15px) translateX(5px); opacity:1; }
+          75% { transform:translateY(10px) translateX(-5px); opacity:0.5; }
+          100% { transform:translateY(0px) translateX(0px); opacity:0.7; }
         }
-        @keyframes glitchShift {
-          0% { transform: translateX(0); filter: none; }
-          20% { transform: translateX(-4px); filter: hue-rotate(90deg); }
-          40% { transform: translateX(4px); filter: hue-rotate(180deg); }
-          60% { transform: translateX(-2px); filter: hue-rotate(270deg); }
-          80% { transform: translateX(2px); filter: hue-rotate(45deg); }
-          100% { transform: translateX(0); filter: none; }
+        @keyframes portalSpin {
+          from { transform:rotate(0deg); }
+          to { transform:rotate(360deg); }
         }
-        @keyframes logoReveal {
-          from { opacity:0; transform: scale(0.7) translateY(20px); filter: blur(12px); }
-          to { opacity:1; transform: scale(1) translateY(0); filter: blur(0); }
+        @keyframes portalSpinRev {
+          from { transform:rotate(0deg); }
+          to { transform:rotate(-360deg); }
         }
-        @keyframes scanline { 0% { transform: translateY(-100%); } 100% { transform: translateY(100vh); } }
-        @keyframes starTwinkle { 0%,100% { opacity:0.2; transform:scale(0.8); } 50% { opacity:1; transform:scale(1.3); } }
-        @keyframes pressPulse { 0%,100% { opacity:1; box-shadow:0 0 20px rgba(168,85,247,0.4); } 50% { opacity:0.4; box-shadow:0 0 5px rgba(168,85,247,0.1); } }
-        @keyframes ringRotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        @keyframes ringRotateRev { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
-        @keyframes warpGrid {
-          0% { transform: perspective(400px) rotateX(0deg); opacity: 0.05; }
-          50% { transform: perspective(400px) rotateX(8deg); opacity: 0.15; }
-          100% { transform: perspective(400px) rotateX(0deg); opacity: 0.05; }
+        @keyframes gatherObj {
+          0% { opacity:0; transform:translate(var(--sx),var(--sy)) rotate(0deg) scale(0.5); }
+          30% { opacity:1; }
+          100% { opacity:0; transform:translate(0,0) rotate(720deg) scale(0); }
         }
-        .ring-fwd { animation: ringRotate 6s linear infinite; transform-origin: 130px 90px; }
-        .ring-rev { animation: ringRotateRev 9s linear infinite; transform-origin: 130px 90px; }
+        @keyframes compressionShake {
+          0%,100% { transform:translate(0,0); }
+          20% { transform:translate(-4px,3px); }
+          40% { transform:translate(4px,-3px); }
+          60% { transform:translate(-3px,-4px); }
+          80% { transform:translate(3px,4px); }
+        }
+        @keyframes explodeParticle {
+          0% { opacity:1; transform:translate(0,0) scale(1); }
+          100% { opacity:0; transform:translate(var(--ex),var(--ey)) scale(0); }
+        }
+        @keyframes shockwave {
+          0% { transform:scale(0); opacity:0.8; }
+          100% { transform:scale(6); opacity:0; }
+        }
+        @keyframes logoBlur {
+          from { filter:blur(20px); opacity:0; transform:scale(0.7); }
+          to { filter:blur(0); opacity:1; transform:scale(1); }
+        }
+        @keyframes auraPulse {
+          0%,100% { opacity:0.2; transform:scale(1); }
+          50% { opacity:0.6; transform:scale(1.15); }
+        }
+        @keyframes lightRay {
+          0%,100% { opacity:0; transform:scaleY(0.5) rotate(var(--deg)); }
+          50% { opacity:0.15; transform:scaleY(1.2) rotate(var(--deg)); }
+        }
+        @keyframes smokeFloat {
+          0% { opacity:0.6; transform:translateY(0) scale(1); }
+          100% { opacity:0; transform:translateY(-60px) scale(2); }
+        }
+        @keyframes pressPulse {
+          0%,100% { opacity:1; box-shadow:0 0 25px rgba(168,85,247,0.5); transform:scale(1); }
+          50% { opacity:0.4; box-shadow:0 0 8px rgba(168,85,247,0.1); transform:scale(0.97); }
+        }
+        @keyframes nebulaDrift {
+          0%,100% { transform:translate(0,0) scale(1); }
+          33% { transform:translate(15px,-10px) scale(1.05); }
+          66% { transform:translate(-10px,8px) scale(0.97); }
+        }
+        @keyframes energyCrack {
+          0% { stroke-dashoffset:300; opacity:0; }
+          30% { opacity:1; }
+          100% { stroke-dashoffset:0; opacity:0.6; }
+        }
+        @keyframes scanline { 0% { transform:translateY(-100%); } 100% { transform:translateY(100vh); } }
+        @keyframes ctaFadeIn { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+        .intro-shake { animation: compressionShake 0.1s linear infinite; }
         .intro-press { animation: pressPulse 1.1s ease-in-out infinite; }
-        .star-a { animation: starTwinkle 1.4s ease-in-out infinite 0s; }
-        .star-b { animation: starTwinkle 1.4s ease-in-out infinite 0.5s; }
-        .star-c { animation: starTwinkle 1.4s ease-in-out infinite 1s; }
+        .aura-ring { animation: auraPulse 2.5s ease-in-out infinite; }
       `}</style>
 
-      {/* Scanline */}
-      <div style={{ position:'absolute', inset:0, overflow:'hidden', pointerEvents:'none', zIndex:1 }}>
-        <div style={{ position:'absolute', left:0, right:0, height:'2px', background:'linear-gradient(transparent,rgba(168,85,247,0.25),transparent)', animation:'scanline 3.5s linear infinite' }}/>
+      {/* ── WHITE FLASH ── */}
+      {whiteFlash && (
+        <div style={{ position:'absolute', inset:0, background:'white', zIndex:100, pointerEvents:'none', opacity: whiteFlash ? 1 : 0, transition:'opacity 0.3s' }}/>
+      )}
+
+      {/* ── SCANLINE ── */}
+      <div style={{ position:'absolute', inset:0, overflow:'hidden', pointerEvents:'none', zIndex:2 }}>
+        <div style={{ position:'absolute', left:0, right:0, height:'2px', background:'linear-gradient(transparent,rgba(168,85,247,0.2),transparent)', animation:'scanline 4s linear infinite' }}/>
       </div>
 
-      {/* Warp grid bg */}
+      {/* ── CAMERA LAYER ── */}
       <div style={{
-        position:'absolute', inset:0, zIndex:0,
-        backgroundImage:'linear-gradient(rgba(59,130,246,0.07) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,0.07) 1px,transparent 1px)',
-        backgroundSize:'45px 45px',
-        animation: showWarp ? 'warpGrid 0.8s ease-in-out infinite' : 'none',
-        transition: 'opacity 0.5s',
-      }}/>
+        position:'absolute', inset:0,
+        transform: `scale(${cameraScale}) translate(${camX}px,${camY}px)`,
+        transition: phase === 5 ? 'transform 0.1s' : 'transform 1.2s ease-out',
+        animation: shakeScreen ? 'compressionShake 0.08s linear infinite' : 'none',
+      }}>
 
-      {/* Radial glow */}
-      <div style={{ position:'absolute', inset:0, zIndex:0, background:'radial-gradient(ellipse 55% 45% at 50% 48%, rgba(139,92,246,0.14) 0%,transparent 70%)' }}/>
+        {/* ── LAYER 1: STARS ── */}
+        <div style={{ position:'absolute', inset:0, zIndex:0 }}>
+          {stars.map(s => (
+            <div key={s.id} style={{
+              position:'absolute', left:`${s.x}%`, top:`${s.y}%`,
+              width: s.size, height: s.size, borderRadius:'50%',
+              background: s.layer === 0 ? '#94a3b8' : s.layer === 1 ? '#a855f7' : '#3b82f6',
+              opacity: phase >= 1 ? 1 : 0,
+              transition: `opacity ${1 + s.layer*0.5}s ease`,
+              animation: `starTwinkle ${2 + s.twinkleDelay}s ease-in-out infinite ${s.twinkleDelay}s`,
+              filter: s.layer === 2 ? 'blur(0.5px)' : 'none',
+            }}/>
+          ))}
+        </div>
 
-      {/* Particles */}
-      {asmPhase >= 1 && particles.map(p => (
-        <div key={p.id} style={{
-          position:'absolute', left:`${p.x}%`, top:`${p.y}%`,
-          width: p.size, height: p.size, borderRadius:'50%',
-          background: p.color, boxShadow:`0 0 6px ${p.color}`,
-          animation:`particleFly 1.2s ease-out ${p.delay}s both`,
-          '--tx': `${(Math.random()-0.5)*120}px`,
-          '--ty': `${(Math.random()-0.5)*120}px`,
-          zIndex:1,
-        }}/>
-      ))}
-
-      {/* Stars */}
-      {[{l:'12%',t:'18%',c:'star-a'},{l:'86%',t:'14%',c:'star-b'},{l:'8%',t:'72%',c:'star-c'},
-        {l:'91%',t:'78%',c:'star-a'},{l:'78%',t:'28%',c:'star-b'},{l:'22%',t:'86%',c:'star-c'},
-        {l:'55%',t:'8%',c:'star-a'},{l:'38%',t:'92%',c:'star-b'}].map((s,i)=>(
-        <div key={i} className={s.c} style={{ position:'absolute', left:s.l, top:s.t, width:3, height:3, borderRadius:'50%', background:'#a855f7', boxShadow:'0 0 6px #a855f7', zIndex:1 }}/>
-      ))}
-
-      {/* Main content */}
-      <div style={{ position:'relative', zIndex:2, textAlign:'center', padding:'0 24px' }}>
-
-        {/* Controller Assembly */}
-        {asmPhase < 5 && (
-          <div style={{
-            width:280, height:200, margin:'0 auto 32px', position:'relative',
-            animation: asmPhase >= 4 ? 'powerCharge 0.6s ease-out forwards' : 'none',
-            filter: showGlitch ? 'hue-rotate(180deg)' : 'none',
-            transform: showGlitch ? 'translateX(4px)' : 'none',
-            transition: showGlitch ? 'none' : 'filter 0.1s, transform 0.1s',
-            '--rgb': currentRgb,
-          }}>
-            <svg viewBox="0 0 260 180" fill="none" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
-              {/* Outer rings - show after power */}
-              {asmPhase >= 4 && <>
-                <g className="ring-fwd">
-                  <circle cx="130" cy="90" r="88" stroke={currentRgb} strokeWidth="1" strokeDasharray="10 8" opacity="0.5"/>
-                </g>
-                <g className="ring-rev">
-                  <circle cx="130" cy="90" r="76" stroke={currentRgb} strokeWidth="0.8" strokeDasharray="5 10" opacity="0.3"/>
-                </g>
-              </>}
-
-              {/* Controller body - phase 2 */}
-              {asmPhase >= 2 && (
-                <g style={{ animation:'bodyAppear 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards' }}>
-                  <path d="M55 78 Q50 65 60 58 L95 54 Q110 50 130 50 Q150 50 165 54 L200 58 Q210 65 205 78 L196 120 Q191 140 173 146 L152 151 Q141 156 130 156 Q119 156 108 151 L87 146 Q69 140 64 120 Z"
-                    fill="#0f0a1e" stroke={asmPhase>=4 ? currentRgb : '#7c3aed'} strokeWidth="2"
-                    style={{ transition:'stroke 0.1s' }}/>
-                  {/* Left grip */}
-                  <path d="M55 88 Q43 95 40 116 Q38 136 52 146 Q63 154 74 147 Q67 132 64 120 Q60 104 55 88Z" fill="#0a0618" stroke={asmPhase>=4 ? currentRgb : '#6d28d9'} strokeWidth="1.5"/>
-                  {/* Right grip */}
-                  <path d="M205 88 Q217 95 220 116 Q222 136 208 146 Q197 154 186 147 Q193 132 196 120 Q200 104 205 88Z" fill="#0a0618" stroke={asmPhase>=4 ? currentRgb : '#6d28d9'} strokeWidth="1.5"/>
-                  {/* Shoulder L */}
-                  <rect x="62" y="58" width="42" height="12" rx="6" fill="#150d28" stroke={asmPhase>=4 ? currentRgb : '#7c3aed'} strokeWidth="1.5"/>
-                  <text x="83" y="68" textAnchor="middle" fill="#a855f7" fontSize="7" fontWeight="bold">LB</text>
-                  {/* Shoulder R */}
-                  <rect x="156" y="58" width="42" height="12" rx="6" fill="#150d28" stroke={asmPhase>=4 ? currentRgb : '#7c3aed'} strokeWidth="1.5"/>
-                  <text x="177" y="68" textAnchor="middle" fill="#a855f7" fontSize="7" fontWeight="bold">RB</text>
-                  {/* Metallic reflection */}
-                  <path d="M75 58 Q130 48 185 58" stroke="rgba(255,255,255,0.12)" strokeWidth="3" strokeLinecap="round"/>
-                  {/* Center GH */}
-                  <circle cx="130" cy="95" r="13" fill="#1a0a2e" stroke={asmPhase>=4 ? currentRgb : '#a855f7'} strokeWidth="1.5"/>
-                  <text x="130" y="99" textAnchor="middle" fill={asmPhase>=4 ? currentRgb : '#a855f7'} fontSize="9" fontWeight="bold">GH</text>
-                  {/* Center menu buttons */}
-                  <rect x="110" y="78" width="12" height="7" rx="3.5" fill="#1e1035" stroke="#6d28d9" strokeWidth="1"/>
-                  <rect x="138" y="78" width="12" height="7" rx="3.5" fill="#1e1035" stroke="#6d28d9" strokeWidth="1"/>
-                </g>
-              )}
-
-              {/* D-pad + sticks - phase 3 */}
-              {asmPhase >= 3 && (
-                <g style={{ animation:'flyFromLeft 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards' }}>
-                  <rect x="75" y="82" width="11" height="32" rx="3" fill="#1e1035" stroke="#a855f7" strokeWidth="1.2"/>
-                  <rect x="66" y="91" width="29" height="11" rx="3" fill="#1e1035" stroke="#a855f7" strokeWidth="1.2"/>
-                  <circle cx="80" cy="97" r="4" fill="#a855f7" opacity="0.4"/>
-                </g>
-              )}
-              {asmPhase >= 3 && (
-                <>
-                  <g style={{ animation:'flyFromBottom 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.1s both' }}>
-                    <circle cx="98" cy="124" r="14" fill="#150d28" stroke={asmPhase>=4 ? currentRgb : '#6d28d9'} strokeWidth="1.5"/>
-                    <circle cx="98" cy="124" r="9" fill="#1e1035" stroke="#a855f7" strokeWidth="1"/>
-                    <circle cx="98" cy="124" r="4" fill="#a855f7" opacity="0.8"/>
-                  </g>
-                  <g style={{ animation:'flyFromBottom 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.2s both' }}>
-                    <circle cx="162" cy="124" r="14" fill="#150d28" stroke={asmPhase>=4 ? currentRgb : '#6d28d9'} strokeWidth="1.5"/>
-                    <circle cx="162" cy="124" r="9" fill="#1e1035" stroke="#a855f7" strokeWidth="1"/>
-                    <circle cx="162" cy="124" r="4" fill="#a855f7" opacity="0.8"/>
-                  </g>
-                </>
-              )}
-
-              {/* ABXY - phase 1 */}
-              {asmPhase >= 1 && (
-                <>
-                  <g style={{ animation:'flyFromTop 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards' }}>
-                    <circle cx="172" cy="78" r="9" fill="#facc15" stroke="#fde68a" strokeWidth="1.5"/>
-                    <text x="172" y="82" textAnchor="middle" fill="#1a1a1a" fontSize="8" fontWeight="bold">Y</text>
-                  </g>
-                  <g style={{ animation:'flyFromLeft 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.1s both' }}>
-                    <circle cx="155" cy="94" r="9" fill="#3b82f6" stroke="#93c5fd" strokeWidth="1.5"/>
-                    <text x="155" y="98" textAnchor="middle" fill="white" fontSize="8" fontWeight="bold">X</text>
-                  </g>
-                  <g style={{ animation:'flyFromRight 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.1s both' }}>
-                    <circle cx="189" cy="94" r="9" fill="#ef4444" stroke="#fca5a5" strokeWidth="1.5"/>
-                    <text x="189" y="98" textAnchor="middle" fill="white" fontSize="8" fontWeight="bold">B</text>
-                  </g>
-                  <g style={{ animation:'flyFromBottom 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.2s both' }}>
-                    <circle cx="172" cy="110" r="9" fill="#10b981" stroke="#6ee7b7" strokeWidth="1.5"/>
-                    <text x="172" y="114" textAnchor="middle" fill="white" fontSize="8" fontWeight="bold">A</text>
-                  </g>
-                </>
-              )}
-
-              {/* RGB power lines */}
-              {asmPhase >= 4 && (
-                <>
-                  <line x1="64" y1="120" x2="196" y2="120" stroke={currentRgb} strokeWidth="1" opacity="0.4"/>
-                  <line x1="85" y1="70" x2="175" y2="70" stroke={currentRgb} strokeWidth="0.8" opacity="0.3"/>
-                </>
-              )}
-            </svg>
+        {/* ── LAYER 2: NEBULA FOG ── */}
+        {phase >= 1 && (
+          <div style={{ position:'absolute', inset:0, zIndex:1, pointerEvents:'none' }}>
+            {[
+              { x:'20%', y:'30%', color:'rgba(139,92,246,0.08)', size:400, delay:0 },
+              { x:'70%', y:'60%', color:'rgba(59,130,246,0.06)', size:350, delay:1 },
+              { x:'50%', y:'20%', color:'rgba(236,72,153,0.05)', size:300, delay:2 },
+            ].map((n,i) => (
+              <div key={i} style={{
+                position:'absolute', left:n.x, top:n.y,
+                width:n.size, height:n.size,
+                borderRadius:'50%', background:n.color,
+                filter:'blur(60px)',
+                transform:'translate(-50%,-50%)',
+                animation:`nebulaDrift ${8+i*2}s ease-in-out infinite ${n.delay}s`,
+              }}/>
+            ))}
           </div>
         )}
 
-        {/* Logo reveal */}
-        {showLogo && (
-          <div style={{ animation:'logoReveal 0.8s cubic-bezier(0.34,1.56,0.64,1) forwards', marginBottom:32 }}>
-            <h1 style={{
-              fontFamily:"'Orbitron',sans-serif",
-              fontSize:'clamp(2.4rem,7vw,4rem)',
-              fontWeight:900,
-              letterSpacing:'0.08em',
-              lineHeight:1,
-              marginBottom:10,
-              filter:'drop-shadow(0 0 30px rgba(168,85,247,0.7))',
-            }}>
-              <span style={{ background:'linear-gradient(135deg,#a855f7,#3b82f6)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>
-                {typedText.slice(0,4)}
-              </span>
-              <span style={{ color:'white' }}>
-                {typedText.slice(4)}
-              </span>
-              {showCursor && !showButton && (
-                <span style={{ color:'#a855f7', WebkitTextFillColor:'#a855f7' }}>|</span>
-              )}
-            </h1>
-            <p style={{ color:'#475569', fontSize:'0.68rem', letterSpacing:'0.28em', fontFamily:"'Space Mono',monospace" }}>
-              YOUR ULTIMATE GAMING UNIVERSE
-            </p>
-          </div>
-        )}
+        {/* ── LAYER 3: AMBIENT PARTICLES ── */}
+        <div style={{ position:'absolute', inset:0, zIndex:2, pointerEvents:'none' }}>
+          {ambientParticles.map(p => (
+            <div key={p.id} style={{
+              position:'absolute', left:`${p.x}%`, top:`${p.y}%`,
+              width:p.size, height:p.size, borderRadius:'50%',
+              background:p.color, boxShadow:`0 0 4px ${p.color}`,
+              opacity: phase >= 1 ? 1 : 0,
+              transition:'opacity 1s',
+              animation:`ambientFloat ${p.speed}s ease-in-out infinite ${p.delay}s`,
+            }}/>
+          ))}
+        </div>
 
-        {/* Press Start */}
-        {showButton && (
-          <button
-            onClick={handleStart}
-            className="intro-press"
-            style={{
-              background:'none', border:'2px solid #a855f7', borderRadius:'8px',
-              color:'#a855f7', fontSize:'0.85rem', letterSpacing:'0.25em', fontWeight:700,
-              padding:'12px 36px', cursor:'pointer',
-              fontFamily:"'Space Mono',monospace",
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background='rgba(168,85,247,0.15)'; e.currentTarget.style.boxShadow='0 0 40px rgba(168,85,247,0.5)'; }}
-            onMouseLeave={e => { e.currentTarget.style.background='none'; e.currentTarget.style.boxShadow='none'; }}
-          >
-            ▶ &nbsp;PRESS START
-          </button>
-        )}
+        {/* ── LAYER 4: FRONT CONTENT ── */}
+        <div style={{ position:'absolute', inset:0, zIndex:3, display:'flex', alignItems:'center', justifyContent:'center' }}>
+
+          {/* ── PHASE 0: VOID AWAKENING ── */}
+          {phase === 0 && (
+            <div style={{ position:'relative', textAlign:'center' }}>
+              <div style={{
+                width:8, height:8, borderRadius:'50%',
+                background:'white', margin:'0 auto',
+                boxShadow:'0 0 20px white, 0 0 60px rgba(168,85,247,0.5)',
+                animation:'voidPulse 1s ease-in-out infinite',
+              }}/>
+              <svg style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:300, height:300 }} viewBox="0 0 300 300">
+                {[0,45,90,135,180,225,270,315].map((a,i) => {
+                  const rad = a * Math.PI/180;
+                  const x2 = 150 + Math.cos(rad)*130;
+                  const y2 = 150 + Math.sin(rad)*130;
+                  return (
+                    <line key={i} x1="150" y1="150" x2={x2} y2={y2}
+                      stroke={['#a855f7','#3b82f6','#ec4899','#8b5cf6'][i%4]}
+                      strokeWidth="0.8" strokeDasharray="200" strokeDashoffset="200"
+                      opacity="0.6"
+                      style={{ animation:`energyCrack 0.5s ease-out ${i*0.05}s both` }}
+                    />
+                  );
+                })}
+              </svg>
+            </div>
+          )}
+
+          {/* ── PHASE 1-3: PORTAL + GATHERING ── */}
+          {phase >= 1 && phase < 6 && (
+            <div style={{ position:'relative', textAlign:'center' }}>
+
+              {/* Portal rings */}
+              <div style={{ position:'relative', width:220, height:220, margin:'0 auto' }}>
+                {/* Outer ring */}
+                <div style={{
+                  position:'absolute', inset:0, borderRadius:'50%',
+                  border:'2px solid transparent',
+                  background:'linear-gradient(#000,#000) padding-box, linear-gradient(135deg,#a855f7,#3b82f6,#ec4899) border-box',
+                  animation:'portalSpin 3s linear infinite',
+                  opacity: phase >= 1 ? 1 : 0,
+                  transition:'opacity 0.5s',
+                  boxShadow: phase >= 3 ? '0 0 60px rgba(168,85,247,0.8), 0 0 120px rgba(59,130,246,0.4)' : '0 0 30px rgba(168,85,247,0.5)',
+                  transform: phase === 4 ? 'scale(1.1)' : 'scale(1)',
+                }}/>
+                {/* Middle ring */}
+                <div style={{
+                  position:'absolute', inset:20, borderRadius:'50%',
+                  border:'1.5px dashed rgba(168,85,247,0.5)',
+                  animation:'portalSpinRev 5s linear infinite',
+                }}/>
+                {/* Inner ring */}
+                <div style={{
+                  position:'absolute', inset:40, borderRadius:'50%',
+                  border:'1px solid rgba(59,130,246,0.4)',
+                  animation:'portalSpin 2s linear infinite',
+                }}/>
+                {/* Portal center */}
+                <div style={{
+                  position:'absolute', inset:50, borderRadius:'50%',
+                  background:'radial-gradient(circle, rgba(139,92,246,0.4) 0%, rgba(59,130,246,0.2) 50%, transparent 100%)',
+                  filter: phase >= 3 ? 'brightness(2)' : 'brightness(1)',
+                  transition:'filter 0.3s',
+                }}/>
+
+                {/* Freeze glow */}
+                {phase === 4 && (
+                  <div style={{
+                    position:'absolute', inset:-30, borderRadius:'50%',
+                    background:'radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%)',
+                    animation:'voidPulse 0.15s ease-in-out infinite',
+                  }}/>
+                )}
+              </div>
+
+              {/* Game objects flying in - phase 2 */}
+              {phase >= 2 && phase < 5 && gameObjects.map((obj, i) => (
+                <div key={i} style={{
+                  position:'absolute',
+                  top:'50%', left:'50%',
+                  fontSize:'2rem',
+                  transform:'translate(-50%,-50%)',
+                  '--sx': `${obj.startX}px`,
+                  '--sy': `${obj.startY}px`,
+                  animation:`gatherObj 1.2s ease-in ${obj.delay}s both`,
+                  filter:'drop-shadow(0 0 8px rgba(168,85,247,0.8))',
+                }}>{obj.emoji}</div>
+              ))}
+            </div>
+          )}
+
+          {/* ── PHASE 5: EXPLOSION ── */}
+          {phase === 5 && (
+            <div style={{ position:'relative', width:300, height:300 }}>
+              {/* Shockwave */}
+              <div style={{
+                position:'absolute', top:'50%', left:'50%',
+                width:60, height:60,
+                borderRadius:'50%',
+                border:'3px solid rgba(255,255,255,0.8)',
+                transform:'translate(-50%,-50%)',
+                animation:'shockwave 0.8s ease-out forwards',
+              }}/>
+              <div style={{
+                position:'absolute', top:'50%', left:'50%',
+                width:40, height:40, borderRadius:'50%',
+                border:'2px solid rgba(168,85,247,0.6)',
+                transform:'translate(-50%,-50%)',
+                animation:'shockwave 0.8s ease-out 0.1s forwards',
+              }}/>
+              {/* Explosion particles */}
+              {explosionParticles.map(p => {
+                const rad = p.angle * Math.PI/180;
+                const ex = Math.cos(rad) * p.distance;
+                const ey = Math.sin(rad) * p.distance;
+                return (
+                  <div key={p.id} style={{
+                    position:'absolute', top:'50%', left:'50%',
+                    width:p.size, height:p.size, borderRadius:'50%',
+                    background:p.color,
+                    boxShadow:`0 0 6px ${p.color}`,
+                    '--ex': `${ex}px`,
+                    '--ey': `${ey}px`,
+                    animation:`explodeParticle ${p.speed}s ease-out forwards`,
+                    transform:'translate(-50%,-50%)',
+                  }}/>
+                );
+              })}
+            </div>
+          )}
+
+          {/* ── PHASE 6-8: LOGO ── */}
+          {phase >= 6 && (
+            <div style={{ textAlign:'center', animation:'logoBlur 0.8s cubic-bezier(0.34,1.56,0.64,1) forwards' }}>
+
+              {/* Light rays behind logo */}
+              {phase >= 7 && (
+                <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:400, height:400, pointerEvents:'none' }}>
+                  {[0,30,60,90,120,150,180,210,240,270,300,330].map((deg,i) => (
+                    <div key={i} style={{
+                      position:'absolute', top:'50%', left:'50%',
+                      width:2, height:200,
+                      background:`linear-gradient(to bottom, rgba(168,85,247,0.3), transparent)`,
+                      transformOrigin:'top center',
+                      '--deg': `${deg}deg`,
+                      transform:`rotate(${deg}deg) translateX(-50%)`,
+                      animation:`lightRay ${3+i*0.2}s ease-in-out infinite ${i*0.15}s`,
+                    }}/>
+                  ))}
+                </div>
+              )}
+
+              {/* Aura behind logo */}
+              {phase >= 7 && (
+                <>
+                  <div className="aura-ring" style={{
+                    position:'absolute', top:'50%', left:'50%',
+                    width:300, height:200, borderRadius:'50%',
+                    background:'radial-gradient(ellipse, rgba(139,92,246,0.25) 0%, transparent 70%)',
+                    transform:'translate(-50%,-50%)',
+                    filter:'blur(20px)',
+                  }}/>
+                  <div className="aura-ring" style={{
+                    position:'absolute', top:'50%', left:'50%',
+                    width:500, height:300, borderRadius:'50%',
+                    background:'radial-gradient(ellipse, rgba(59,130,246,0.12) 0%, transparent 70%)',
+                    transform:'translate(-50%,-50%)',
+                    filter:'blur(30px)',
+                    animationDelay:'0.5s',
+                  }}/>
+                </>
+              )}
+
+              {/* Smoke particles */}
+              {phase >= 6 && Array.from({length:12},(_, i)=>(
+                <div key={i} style={{
+                  position:'absolute',
+                  left:`${40 + Math.random()*20}%`,
+                  top:`${40 + Math.random()*20}%`,
+                  width: 20+Math.random()*30,
+                  height: 20+Math.random()*30,
+                  borderRadius:'50%',
+                  background:'rgba(139,92,246,0.15)',
+                  filter:'blur(8px)',
+                  animation:`smokeFloat ${2+Math.random()*2}s ease-out ${Math.random()*1}s both`,
+                }}/>
+              ))}
+
+              {/* GAMEHUB Logo */}
+              <div style={{ position:'relative', zIndex:10, marginBottom: phase >= 8 ? 16 : 8 }}>
+                <h1 style={{
+                  fontFamily:"'Orbitron',sans-serif",
+                  fontSize:'clamp(2.8rem,8vw,5rem)',
+                  fontWeight:900,
+                  letterSpacing:'0.08em',
+                  lineHeight:1,
+                  marginBottom:12,
+                  filter:'drop-shadow(0 0 40px rgba(168,85,247,0.8)) drop-shadow(0 0 80px rgba(59,130,246,0.4))',
+                }}>
+                  <span style={{ background:'linear-gradient(135deg,#a855f7,#3b82f6)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>
+                    {typedText.slice(0,4)}
+                  </span>
+                  <span style={{ color:'white' }}>
+                    {typedText.slice(4)}
+                  </span>
+                  {showCursor && phase < 8 && (
+                    <span style={{ color:'#a855f7', WebkitTextFillColor:'#a855f7', fontSize:'0.8em' }}>|</span>
+                  )}
+                </h1>
+                {phase >= 7 && (
+                  <p style={{
+                    color:'#475569', fontSize:'0.68rem',
+                    letterSpacing:'0.3em',
+                    fontFamily:"'Space Mono',monospace",
+                    animation:'ctaFadeIn 1s ease-out forwards',
+                    marginBottom: phase >= 8 ? 36 : 0,
+                  }}>
+                    YOUR ULTIMATE GAMING UNIVERSE
+                  </p>
+                )}
+              </div>
+
+              {/* PRESS START */}
+              {phase >= 8 && (
+                <button
+                  onClick={handleStart}
+                  className="intro-press"
+                  style={{
+                    background:'none', border:'2px solid #a855f7',
+                    borderRadius:'8px', color:'#a855f7',
+                    fontSize:'0.85rem', letterSpacing:'0.25em',
+                    fontWeight:700, padding:'14px 40px',
+                    cursor:'pointer',
+                    fontFamily:"'Space Mono',monospace",
+                    animation:'ctaFadeIn 0.8s ease-out forwards, pressPulse 1.1s ease-in-out 0.8s infinite',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background='rgba(168,85,247,0.15)';
+                    e.currentTarget.style.boxShadow='0 0 50px rgba(168,85,247,0.6)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background='none';
+                    e.currentTarget.style.boxShadow='none';
+                  }}
+                >
+                  ▶ &nbsp;PRESS START
+                </button>
+              )}
+            </div>
+          )}
+
+        </div>
       </div>
     </div>
   );
