@@ -998,10 +998,10 @@ function IntroScreen({ onComplete }) {
 
   useEffect(() => {
     const timers = [
-      setTimeout(() => setPhase(1), 500),
-      setTimeout(() => setPhase(2), 1100),
-      setTimeout(() => { setPhase(3); setShaking(true); }, 2400),
-      setTimeout(() => { setPhase(4); setShaking(false); }, 3000),
+      setTimeout(() => setPhase(1), 400),
+      setTimeout(() => setPhase(2), 900),
+      setTimeout(() => { setPhase(3); setShaking(true); }, 2300),
+      setTimeout(() => { setPhase(4); setShaking(false); }, 2900),
       setTimeout(() => {
         setPhase(5);
         setWhiteFlash(true);
@@ -1071,8 +1071,8 @@ function IntroScreen({ onComplete }) {
         @keyframes IS_portalSpinR { to{transform:rotate(-360deg)} }
         @keyframes IS_gather {
           0%   { transform:translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) rotate(0deg) scale(0.4); opacity:0; }
-          15%  { opacity:1; }
-          85%  { transform:translate(calc(-50% + calc(var(--tx) * 0.04)), calc(-50% + calc(var(--ty) * 0.04))) rotate(600deg) scale(0.5); opacity:.8; }
+          12%  { opacity:1; }
+          82%  { transform:translate(calc(-50% + calc(var(--tx) * 0.05)), calc(-50% + calc(var(--ty) * 0.05))) rotate(580deg) scale(0.45); opacity:1; }
           100% { transform:translate(-50%,-50%) rotate(720deg) scale(0); opacity:0; }
         }
         @keyframes IS_shake     { 0%,100%{transform:translate(0,0)} 25%{transform:translate(-5px,4px)} 75%{transform:translate(5px,-4px)} }
@@ -1210,8 +1210,8 @@ function IntroScreen({ onComplete }) {
               </>
             )}
 
-            {/* Game objects — phase 2+ */}
-            {phase >= 2 && phase <= 4 && gameObjects.map((obj, i) => (
+            {/* Game objects — in DOM from phase 1, use absolute delay so no stutter */}
+            {phase >= 1 && phase <= 4 && gameObjects.map((obj, i) => (
               <div key={i} style={{
                 position:'absolute',
                 top:'50%', left:'50%',
