@@ -1064,6 +1064,9 @@ function IntroScreen({ onComplete }) {
       <style>{`
         @keyframes IS_twinkle { 0%,100%{opacity:0.15} 50%{opacity:1} }
         @keyframes IS_voidDot { 0%,100%{transform:scale(1);opacity:0.4} 50%{transform:scale(2);opacity:1} }
+        @keyframes IS_drawCircleOuter { from{stroke-dashoffset:692} to{stroke-dashoffset:0} }
+        @keyframes IS_drawCircleMid   { from{stroke-dashoffset:503} to{stroke-dashoffset:0} }
+        @keyframes IS_drawCircleInner { from{stroke-dashoffset:314} to{stroke-dashoffset:0} }
         @keyframes IS_drawCircle { from{stroke-dashoffset:inherit} to{stroke-dashoffset:0} }
         @keyframes IS_crack {
           from { stroke-dashoffset:250; opacity:0; }
@@ -1179,30 +1182,41 @@ function IntroScreen({ onComplete }) {
         animation: shaking ? 'IS_shake 0.08s linear infinite' : 'none',
       }}>
 
-        {/* PHASE 0 — void dot + cracks */}
+        {/* PHASE 0 — circles drawing themselves */}
         {phase === 0 && (
-          <div style={{ position:'relative', width:280, height:280 }}>
-            <div style={{
-              position:'absolute', top:'50%', left:'50%',
-              width:10, height:10, borderRadius:'50%',
-              background:'white',
-              transform:'translate(-50%,-50%)',
-              boxShadow:'0 0 30px white, 0 0 80px rgba(168,85,247,0.6)',
-              animation:'IS_voidDot 0.6s ease-in-out infinite',
-            }}/>
-            <svg style={{ position:'absolute', inset:0, width:'100%', height:'100%' }} viewBox="0 0 280 280">
-              {[0,45,90,135,180,225,270,315].map((a,i) => {
-                const r = a*Math.PI/180;
-                return (
-                  <line key={i}
-                    x1="150" y1="150"
-                    x2={150+Math.cos(r)*120} y2={150+Math.sin(r)*120}
-                    stroke={['#a855f7','#3b82f6','#ec4899','#8b5cf6'][i%4]}
-                    strokeWidth="0.8" strokeDasharray="200" strokeDashoffset="200"
-                    style={{ animation:`IS_crack 0.4s ease-out ${i*0.05}s both` }}
-                  />
-                );
-              })}
+          <div style={{ position:'relative', width:300, height:300 }}>
+            <svg width="300" height="300" viewBox="0 0 300 300" style={{ position:'absolute', inset:0 }}>
+              <defs>
+                <filter id="circleGlow">
+                  <feGaussianBlur stdDeviation="4" result="blur"/>
+                  <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
+              </defs>
+              {/* Outer circle */}
+              <circle cx="150" cy="150" r="110"
+                stroke="#a855f7" strokeWidth="2" fill="none"
+                strokeDasharray="692" strokeDashoffset="692"
+                filter="url(#circleGlow)"
+                style={{ animation:'IS_drawCircleOuter 0.5s ease-out 0s forwards' }}
+              />
+              {/* Middle circle */}
+              <circle cx="150" cy="150" r="80"
+                stroke="#3b82f6" strokeWidth="1.5" fill="none"
+                strokeDasharray="503" strokeDashoffset="503"
+                style={{ animation:'IS_drawCircleMid 0.5s ease-out 0.08s forwards' }}
+                opacity="0.7"
+              />
+              {/* Inner circle */}
+              <circle cx="150" cy="150" r="50"
+                stroke="#ec4899" strokeWidth="1" fill="none"
+                strokeDasharray="314" strokeDashoffset="314"
+                style={{ animation:'IS_drawCircleInner 0.5s ease-out 0.16s forwards' }}
+                opacity="0.5"
+              />
+              {/* Center glow dot */}
+              <circle cx="150" cy="150" r="5" fill="white" filter="url(#circleGlow)"
+                style={{ animation:'IS_voidDot 0.6s ease-in-out infinite' }}
+              />
             </svg>
           </div>
         )}
@@ -1348,7 +1362,7 @@ function IntroScreen({ onComplete }) {
                   {typedText.slice(0,4)}
                 </span>
                 <span style={{ color:'white' }}>
-                  {typedText.slice(4)}{showCursor && phase < 8 ? <span style={{ color:'#a855f7', WebkitTextFillColor:'#a855f7' }}>|</span> : null}
+                  {typedText.slice(4)}{showCursor && typedText.length < fullText.length ? <span style={{ color:'#a855f7', WebkitTextFillColor:'#a855f7' }}>|</span> : null}
                 </span>
               </h1>
 
