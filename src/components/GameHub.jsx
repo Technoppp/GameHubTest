@@ -999,7 +999,7 @@ function IntroScreen({ onComplete }) {
   useEffect(() => {
     const timers = [
       setTimeout(() => setPhase(1), 500),
-      setTimeout(() => setPhase(2), 1200),
+      setTimeout(() => setPhase(2), 1100),
       setTimeout(() => { setPhase(3); setShaking(true); }, 2400),
       setTimeout(() => { setPhase(4); setShaking(false); }, 3000),
       setTimeout(() => {
@@ -1137,43 +1137,83 @@ function IntroScreen({ onComplete }) {
       {/* ── CENTER STAGE — everything centered perfectly ── */}
       <div style={{ position:'relative', zIndex:5, display:'flex', alignItems:'center', justifyContent:'center', animation: shaking ? 'IS_shake 0.08s linear infinite' : 'none' }}>
 
-        {/* PHASE 0 — circles draw themselves, all centered in one SVG */}
-        {phase === 0 && (
-          <svg width={W} height={W} viewBox={`0 0 ${W} ${W}`} style={{ overflow:'visible' }}>
-            <defs>
-              <filter id="IS_glow">
-                <feGaussianBlur stdDeviation="4" result="b"/>
-                <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-              </filter>
-            </defs>
-            <circle cx={CX} cy={CY} r="110" stroke="#a855f7" strokeWidth="2" fill="none"
-              strokeDasharray="692" strokeDashoffset="692" filter="url(#IS_glow)"
-              style={{ animation:'IS_drawOuter 0.5s ease-out 0s forwards' }}/>
-            <circle cx={CX} cy={CY} r="80" stroke="#3b82f6" strokeWidth="1.5" fill="none"
-              strokeDasharray="503" strokeDashoffset="503" opacity="0.7"
-              style={{ animation:'IS_drawMid 0.5s ease-out 0.08s forwards' }}/>
-            <circle cx={CX} cy={CY} r="50" stroke="#ec4899" strokeWidth="1" fill="none"
-              strokeDasharray="314" strokeDashoffset="314" opacity="0.5"
-              style={{ animation:'IS_drawInner 0.5s ease-out 0.16s forwards' }}/>
-            <circle cx={CX} cy={CY} r="6" fill="white" filter="url(#IS_glow)"
-              style={{ animation:'IS_dotPulse 0.7s ease-in-out infinite' }}/>
-          </svg>
-        )}
-
-        {/* PHASE 1-4 — Portal + game objects */}
-        {phase >= 1 && phase <= 4 && (
+        {/* PHASE 0-4 — unified portal (circles draw then spin, no jump) */}
+        {phase >= 0 && phase <= 4 && (
           <div style={{ position:'relative', width:W, height:W, display:'flex', alignItems:'center', justifyContent:'center' }}>
-            {/* Portal rings — centered via flex */}
-            <div style={{ position:'absolute', width:240, height:240, borderRadius:'50%', border:'2px solid #a855f7',
-              boxShadow: phase >= 4 ? '0 0 80px white,0 0 160px rgba(168,85,247,.8)' : phase >= 3 ? '0 0 50px rgba(168,85,247,.9)' : '0 0 25px rgba(168,85,247,.5)',
-              transition:'box-shadow 0.3s', animation:'IS_portalSpin 3s linear infinite' }}/>
-            <div style={{ position:'absolute', width:196, height:196, borderRadius:'50%', border:'1.5px dashed rgba(168,85,247,.4)', animation:'IS_portalSpinR 5s linear infinite' }}/>
-            <div style={{ position:'absolute', width:152, height:152, borderRadius:'50%', border:'1px solid rgba(59,130,246,.35)', animation:'IS_portalSpin 2s linear infinite' }}/>
-            <div style={{ position:'absolute', width:108, height:108, borderRadius:'50%',
-              background:`radial-gradient(circle,${phase>=4?'rgba(255,255,255,.5)':phase>=3?'rgba(168,85,247,.45)':'rgba(139,92,246,.25)'} 0%,transparent 100%)`,
-              filter:'blur(4px)', transition:'background 0.3s' }}/>
+            <svg width={W} height={W} viewBox={`0 0 ${W} ${W}`} style={{ position:'absolute', inset:0, overflow:'visible' }}>
+              <defs>
+                <filter id="IS_glow">
+                  <feGaussianBlur stdDeviation="5" result="b"/>
+                  <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
+              </defs>
+              {/* Outer ring — draws itself then spins */}
+              <circle cx={CX} cy={CY} r="110"
+                stroke={phase >= 3 ? 'white' : '#a855f7'}
+                strokeWidth="2" fill="none"
+                filter="url(#IS_glow)"
+                strokeDasharray="692"
+                strokeDashoffset={phase >= 1 ? 0 : 692}
+                style={{
+                  transition: phase === 0 ? 'none' : 'stroke 0.3s',
+                  animation: phase >= 1
+                    ? `IS_portalSpin 3s linear infinite`
+                    : 'IS_drawOuter 0.5s ease-out forwards',
+                  boxShadow: phase >= 4 ? '0 0 80px white' : 'none',
+                }}
+              />
+              {/* Middle ring */}
+              <circle cx={CX} cy={CY} r="80"
+                stroke="#a855f7" strokeWidth="1.5" fill="none"
+                strokeDasharray="503"
+                strokeDashoffset={phase >= 1 ? 0 : 503}
+                opacity="0.6"
+                style={{
+                  animation: phase >= 1
+                    ? 'IS_portalSpinR 5s linear infinite'
+                    : 'IS_drawMid 0.5s ease-out 0.08s forwards',
+                }}
+              />
+              {/* Inner ring */}
+              <circle cx={CX} cy={CY} r="50"
+                stroke="#3b82f6" strokeWidth="1" fill="none"
+                strokeDasharray="314"
+                strokeDashoffset={phase >= 1 ? 0 : 314}
+                opacity="0.45"
+                style={{
+                  animation: phase >= 1
+                    ? 'IS_portalSpin 2s linear infinite'
+                    : 'IS_drawInner 0.5s ease-out 0.16s forwards',
+                }}
+              />
+              {/* Center dot / core glow */}
+              <circle cx={CX} cy={CY} r={phase >= 1 ? 40 : 6}
+                fill={phase >= 1
+                  ? `radial-gradient(circle,${phase>=4?'rgba(255,255,255,.5)':phase>=3?'rgba(168,85,247,.45)':'rgba(139,92,246,.25)'} 0%,transparent 100%)`
+                  : 'white'}
+                filter={phase === 0 ? 'url(#IS_glow)' : undefined}
+                style={{
+                  transition: 'r 0.4s ease',
+                  animation: phase === 0 ? 'IS_dotPulse 0.7s ease-in-out infinite' : 'none',
+                }}
+              />
+            </svg>
 
-            {/* Game objects */}
+            {/* Portal core glow (div, phase 1+) */}
+            {phase >= 1 && (
+              <div style={{
+                position:'absolute', width:108, height:108, borderRadius:'50%',
+                background: phase>=4
+                  ? 'radial-gradient(circle,rgba(255,255,255,.5) 0%,transparent 100%)'
+                  : phase>=3
+                  ? 'radial-gradient(circle,rgba(168,85,247,.45) 0%,transparent 100%)'
+                  : 'radial-gradient(circle,rgba(139,92,246,.25) 0%,transparent 100%)',
+                filter:'blur(6px)',
+                transition:'background 0.3s',
+              }}/>
+            )}
+
+            {/* Game objects — phase 2+, no extra delay */}
             {phase >= 2 && phase <= 4 && gameObjects.map((obj, i) => (
               <div key={i} style={{
                 position:'absolute',
@@ -1181,7 +1221,7 @@ function IntroScreen({ onComplete }) {
                 fontSize:'3rem', lineHeight:1,
                 '--tx': `${obj.tx}px`,
                 '--ty': `${obj.ty}px`,
-                animation:`IS_gather 1.4s ease-in-out ${i*0.12}s both`,
+                animation:`IS_gather 1.4s ease-in-out ${i*0.1}s both`,
                 filter:'drop-shadow(0 0 16px rgba(168,85,247,1))',
                 zIndex:10,
               }}>{obj.emoji}</div>
