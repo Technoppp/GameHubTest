@@ -962,40 +962,39 @@ function IntroScreen({ onComplete }) {
   const [phase, setPhase] = useState(0);
   const [exiting, setExiting] = useState(false);
   const [typedText, setTypedText] = useState('');
+  const [typingDone, setTypingDone] = useState(false);
   const [showCursor, setShowCursor] = useState(true);
   const [whiteFlash, setWhiteFlash] = useState(false);
   const [shaking, setShaking] = useState(false);
+  const fullText = 'GAMEHUB';
 
-  // Static arrays — สร้างครั้งเดียว ไม่ re-render
-  const stars = useRef(Array.from({ length: 50 }, (_, i) => ({
+  const stars = useRef(Array.from({ length: 60 }, (_, i) => ({
     id: i, x: Math.random()*100, y: Math.random()*100,
-    size: Math.random()*2+0.5,
-    twinkle: 1.5 + Math.random()*3,
-    delay: Math.random()*3,
-    color: i % 3 === 0 ? '#a855f7' : i % 3 === 1 ? '#3b82f6' : '#e2e8f0',
+    size: Math.random()*1.5+0.5, dur: 1.5+Math.random()*3,
+    delay: Math.random()*4,
+    color: ['#c4b5fd','#93c5fd','#f0abfc','#e2e8f0'][i%4],
   }))).current;
 
-  const explosionParts = useRef(Array.from({ length: 36 }, (_, i) => {
-    const angle = (i / 36) * 360 * Math.PI / 180;
-    const dist = 100 + Math.random() * 120;
+  const gameObjects = useRef([
+    { emoji: '⚔️', tx:   0, ty: -260 },
+    { emoji: '🔫', tx: 247, ty:  -80 },
+    { emoji: '🎮', tx: 153, ty:  211 },
+    { emoji: '🛡️', tx:-153, ty:  211 },
+    { emoji: '🧱', tx:-247, ty:  -80 },
+  ]).current;
+
+  const explosionParts = useRef(Array.from({ length: 40 }, (_, i) => {
+    const angle = (i/40)*Math.PI*2;
+    const dist = 90+Math.random()*130;
     return {
       id: i,
-      ex: Math.cos(angle) * dist,
-      ey: Math.sin(angle) * dist,
-      size: Math.random() * 5 + 2,
-      color: ['#fff','#a855f7','#3b82f6','#ec4899','#facc15'][Math.floor(Math.random()*5)],
+      ex: Math.cos(angle)*dist,
+      ey: Math.sin(angle)*dist,
+      size: Math.random()*5+2,
+      color: ['#fff','#a855f7','#3b82f6','#ec4899','#facc15','#f97316'][i%6],
+      dur: 0.5+Math.random()*0.4,
     };
   })).current;
-
-  const gameObjects = [
-    { emoji: '⚔️', angle: 0 },
-    { emoji: '🔫', angle: 72 },
-    { emoji: '🎮', angle: 144 },
-    { emoji: '🛡️', angle: 216 },
-    { emoji: '🧱', angle: 288 },
-  ];
-
-  const fullText = 'GAMEHUB';
 
   useEffect(() => {
     const timers = [
@@ -1013,21 +1012,16 @@ function IntroScreen({ onComplete }) {
       setTimeout(() => setPhase(7), 4600),
       setTimeout(() => setPhase(8), 5500),
     ];
-
-    // Typewriter
-    let typeIdx = 0;
     let typeTimer = null;
     const startType = setTimeout(() => {
+      let i = 0;
       typeTimer = setInterval(() => {
-        typeIdx++;
-        setTypedText(fullText.slice(0, typeIdx));
-        if (typeIdx >= fullText.length) clearInterval(typeTimer);
+        i++;
+        setTypedText(fullText.slice(0, i));
+        if (i >= fullText.length) { clearInterval(typeTimer); setTypingDone(true); }
       }, 110);
     }, 3700);
-
-    // Cursor blink
     const cursorTimer = setInterval(() => setShowCursor(p => !p), 500);
-
     return () => {
       timers.forEach(clearTimeout);
       clearTimeout(startType);
@@ -1048,6 +1042,10 @@ function IntroScreen({ onComplete }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [phase, exiting]);
 
+  const W = 300;
+  const CX = W/2;
+  const CY = W/2;
+
   return (
     <div
       onClick={handleStart}
@@ -1062,82 +1060,46 @@ function IntroScreen({ onComplete }) {
       }}
     >
       <style>{`
-        @keyframes IS_twinkle { 0%,100%{opacity:0.15} 50%{opacity:1} }
-        @keyframes IS_voidDot { 0%,100%{transform:scale(1);opacity:0.4} 50%{transform:scale(2);opacity:1} }
-        @keyframes IS_drawCircleOuter { from{stroke-dashoffset:692} to{stroke-dashoffset:0} }
-        @keyframes IS_drawCircleMid   { from{stroke-dashoffset:503} to{stroke-dashoffset:0} }
-        @keyframes IS_drawCircleInner { from{stroke-dashoffset:314} to{stroke-dashoffset:0} }
-        @keyframes IS_drawCircle { from{stroke-dashoffset:inherit} to{stroke-dashoffset:0} }
-        @keyframes IS_crack {
-          from { stroke-dashoffset:250; opacity:0; }
-          to { stroke-dashoffset:0; opacity:0.7; }
-        }
-        @keyframes IS_portalSpin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-        @keyframes IS_portalSpinR { from{transform:rotate(0deg)} to{transform:rotate(-360deg)} }
+        @keyframes IS_twinkle   { 0%,100%{opacity:.08} 50%{opacity:1} }
+        @keyframes IS_scanline  { 0%{top:-2px} 100%{top:100%} }
+        @keyframes IS_nebula    { 0%,100%{transform:translate(-50%,-50%) scale(1)} 50%{transform:translate(-50%,-50%) scale(1.12)} }
+        @keyframes IS_drawOuter { from{stroke-dashoffset:692} to{stroke-dashoffset:0} }
+        @keyframes IS_drawMid   { from{stroke-dashoffset:503} to{stroke-dashoffset:0} }
+        @keyframes IS_drawInner { from{stroke-dashoffset:314} to{stroke-dashoffset:0} }
+        @keyframes IS_dotPulse  { 0%,100%{opacity:.4;r:5px} 50%{opacity:1;r:9px} }
+        @keyframes IS_portalSpin  { to{transform:rotate(360deg)} }
+        @keyframes IS_portalSpinR { to{transform:rotate(-360deg)} }
         @keyframes IS_gather {
-          0%   { transform:translate(var(--sx),var(--sy)) rotate(0deg) scale(0.3); opacity:0; }
-          20%  { opacity:1; }
-          85%  { transform:translate(calc(var(--sx)*0.05),calc(var(--sy)*0.05)) rotate(600deg) scale(0.3); opacity:1; }
-          100% { transform:translate(0,0) rotate(720deg) scale(0); opacity:0; }
+          0%   { transform:translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) rotate(0deg) scale(0.4); opacity:0; }
+          15%  { opacity:1; }
+          85%  { transform:translate(calc(-50% + calc(var(--tx) * 0.04)), calc(-50% + calc(var(--ty) * 0.04))) rotate(600deg) scale(0.5); opacity:.8; }
+          100% { transform:translate(-50%,-50%) rotate(720deg) scale(0); opacity:0; }
         }
-        @keyframes IS_shake {
-          0%,100%{transform:translate(0,0)}
-          25%{transform:translate(-5px,4px)}
-          50%{transform:translate(5px,-4px)}
-          75%{transform:translate(-3px,5px)}
-        }
-        @keyframes IS_shockwave {
-          0%   { transform:translate(-50%,-50%) scale(0); opacity:0.9; }
-          100% { transform:translate(-50%,-50%) scale(8); opacity:0; }
-        }
-        @keyframes IS_explode {
-          0%   { transform:translate(-50%,-50%) translate(0,0) scale(1); opacity:1; }
-          100% { transform:translate(-50%,-50%) translate(var(--ex),var(--ey)) scale(0); opacity:0; }
-        }
-        @keyframes IS_logoIn {
-          from { filter:blur(24px); opacity:0; transform:scale(0.65) translateY(20px); }
-          to   { filter:blur(0);   opacity:1; transform:scale(1) translateY(0); }
-        }
-        @keyframes IS_auraPulse {
-          0%,100%{opacity:0.15;transform:translate(-50%,-50%) scale(1)}
-          50%{opacity:0.5;transform:translate(-50%,-50%) scale(1.18)}
-        }
-        @keyframes IS_ray {
-          0%,100%{opacity:0;transform:translateX(-50%) scaleY(0.4) rotate(var(--deg))}
-          50%{opacity:0.18;transform:translateX(-50%) scaleY(1.3) rotate(var(--deg))}
-        }
-        @keyframes IS_fadeUp {
-          from{opacity:0;transform:translateY(18px)}
-          to{opacity:1;transform:translateY(0)}
-        }
-        @keyframes IS_pressPulse {
-          0%,100%{opacity:1;box-shadow:0 0 24px rgba(168,85,247,0.6)}
-          50%{opacity:0.35;box-shadow:0 0 6px rgba(168,85,247,0.1)}
-        }
-        @keyframes IS_scanline { 0%{transform:translateY(-100%)} 100%{transform:translateY(100vh)} }
-        @keyframes IS_nebula {
-          0%,100%{transform:translate(-50%,-50%) scale(1)}
-          50%{transform:translate(-50%,-50%) scale(1.12)}
-        }
-        @keyframes IS_float {
-          0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)}
-        }
+        @keyframes IS_shake     { 0%,100%{transform:translate(0,0)} 25%{transform:translate(-5px,4px)} 75%{transform:translate(5px,-4px)} }
+        @keyframes IS_shockwave { 0%{transform:translate(-50%,-50%) scale(0);opacity:.9} 100%{transform:translate(-50%,-50%) scale(8);opacity:0} }
+        @keyframes IS_explode   { 0%{opacity:1;transform:translate(-50%,-50%) translate(0,0)} 100%{opacity:0;transform:translate(-50%,-50%) translate(var(--ex),var(--ey))} }
+        @keyframes IS_logoIn    { from{filter:blur(24px);opacity:0;transform:scale(.65)} to{filter:blur(0);opacity:1;transform:scale(1)} }
+        @keyframes IS_float     { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+        @keyframes IS_aura      { 0%,100%{opacity:.15;transform:translate(-50%,-50%) scale(1)} 50%{opacity:.5;transform:translate(-50%,-50%) scale(1.18)} }
+        @keyframes IS_ray       { 0%,100%{opacity:0} 50%{opacity:.18} }
+        @keyframes IS_fadeUp    { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes IS_press     { 0%,100%{opacity:1;box-shadow:0 0 24px rgba(168,85,247,.6)} 50%{opacity:.35;box-shadow:0 0 6px rgba(168,85,247,.1)} }
       `}</style>
 
       {/* White flash */}
       {whiteFlash && (
-        <div style={{ position:'absolute', inset:0, background:'white', zIndex:50, pointerEvents:'none' }}/>
+        <div style={{ position:'absolute', inset:0, background:'white', zIndex:100, pointerEvents:'none' }}/>
       )}
 
       {/* Scanline */}
-      <div style={{ position:'absolute', inset:0, overflow:'hidden', pointerEvents:'none', zIndex:10 }}>
-        <div style={{ position:'absolute', left:0, right:0, height:'2px', background:'linear-gradient(transparent,rgba(168,85,247,0.25),transparent)', animation:'IS_scanline 3.5s linear infinite' }}/>
+      <div style={{ position:'absolute', inset:0, overflow:'hidden', pointerEvents:'none', zIndex:20 }}>
+        <div style={{ position:'absolute', left:0, right:0, height:2, background:'linear-gradient(transparent,rgba(168,85,247,.25),transparent)', animation:'IS_scanline 3.5s linear infinite' }}/>
       </div>
 
       {/* Grid */}
       <div style={{
         position:'absolute', inset:0, zIndex:0,
-        backgroundImage:'linear-gradient(rgba(59,130,246,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,0.05) 1px,transparent 1px)',
+        backgroundImage:'linear-gradient(rgba(59,130,246,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,.05) 1px,transparent 1px)',
         backgroundSize:'48px 48px',
         animation: shaking ? 'IS_shake 0.08s linear infinite' : 'none',
       }}/>
@@ -1147,11 +1109,8 @@ function IntroScreen({ onComplete }) {
         {stars.map(s => (
           <div key={s.id} style={{
             position:'absolute', left:`${s.x}%`, top:`${s.y}%`,
-            width:s.size, height:s.size, borderRadius:'50%',
-            background:s.color,
-            opacity: phase >= 1 ? undefined : 0,
-            transition:'opacity 1.5s',
-            animation:`IS_twinkle ${s.twinkle}s ease-in-out infinite ${s.delay}s`,
+            width:s.size, height:s.size, borderRadius:'50%', background:s.color,
+            animation:`IS_twinkle ${s.dur}s ease-in-out infinite ${s.delay}s`,
           }}/>
         ))}
       </div>
@@ -1160,9 +1119,9 @@ function IntroScreen({ onComplete }) {
       {phase >= 1 && (
         <div style={{ position:'absolute', inset:0, zIndex:1, pointerEvents:'none' }}>
           {[
-            { x:'25%', y:'35%', w:380, h:280, c:'rgba(139,92,246,0.09)', spd:9 },
-            { x:'72%', y:'62%', w:320, h:240, c:'rgba(59,130,246,0.07)', spd:12 },
-            { x:'50%', y:'18%', w:280, h:200, c:'rgba(236,72,153,0.06)', spd:15 },
+            { x:'25%', y:'35%', w:380, h:280, c:'rgba(139,92,246,.09)',  spd:9  },
+            { x:'72%', y:'62%', w:320, h:240, c:'rgba(59,130,246,.07)',  spd:12 },
+            { x:'50%', y:'18%', w:280, h:200, c:'rgba(236,72,153,.06)', spd:15 },
           ].map((n,i) => (
             <div key={i} style={{
               position:'absolute', left:n.x, top:n.y,
@@ -1175,137 +1134,79 @@ function IntroScreen({ onComplete }) {
         </div>
       )}
 
-      {/* ── CENTER STAGE ── */}
-      <div style={{
-        position:'relative', zIndex:5,
-        textAlign:'center',
-        animation: shaking ? 'IS_shake 0.08s linear infinite' : 'none',
-      }}>
+      {/* ── CENTER STAGE — everything centered perfectly ── */}
+      <div style={{ position:'relative', zIndex:5, display:'flex', alignItems:'center', justifyContent:'center', animation: shaking ? 'IS_shake 0.08s linear infinite' : 'none' }}>
 
-        {/* PHASE 0 — circles drawing themselves */}
+        {/* PHASE 0 — circles draw themselves, all centered in one SVG */}
         {phase === 0 && (
-          <div style={{ position:'relative', width:300, height:300 }}>
-            <svg width="300" height="300" viewBox="0 0 300 300" style={{ position:'absolute', inset:0 }}>
-              <defs>
-                <filter id="circleGlow">
-                  <feGaussianBlur stdDeviation="4" result="blur"/>
-                  <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-                </filter>
-              </defs>
-              {/* Outer circle */}
-              <circle cx="150" cy="150" r="110"
-                stroke="#a855f7" strokeWidth="2" fill="none"
-                strokeDasharray="692" strokeDashoffset="692"
-                filter="url(#circleGlow)"
-                style={{ animation:'IS_drawCircleOuter 0.5s ease-out 0s forwards' }}
-              />
-              {/* Middle circle */}
-              <circle cx="150" cy="150" r="80"
-                stroke="#3b82f6" strokeWidth="1.5" fill="none"
-                strokeDasharray="503" strokeDashoffset="503"
-                style={{ animation:'IS_drawCircleMid 0.5s ease-out 0.08s forwards' }}
-                opacity="0.7"
-              />
-              {/* Inner circle */}
-              <circle cx="150" cy="150" r="50"
-                stroke="#ec4899" strokeWidth="1" fill="none"
-                strokeDasharray="314" strokeDashoffset="314"
-                style={{ animation:'IS_drawCircleInner 0.5s ease-out 0.16s forwards' }}
-                opacity="0.5"
-              />
-              {/* Center glow dot */}
-              <circle cx="150" cy="150" r="5" fill="white" filter="url(#circleGlow)"
-                style={{ animation:'IS_voidDot 0.6s ease-in-out infinite' }}
-              />
-            </svg>
-          </div>
+          <svg width={W} height={W} viewBox={`0 0 ${W} ${W}`} style={{ overflow:'visible' }}>
+            <defs>
+              <filter id="IS_glow">
+                <feGaussianBlur stdDeviation="4" result="b"/>
+                <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+            </defs>
+            <circle cx={CX} cy={CY} r="110" stroke="#a855f7" strokeWidth="2" fill="none"
+              strokeDasharray="692" strokeDashoffset="692" filter="url(#IS_glow)"
+              style={{ animation:'IS_drawOuter 0.5s ease-out 0s forwards' }}/>
+            <circle cx={CX} cy={CY} r="80" stroke="#3b82f6" strokeWidth="1.5" fill="none"
+              strokeDasharray="503" strokeDashoffset="503" opacity="0.7"
+              style={{ animation:'IS_drawMid 0.5s ease-out 0.08s forwards' }}/>
+            <circle cx={CX} cy={CY} r="50" stroke="#ec4899" strokeWidth="1" fill="none"
+              strokeDasharray="314" strokeDashoffset="314" opacity="0.5"
+              style={{ animation:'IS_drawInner 0.5s ease-out 0.16s forwards' }}/>
+            <circle cx={CX} cy={CY} r="6" fill="white" filter="url(#IS_glow)"
+              style={{ animation:'IS_dotPulse 0.7s ease-in-out infinite' }}/>
+          </svg>
         )}
 
-        {/* PHASE 1-4 — Portal */}
+        {/* PHASE 1-4 — Portal + game objects */}
         {phase >= 1 && phase <= 4 && (
-          <div style={{ position:'relative', width:240, height:240, margin:'0 auto' }}>
-            {/* Outer ring */}
-            <div style={{
-              position:'absolute', inset:0, borderRadius:'50%',
-              border: `2px solid ${phase >= 3 ? '#fff' : '#a855f7'}`,
-              boxShadow: phase >= 4
-                ? '0 0 80px white, 0 0 160px rgba(168,85,247,0.8)'
-                : phase >= 3
-                ? '0 0 50px rgba(168,85,247,0.9), 0 0 100px rgba(59,130,246,0.5)'
-                : '0 0 25px rgba(168,85,247,0.5)',
-              animation:'IS_portalSpin 3s linear infinite',
-              transition:'box-shadow 0.3s, border-color 0.3s',
-            }}/>
-            {/* Middle ring */}
-            <div style={{
-              position:'absolute', inset:22, borderRadius:'50%',
-              border:'1.5px dashed rgba(168,85,247,0.45)',
-              animation:'IS_portalSpinR 5s linear infinite',
-            }}/>
-            {/* Inner ring */}
-            <div style={{
-              position:'absolute', inset:44, borderRadius:'50%',
-              border:'1px solid rgba(59,130,246,0.35)',
-              animation:'IS_portalSpin 2s linear infinite',
-            }}/>
-            {/* Core glow */}
-            <div style={{
-              position:'absolute', inset:56, borderRadius:'50%',
-              background:`radial-gradient(circle, ${
-                phase >= 4 ? 'rgba(255,255,255,0.6)' :
-                phase >= 3 ? 'rgba(168,85,247,0.5)' :
-                'rgba(139,92,246,0.3)'
-              } 0%, transparent 100%)`,
-              filter:'blur(4px)',
-              transition:'background 0.3s',
-            }}/>
+          <div style={{ position:'relative', width:W, height:W, display:'flex', alignItems:'center', justifyContent:'center' }}>
+            {/* Portal rings — centered via flex */}
+            <div style={{ position:'absolute', width:240, height:240, borderRadius:'50%', border:'2px solid #a855f7',
+              boxShadow: phase >= 4 ? '0 0 80px white,0 0 160px rgba(168,85,247,.8)' : phase >= 3 ? '0 0 50px rgba(168,85,247,.9)' : '0 0 25px rgba(168,85,247,.5)',
+              transition:'box-shadow 0.3s', animation:'IS_portalSpin 3s linear infinite' }}/>
+            <div style={{ position:'absolute', width:196, height:196, borderRadius:'50%', border:'1.5px dashed rgba(168,85,247,.4)', animation:'IS_portalSpinR 5s linear infinite' }}/>
+            <div style={{ position:'absolute', width:152, height:152, borderRadius:'50%', border:'1px solid rgba(59,130,246,.35)', animation:'IS_portalSpin 2s linear infinite' }}/>
+            <div style={{ position:'absolute', width:108, height:108, borderRadius:'50%',
+              background:`radial-gradient(circle,${phase>=4?'rgba(255,255,255,.5)':phase>=3?'rgba(168,85,247,.45)':'rgba(139,92,246,.25)'} 0%,transparent 100%)`,
+              filter:'blur(4px)', transition:'background 0.3s' }}/>
 
-            {/* Game objects — phase 2 */}
-            {phase >= 2 && phase <= 4 && gameObjects.map((obj, i) => {
-              const rad = (obj.angle - 90) * Math.PI / 180;
-              const sx = Math.cos(rad) * 280;
-              const sy = Math.sin(rad) * 280;
-              return (
-                <div key={i} style={{
-                  position:'absolute',
-                  top:'50%', left:'50%',
-                  fontSize:'2.6rem',
-                  lineHeight:1,
-                  marginTop:'-1.3rem',
-                  marginLeft:'-1.3rem',
-                  '--sx': `${sx}px`,
-                  '--sy': `${sy}px`,
-                  animation:`IS_gather 1.4s ease-in-out ${i*0.12}s both`,
-                  filter:'drop-shadow(0 0 14px rgba(168,85,247,1))',
-                  zIndex:10,
-                }}>{obj.emoji}</div>
-              );
-            })}
+            {/* Game objects */}
+            {phase >= 2 && phase <= 4 && gameObjects.map((obj, i) => (
+              <div key={i} style={{
+                position:'absolute',
+                top:'50%', left:'50%',
+                fontSize:'3rem', lineHeight:1,
+                '--tx': `${obj.tx}px`,
+                '--ty': `${obj.ty}px`,
+                animation:`IS_gather 1.4s ease-in-out ${i*0.12}s both`,
+                filter:'drop-shadow(0 0 16px rgba(168,85,247,1))',
+                zIndex:10,
+              }}>{obj.emoji}</div>
+            ))}
           </div>
         )}
 
         {/* PHASE 5 — Explosion */}
         {phase === 5 && (
-          <div style={{ position:'relative', width:300, height:300 }}>
-            {/* Shockwaves */}
-            {[0, 0.1, 0.2].map((d,i) => (
+          <div style={{ position:'relative', width:W, height:W, display:'flex', alignItems:'center', justifyContent:'center' }}>
+            {[0,0.1,0.2].map((d,i) => (
               <div key={i} style={{
                 position:'absolute', top:'50%', left:'50%',
-                width: 50+i*20, height: 50+i*20,
-                borderRadius:'50%',
+                width:50+i*20, height:50+i*20, borderRadius:'50%',
                 border:`${2-i*0.5}px solid rgba(255,255,255,${0.8-i*0.2})`,
                 animation:`IS_shockwave 0.7s ease-out ${d}s both`,
               }}/>
             ))}
-            {/* Particles */}
             {explosionParts.map(p => (
               <div key={p.id} style={{
                 position:'absolute', top:'50%', left:'50%',
                 width:p.size, height:p.size, borderRadius:'50%',
-                background:p.color,
-                boxShadow:`0 0 8px ${p.color}`,
+                background:p.color, boxShadow:`0 0 8px ${p.color}`,
                 '--ex':`${p.ex}px`, '--ey':`${p.ey}px`,
-                animation:'IS_explode 0.8s ease-out forwards',
+                animation:`IS_explode ${p.dur}s ease-out forwards`,
               }}/>
             ))}
           </div>
@@ -1313,64 +1214,50 @@ function IntroScreen({ onComplete }) {
 
         {/* PHASE 6-8 — Logo */}
         {phase >= 6 && (
-          <div style={{ animation:'IS_logoIn 0.9s cubic-bezier(0.34,1.3,0.64,1) forwards' }}>
+          <div style={{ textAlign:'center', animation:'IS_logoIn 0.9s cubic-bezier(0.34,1.3,0.64,1) forwards' }}>
 
-            {/* Aura */}
+            {/* Aura + rays */}
             {phase >= 7 && (
-              <>
-                <div style={{
-                  position:'absolute', top:'50%', left:'50%',
-                  width:340, height:180, borderRadius:'50%',
-                  background:'radial-gradient(ellipse,rgba(139,92,246,0.3) 0%,transparent 70%)',
-                  filter:'blur(24px)',
-                  animation:'IS_auraPulse 2.8s ease-in-out infinite',
-                }}/>
-                <div style={{
-                  position:'absolute', top:'50%', left:'50%',
-                  width:520, height:260, borderRadius:'50%',
-                  background:'radial-gradient(ellipse,rgba(59,130,246,0.15) 0%,transparent 70%)',
-                  filter:'blur(36px)',
-                  animation:'IS_auraPulse 3.5s ease-in-out infinite 0.5s',
-                }}/>
-                {/* Light rays */}
-                {[0,30,60,90,120,150,180,210,240,270,300,330].map((deg,i)=>(
+              <div style={{ position:'absolute', top:'50%', left:'50%', width:0, height:0, pointerEvents:'none' }}>
+                <div style={{ position:'absolute', width:360, height:200, borderRadius:'50%', background:'radial-gradient(ellipse,rgba(139,92,246,.3) 0%,transparent 70%)', filter:'blur(24px)', animation:'IS_aura 2.8s ease-in-out infinite', transform:'translate(-50%,-50%)' }}/>
+                <div style={{ position:'absolute', width:540, height:280, borderRadius:'50%', background:'radial-gradient(ellipse,rgba(59,130,246,.15) 0%,transparent 70%)', filter:'blur(36px)', animation:'IS_aura 3.5s ease-in-out infinite 0.5s', transform:'translate(-50%,-50%)' }}/>
+                {[0,30,60,90,120,150,180,210,240,270,300,330].map((deg,i) => (
                   <div key={i} style={{
-                    position:'absolute', top:'40%', left:'50%',
-                    width:2, height:180,
-                    background:'linear-gradient(to bottom,rgba(168,85,247,0.35),transparent)',
+                    position:'absolute', top:0, left:0, width:2, height:200,
+                    background:'linear-gradient(to bottom,rgba(168,85,247,.35),transparent)',
                     transformOrigin:'top center',
-                    '--deg':`${deg}deg`,
+                    transform:`rotate(${deg}deg)`,
                     animation:`IS_ray ${3+i*0.2}s ease-in-out infinite ${i*0.12}s`,
                   }}/>
                 ))}
-              </>
+              </div>
             )}
 
             {/* Logo text */}
-            <div style={{
-              position:'relative', zIndex:10,
-              animation: phase >= 7 ? 'IS_float 4s ease-in-out infinite' : 'none',
-            }}>
+            <div style={{ position:'relative', zIndex:10, animation: phase >= 7 ? 'IS_float 4s ease-in-out infinite' : 'none' }}>
               <h1 style={{
                 fontFamily:"'Orbitron',sans-serif",
                 fontSize:'clamp(3rem,9vw,5.5rem)',
                 fontWeight:900, letterSpacing:'0.08em', lineHeight:1,
-                marginBottom:12,
-                filter:'drop-shadow(0 0 40px rgba(168,85,247,0.9)) drop-shadow(0 0 80px rgba(59,130,246,0.5))',
+                margin:0, marginBottom:12,
+                filter:'drop-shadow(0 0 40px rgba(168,85,247,.9)) drop-shadow(0 0 80px rgba(59,130,246,.5))',
+                whiteSpace:'nowrap',
               }}>
                 <span style={{ background:'linear-gradient(135deg,#a855f7,#3b82f6)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>
                   {typedText.slice(0,4)}
                 </span>
                 <span style={{ color:'white' }}>
-                  {typedText.slice(4)}{showCursor && typedText.length < fullText.length ? <span style={{ color:'#a855f7', WebkitTextFillColor:'#a855f7' }}>|</span> : null}
+                  {typedText.slice(4)}
                 </span>
+                {!typingDone && showCursor && (
+                  <span style={{ color:'#a855f7', WebkitTextFillColor:'#a855f7' }}>|</span>
+                )}
               </h1>
 
               {phase >= 7 && (
                 <p style={{
-                  color:'#475569', fontSize:'0.68rem',
-                  letterSpacing:'0.3em',
-                  fontFamily:"'Space Mono',monospace",
+                  color:'#475569', fontSize:'0.68rem', letterSpacing:'0.3em',
+                  fontFamily:"'Space Mono',monospace", margin:0,
                   marginBottom: phase >= 8 ? 40 : 0,
                   animation:'IS_fadeUp 1s ease-out forwards',
                 }}>
@@ -1381,24 +1268,18 @@ function IntroScreen({ onComplete }) {
 
             {/* PRESS START */}
             {phase >= 8 && (
-              <div style={{ animation:'IS_fadeUp 0.8s ease-out forwards' }}>
+              <div style={{ animation:'IS_fadeUp 0.8s ease-out forwards', marginTop:8 }}>
                 <button
                   onClick={handleStart}
                   style={{
-                    background:'none',
-                    border:'2px solid #a855f7',
-                    borderRadius:'8px',
-                    color:'#a855f7',
-                    fontSize:'0.85rem',
-                    letterSpacing:'0.25em',
-                    fontWeight:700,
-                    padding:'14px 44px',
-                    cursor:'pointer',
+                    background:'none', border:'2px solid #a855f7', borderRadius:8,
+                    color:'#a855f7', fontSize:'0.85rem', letterSpacing:'0.25em',
+                    fontWeight:700, padding:'14px 44px', cursor:'pointer',
                     fontFamily:"'Space Mono',monospace",
-                    animation:'IS_pressPulse 1.1s ease-in-out infinite',
+                    animation:'IS_press 1.1s ease-in-out infinite',
                   }}
-                  onMouseEnter={e=>{e.currentTarget.style.background='rgba(168,85,247,0.15)';e.currentTarget.style.boxShadow='0 0 50px rgba(168,85,247,0.6)';}}
-                  onMouseLeave={e=>{e.currentTarget.style.background='none';e.currentTarget.style.boxShadow='none';}}
+                  onMouseEnter={e=>{ e.currentTarget.style.background='rgba(168,85,247,.15)'; e.currentTarget.style.boxShadow='0 0 50px rgba(168,85,247,.6)'; }}
+                  onMouseLeave={e=>{ e.currentTarget.style.background='none'; e.currentTarget.style.boxShadow='none'; }}
                 >
                   ▶ &nbsp;PRESS START
                 </button>
