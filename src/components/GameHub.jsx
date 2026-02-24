@@ -1064,6 +1064,7 @@ function IntroScreen({ onComplete }) {
       <style>{`
         @keyframes IS_twinkle { 0%,100%{opacity:0.15} 50%{opacity:1} }
         @keyframes IS_voidDot { 0%,100%{transform:scale(1);opacity:0.4} 50%{transform:scale(2);opacity:1} }
+        @keyframes IS_drawCircle { from{stroke-dashoffset:inherit} to{stroke-dashoffset:0} }
         @keyframes IS_crack {
           from { stroke-dashoffset:250; opacity:0; }
           to { stroke-dashoffset:0; opacity:0.7; }
