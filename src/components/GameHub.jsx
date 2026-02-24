@@ -963,117 +963,89 @@ function IntroScreen({ onComplete }) {
   const [exiting, setExiting] = useState(false);
   const [typedText, setTypedText] = useState('');
   const [showCursor, setShowCursor] = useState(true);
-  const [shakeScreen, setShakeScreen] = useState(false);
   const [whiteFlash, setWhiteFlash] = useState(false);
-  const [portalRotation, setPortalRotation] = useState(0);
-  const [cameraScale, setCameraScale] = useState(1);
-  const [camX, setCamX] = useState(0);
-  const [camY, setCamY] = useState(0);
-  const fullText = 'GAMEHUB';
+  const [shaking, setShaking] = useState(false);
 
-  // Ambient particles
-  const ambientParticles = Array.from({ length: 40 }, (_, i) => ({
+  // Static arrays — สร้างครั้งเดียว ไม่ re-render
+  const stars = useRef(Array.from({ length: 50 }, (_, i) => ({
     id: i, x: Math.random()*100, y: Math.random()*100,
-    size: Math.random()*2+1, speed: Math.random()*3+2,
-    color: ['#a855f7','#3b82f6','#ec4899','#8b5cf6'][Math.floor(Math.random()*4)],
-    delay: Math.random()*5,
-  }));
+    size: Math.random()*2+0.5,
+    twinkle: 1.5 + Math.random()*3,
+    delay: Math.random()*3,
+    color: i % 3 === 0 ? '#a855f7' : i % 3 === 1 ? '#3b82f6' : '#e2e8f0',
+  }))).current;
 
-  // Stars parallax layers
-  const stars = Array.from({ length: 60 }, (_, i) => ({
-    id: i, x: Math.random()*100, y: Math.random()*100,
-    size: Math.random()*2+0.5, layer: Math.floor(Math.random()*3),
-    twinkleDelay: Math.random()*3,
-  }));
+  const explosionParts = useRef(Array.from({ length: 36 }, (_, i) => {
+    const angle = (i / 36) * 360 * Math.PI / 180;
+    const dist = 100 + Math.random() * 120;
+    return {
+      id: i,
+      ex: Math.cos(angle) * dist,
+      ey: Math.sin(angle) * dist,
+      size: Math.random() * 5 + 2,
+      color: ['#fff','#a855f7','#3b82f6','#ec4899','#facc15'][Math.floor(Math.random()*5)],
+    };
+  })).current;
 
-  // Game objects for phase 2
   const gameObjects = [
-    { emoji: '⚔️', startX: -120, startY: -80, delay: 0 },
-    { emoji: '🔫', startX: 120, startY: -60, delay: 0.1 },
-    { emoji: '🎮', startX: -100, startY: 60, delay: 0.2 },
-    { emoji: '🛡️', startX: 100, startY: 80, delay: 0.3 },
-    { emoji: '🧱', startX: 0, startY: -120, delay: 0.15 },
+    { emoji: '⚔️', angle: 0 },
+    { emoji: '🔫', angle: 72 },
+    { emoji: '🎮', angle: 144 },
+    { emoji: '🛡️', angle: 216 },
+    { emoji: '🧱', angle: 288 },
   ];
 
-  // Explosion particles for phase 5
-  const explosionParticles = Array.from({ length: 50 }, (_, i) => ({
-    id: i,
-    angle: (i / 50) * 360,
-    distance: Math.random()*200+80,
-    size: Math.random()*6+2,
-    color: ['#fff','#a855f7','#3b82f6','#ec4899','#facc15','#f97316'][Math.floor(Math.random()*6)],
-    speed: Math.random()*0.8+0.5,
-  }));
+  const fullText = 'GAMEHUB';
 
   useEffect(() => {
-    // Portal rotation
-    const rotTimer = setInterval(() => {
-      setPortalRotation(r => r + 1.5);
-    }, 16);
-
-    // Parallax slow drift
-    let driftY = 0;
-    const driftTimer = setInterval(() => {
-      driftY += 0.02;
-      setCamY(Math.sin(driftY) * 5);
-    }, 16);
-
-    // Timeline
-    const t = [
-      setTimeout(() => setPhase(1), 500),   // portal
-      setTimeout(() => { setPhase(2); setCameraScale(1.03); }, 1200), // gathering
-      setTimeout(() => { setPhase(3); setShakeScreen(true); setCameraScale(1.06); }, 2400), // compression
-      setTimeout(() => { setPhase(4); setShakeScreen(false); setCameraScale(1.08); }, 3000), // freeze
-      setTimeout(() => {                      // explosion
+    const timers = [
+      setTimeout(() => setPhase(1), 500),
+      setTimeout(() => setPhase(2), 1200),
+      setTimeout(() => { setPhase(3); setShaking(true); }, 2400),
+      setTimeout(() => { setPhase(4); setShaking(false); }, 3000),
+      setTimeout(() => {
         setPhase(5);
         setWhiteFlash(true);
-        setShakeScreen(true);
-        setCameraScale(0.95);
-        setTimeout(() => setWhiteFlash(false), 300);
-        setTimeout(() => setShakeScreen(false), 400);
+        setShaking(true);
+        setTimeout(() => { setWhiteFlash(false); setShaking(false); }, 350);
       }, 3150),
-      setTimeout(() => { setPhase(6); setCameraScale(1.02); setShakeScreen(false); }, 3600), // logo
-      setTimeout(() => setPhase(7), 4600),   // hero
-      setTimeout(() => setPhase(8), 5500),   // cta
+      setTimeout(() => setPhase(6), 3600),
+      setTimeout(() => setPhase(7), 4600),
+      setTimeout(() => setPhase(8), 5500),
     ];
+
+    // Typewriter
+    let typeIdx = 0;
+    let typeTimer = null;
+    const startType = setTimeout(() => {
+      typeTimer = setInterval(() => {
+        typeIdx++;
+        setTypedText(fullText.slice(0, typeIdx));
+        if (typeIdx >= fullText.length) clearInterval(typeTimer);
+      }, 110);
+    }, 3700);
 
     // Cursor blink
     const cursorTimer = setInterval(() => setShowCursor(p => !p), 500);
 
-    // Typewriter starts at phase 6 (3.6s)
-    let typeTimer = null;
-    const startType = setTimeout(() => {
-      let i = 0;
-      typeTimer = setInterval(() => {
-        i++;
-        setTypedText(fullText.slice(0, i));
-        if (i >= fullText.length) clearInterval(typeTimer);
-      }, 110);
-    }, 3700);
-
     return () => {
-      t.forEach(clearTimeout);
-      clearInterval(rotTimer);
-      clearInterval(driftTimer);
-      clearInterval(cursorTimer);
+      timers.forEach(clearTimeout);
       clearTimeout(startType);
       if (typeTimer) clearInterval(typeTimer);
+      clearInterval(cursorTimer);
     };
   }, []);
 
   const handleStart = () => {
     if (exiting || phase < 8) return;
     setExiting(true);
-    setTimeout(() => onComplete(), 1000);
-  };
-
-  const handleKey = (e) => {
-    if (e.key === 'Enter' || e.key === ' ') handleStart();
+    setTimeout(onComplete, 900);
   };
 
   useEffect(() => {
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
+    const onKey = (e) => { if ((e.key === 'Enter' || e.key === ' ') && phase >= 8) handleStart(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, [phase, exiting]);
 
   return (
@@ -1081,418 +1053,345 @@ function IntroScreen({ onComplete }) {
       onClick={handleStart}
       style={{
         position: 'fixed', inset: 0, zIndex: 9999,
-        background: '#000008',
+        background: '#000010',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         cursor: phase >= 8 ? 'pointer' : 'default',
         opacity: exiting ? 0 : 1,
-        transition: exiting ? 'opacity 1s ease' : 'none',
+        transition: exiting ? 'opacity 0.9s ease' : 'none',
         overflow: 'hidden',
       }}
     >
       <style>{`
-        @keyframes voidPulse {
-          0%,100% { opacity:0.3; transform:scale(1); }
-          50% { opacity:1; transform:scale(1.5); }
+        @keyframes IS_twinkle { 0%,100%{opacity:0.15} 50%{opacity:1} }
+        @keyframes IS_voidDot { 0%,100%{transform:scale(1);opacity:0.4} 50%{transform:scale(2);opacity:1} }
+        @keyframes IS_crack {
+          from { stroke-dashoffset:250; opacity:0; }
+          to { stroke-dashoffset:0; opacity:0.7; }
         }
-        @keyframes crackGrow {
-          from { stroke-dashoffset: 200; opacity:0; }
-          to { stroke-dashoffset: 0; opacity:1; }
+        @keyframes IS_portalSpin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+        @keyframes IS_portalSpinR { from{transform:rotate(0deg)} to{transform:rotate(-360deg)} }
+        @keyframes IS_gather {
+          0%   { transform:translate(var(--sx),var(--sy)) rotate(0deg) scale(0.3); opacity:0; }
+          20%  { opacity:1; }
+          85%  { transform:translate(calc(var(--sx)*0.05),calc(var(--sy)*0.05)) rotate(600deg) scale(0.3); opacity:1; }
+          100% { transform:translate(0,0) rotate(720deg) scale(0); opacity:0; }
         }
-        @keyframes starTwinkle {
-          0%,100% { opacity:0.15; } 50% { opacity:1; }
+        @keyframes IS_shake {
+          0%,100%{transform:translate(0,0)}
+          25%{transform:translate(-5px,4px)}
+          50%{transform:translate(5px,-4px)}
+          75%{transform:translate(-3px,5px)}
         }
-        @keyframes ambientFloat {
-          0% { transform:translateY(0px) translateX(0px); opacity:0.7; }
-          25% { transform:translateY(-15px) translateX(5px); opacity:1; }
-          75% { transform:translateY(10px) translateX(-5px); opacity:0.5; }
-          100% { transform:translateY(0px) translateX(0px); opacity:0.7; }
+        @keyframes IS_shockwave {
+          0%   { transform:translate(-50%,-50%) scale(0); opacity:0.9; }
+          100% { transform:translate(-50%,-50%) scale(8); opacity:0; }
         }
-        @keyframes portalSpin {
-          from { transform:rotate(0deg); }
-          to { transform:rotate(360deg); }
+        @keyframes IS_explode {
+          0%   { transform:translate(-50%,-50%) translate(0,0) scale(1); opacity:1; }
+          100% { transform:translate(-50%,-50%) translate(var(--ex),var(--ey)) scale(0); opacity:0; }
         }
-        @keyframes portalSpinRev {
-          from { transform:rotate(0deg); }
-          to { transform:rotate(-360deg); }
+        @keyframes IS_logoIn {
+          from { filter:blur(24px); opacity:0; transform:scale(0.65) translateY(20px); }
+          to   { filter:blur(0);   opacity:1; transform:scale(1) translateY(0); }
         }
-        @keyframes gatherObj {
-          0% { opacity:0; transform:translate(var(--sx),var(--sy)) rotate(0deg) scale(0.5); }
-          30% { opacity:1; }
-          100% { opacity:0; transform:translate(0,0) rotate(720deg) scale(0); }
+        @keyframes IS_auraPulse {
+          0%,100%{opacity:0.15;transform:translate(-50%,-50%) scale(1)}
+          50%{opacity:0.5;transform:translate(-50%,-50%) scale(1.18)}
         }
-        @keyframes compressionShake {
-          0%,100% { transform:translate(0,0); }
-          20% { transform:translate(-4px,3px); }
-          40% { transform:translate(4px,-3px); }
-          60% { transform:translate(-3px,-4px); }
-          80% { transform:translate(3px,4px); }
+        @keyframes IS_ray {
+          0%,100%{opacity:0;transform:translateX(-50%) scaleY(0.4) rotate(var(--deg))}
+          50%{opacity:0.18;transform:translateX(-50%) scaleY(1.3) rotate(var(--deg))}
         }
-        @keyframes explodeParticle {
-          0% { opacity:1; transform:translate(0,0) scale(1); }
-          100% { opacity:0; transform:translate(var(--ex),var(--ey)) scale(0); }
+        @keyframes IS_fadeUp {
+          from{opacity:0;transform:translateY(18px)}
+          to{opacity:1;transform:translateY(0)}
         }
-        @keyframes shockwave {
-          0% { transform:scale(0); opacity:0.8; }
-          100% { transform:scale(6); opacity:0; }
+        @keyframes IS_pressPulse {
+          0%,100%{opacity:1;box-shadow:0 0 24px rgba(168,85,247,0.6)}
+          50%{opacity:0.35;box-shadow:0 0 6px rgba(168,85,247,0.1)}
         }
-        @keyframes logoBlur {
-          from { filter:blur(20px); opacity:0; transform:scale(0.7); }
-          to { filter:blur(0); opacity:1; transform:scale(1); }
+        @keyframes IS_scanline { 0%{transform:translateY(-100%)} 100%{transform:translateY(100vh)} }
+        @keyframes IS_nebula {
+          0%,100%{transform:translate(-50%,-50%) scale(1)}
+          50%{transform:translate(-50%,-50%) scale(1.12)}
         }
-        @keyframes auraPulse {
-          0%,100% { opacity:0.2; transform:scale(1); }
-          50% { opacity:0.6; transform:scale(1.15); }
+        @keyframes IS_float {
+          0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)}
         }
-        @keyframes lightRay {
-          0%,100% { opacity:0; transform:scaleY(0.5) rotate(var(--deg)); }
-          50% { opacity:0.15; transform:scaleY(1.2) rotate(var(--deg)); }
-        }
-        @keyframes smokeFloat {
-          0% { opacity:0.6; transform:translateY(0) scale(1); }
-          100% { opacity:0; transform:translateY(-60px) scale(2); }
-        }
-        @keyframes pressPulse {
-          0%,100% { opacity:1; box-shadow:0 0 25px rgba(168,85,247,0.5); transform:scale(1); }
-          50% { opacity:0.4; box-shadow:0 0 8px rgba(168,85,247,0.1); transform:scale(0.97); }
-        }
-        @keyframes nebulaDrift {
-          0%,100% { transform:translate(0,0) scale(1); }
-          33% { transform:translate(15px,-10px) scale(1.05); }
-          66% { transform:translate(-10px,8px) scale(0.97); }
-        }
-        @keyframes energyCrack {
-          0% { stroke-dashoffset:300; opacity:0; }
-          30% { opacity:1; }
-          100% { stroke-dashoffset:0; opacity:0.6; }
-        }
-        @keyframes scanline { 0% { transform:translateY(-100%); } 100% { transform:translateY(100vh); } }
-        @keyframes ctaFadeIn { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
-        .intro-shake { animation: compressionShake 0.1s linear infinite; }
-        .intro-press { animation: pressPulse 1.1s ease-in-out infinite; }
-        .aura-ring { animation: auraPulse 2.5s ease-in-out infinite; }
       `}</style>
 
-      {/* ── WHITE FLASH ── */}
+      {/* White flash */}
       {whiteFlash && (
-        <div style={{ position:'absolute', inset:0, background:'white', zIndex:100, pointerEvents:'none', opacity: whiteFlash ? 1 : 0, transition:'opacity 0.3s' }}/>
+        <div style={{ position:'absolute', inset:0, background:'white', zIndex:50, pointerEvents:'none' }}/>
       )}
 
-      {/* ── SCANLINE ── */}
-      <div style={{ position:'absolute', inset:0, overflow:'hidden', pointerEvents:'none', zIndex:2 }}>
-        <div style={{ position:'absolute', left:0, right:0, height:'2px', background:'linear-gradient(transparent,rgba(168,85,247,0.2),transparent)', animation:'scanline 4s linear infinite' }}/>
+      {/* Scanline */}
+      <div style={{ position:'absolute', inset:0, overflow:'hidden', pointerEvents:'none', zIndex:10 }}>
+        <div style={{ position:'absolute', left:0, right:0, height:'2px', background:'linear-gradient(transparent,rgba(168,85,247,0.25),transparent)', animation:'IS_scanline 3.5s linear infinite' }}/>
       </div>
 
-      {/* ── CAMERA LAYER ── */}
+      {/* Grid */}
       <div style={{
-        position:'absolute', inset:0,
-        transform: `scale(${cameraScale}) translate(${camX}px,${camY}px)`,
-        transition: phase === 5 ? 'transform 0.1s' : 'transform 1.2s ease-out',
-        animation: shakeScreen ? 'compressionShake 0.08s linear infinite' : 'none',
-      }}>
+        position:'absolute', inset:0, zIndex:0,
+        backgroundImage:'linear-gradient(rgba(59,130,246,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,0.05) 1px,transparent 1px)',
+        backgroundSize:'48px 48px',
+        animation: shaking ? 'IS_shake 0.08s linear infinite' : 'none',
+      }}/>
 
-        {/* ── LAYER 1: STARS ── */}
-        <div style={{ position:'absolute', inset:0, zIndex:0 }}>
-          {stars.map(s => (
-            <div key={s.id} style={{
-              position:'absolute', left:`${s.x}%`, top:`${s.y}%`,
-              width: s.size, height: s.size, borderRadius:'50%',
-              background: s.layer === 0 ? '#94a3b8' : s.layer === 1 ? '#a855f7' : '#3b82f6',
-              opacity: phase >= 1 ? 1 : 0,
-              transition: `opacity ${1 + s.layer*0.5}s ease`,
-              animation: `starTwinkle ${2 + s.twinkleDelay}s ease-in-out infinite ${s.twinkleDelay}s`,
-              filter: s.layer === 2 ? 'blur(0.5px)' : 'none',
+      {/* Stars */}
+      <div style={{ position:'absolute', inset:0, zIndex:1, pointerEvents:'none' }}>
+        {stars.map(s => (
+          <div key={s.id} style={{
+            position:'absolute', left:`${s.x}%`, top:`${s.y}%`,
+            width:s.size, height:s.size, borderRadius:'50%',
+            background:s.color,
+            opacity: phase >= 1 ? undefined : 0,
+            transition:'opacity 1.5s',
+            animation:`IS_twinkle ${s.twinkle}s ease-in-out infinite ${s.delay}s`,
+          }}/>
+        ))}
+      </div>
+
+      {/* Nebula */}
+      {phase >= 1 && (
+        <div style={{ position:'absolute', inset:0, zIndex:1, pointerEvents:'none' }}>
+          {[
+            { x:'25%', y:'35%', w:380, h:280, c:'rgba(139,92,246,0.09)', spd:9 },
+            { x:'72%', y:'62%', w:320, h:240, c:'rgba(59,130,246,0.07)', spd:12 },
+            { x:'50%', y:'18%', w:280, h:200, c:'rgba(236,72,153,0.06)', spd:15 },
+          ].map((n,i) => (
+            <div key={i} style={{
+              position:'absolute', left:n.x, top:n.y,
+              width:n.w, height:n.h, borderRadius:'50%',
+              background:n.c, filter:'blur(55px)',
+              transform:'translate(-50%,-50%)',
+              animation:`IS_nebula ${n.spd}s ease-in-out infinite ${i}s`,
             }}/>
           ))}
         </div>
+      )}
 
-        {/* ── LAYER 2: NEBULA FOG ── */}
-        {phase >= 1 && (
-          <div style={{ position:'absolute', inset:0, zIndex:1, pointerEvents:'none' }}>
-            {[
-              { x:'20%', y:'30%', color:'rgba(139,92,246,0.08)', size:400, delay:0 },
-              { x:'70%', y:'60%', color:'rgba(59,130,246,0.06)', size:350, delay:1 },
-              { x:'50%', y:'20%', color:'rgba(236,72,153,0.05)', size:300, delay:2 },
-            ].map((n,i) => (
+      {/* ── CENTER STAGE ── */}
+      <div style={{
+        position:'relative', zIndex:5,
+        textAlign:'center',
+        animation: shaking ? 'IS_shake 0.08s linear infinite' : 'none',
+      }}>
+
+        {/* PHASE 0 — void dot + cracks */}
+        {phase === 0 && (
+          <div style={{ position:'relative', width:280, height:280 }}>
+            <div style={{
+              position:'absolute', top:'50%', left:'50%',
+              width:10, height:10, borderRadius:'50%',
+              background:'white',
+              transform:'translate(-50%,-50%)',
+              boxShadow:'0 0 30px white, 0 0 80px rgba(168,85,247,0.6)',
+              animation:'IS_voidDot 0.6s ease-in-out infinite',
+            }}/>
+            <svg style={{ position:'absolute', inset:0, width:'100%', height:'100%' }} viewBox="0 0 280 280">
+              {[0,45,90,135,180,225,270,315].map((a,i) => {
+                const r = a*Math.PI/180;
+                return (
+                  <line key={i}
+                    x1="140" y1="140"
+                    x2={140+Math.cos(r)*120} y2={140+Math.sin(r)*120}
+                    stroke={['#a855f7','#3b82f6','#ec4899','#8b5cf6'][i%4]}
+                    strokeWidth="0.8" strokeDasharray="200" strokeDashoffset="200"
+                    style={{ animation:`IS_crack 0.4s ease-out ${i*0.05}s both` }}
+                  />
+                );
+              })}
+            </svg>
+          </div>
+        )}
+
+        {/* PHASE 1-4 — Portal */}
+        {phase >= 1 && phase <= 4 && (
+          <div style={{ position:'relative', width:240, height:240, margin:'0 auto' }}>
+            {/* Outer ring */}
+            <div style={{
+              position:'absolute', inset:0, borderRadius:'50%',
+              border: `2px solid ${phase >= 3 ? '#fff' : '#a855f7'}`,
+              boxShadow: phase >= 4
+                ? '0 0 80px white, 0 0 160px rgba(168,85,247,0.8)'
+                : phase >= 3
+                ? '0 0 50px rgba(168,85,247,0.9), 0 0 100px rgba(59,130,246,0.5)'
+                : '0 0 25px rgba(168,85,247,0.5)',
+              animation:'IS_portalSpin 3s linear infinite',
+              transition:'box-shadow 0.3s, border-color 0.3s',
+            }}/>
+            {/* Middle ring */}
+            <div style={{
+              position:'absolute', inset:22, borderRadius:'50%',
+              border:'1.5px dashed rgba(168,85,247,0.45)',
+              animation:'IS_portalSpinR 5s linear infinite',
+            }}/>
+            {/* Inner ring */}
+            <div style={{
+              position:'absolute', inset:44, borderRadius:'50%',
+              border:'1px solid rgba(59,130,246,0.35)',
+              animation:'IS_portalSpin 2s linear infinite',
+            }}/>
+            {/* Core glow */}
+            <div style={{
+              position:'absolute', inset:56, borderRadius:'50%',
+              background:`radial-gradient(circle, ${
+                phase >= 4 ? 'rgba(255,255,255,0.6)' :
+                phase >= 3 ? 'rgba(168,85,247,0.5)' :
+                'rgba(139,92,246,0.3)'
+              } 0%, transparent 100%)`,
+              filter:'blur(4px)',
+              transition:'background 0.3s',
+            }}/>
+
+            {/* Game objects — phase 2 */}
+            {phase >= 2 && phase <= 4 && gameObjects.map((obj, i) => {
+              const rad = (obj.angle - 90) * Math.PI / 180;
+              const sx = Math.cos(rad) * 160;
+              const sy = Math.sin(rad) * 160;
+              return (
+                <div key={i} style={{
+                  position:'absolute',
+                  top:'50%', left:'50%',
+                  fontSize:'1.8rem',
+                  '--sx': `${sx}px`,
+                  '--sy': `${sy}px`,
+                  animation:`IS_gather 1.4s ease-in-out ${i*0.12}s both`,
+                  filter:'drop-shadow(0 0 10px rgba(168,85,247,0.9))',
+                  zIndex:2,
+                }}>{obj.emoji}</div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* PHASE 5 — Explosion */}
+        {phase === 5 && (
+          <div style={{ position:'relative', width:300, height:300 }}>
+            {/* Shockwaves */}
+            {[0, 0.1, 0.2].map((d,i) => (
               <div key={i} style={{
-                position:'absolute', left:n.x, top:n.y,
-                width:n.size, height:n.size,
-                borderRadius:'50%', background:n.color,
-                filter:'blur(60px)',
-                transform:'translate(-50%,-50%)',
-                animation:`nebulaDrift ${8+i*2}s ease-in-out infinite ${n.delay}s`,
+                position:'absolute', top:'50%', left:'50%',
+                width: 50+i*20, height: 50+i*20,
+                borderRadius:'50%',
+                border:`${2-i*0.5}px solid rgba(255,255,255,${0.8-i*0.2})`,
+                animation:`IS_shockwave 0.7s ease-out ${d}s both`,
+              }}/>
+            ))}
+            {/* Particles */}
+            {explosionParts.map(p => (
+              <div key={p.id} style={{
+                position:'absolute', top:'50%', left:'50%',
+                width:p.size, height:p.size, borderRadius:'50%',
+                background:p.color,
+                boxShadow:`0 0 8px ${p.color}`,
+                '--ex':`${p.ex}px`, '--ey':`${p.ey}px`,
+                animation:'IS_explode 0.8s ease-out forwards',
               }}/>
             ))}
           </div>
         )}
 
-        {/* ── LAYER 3: AMBIENT PARTICLES ── */}
-        <div style={{ position:'absolute', inset:0, zIndex:2, pointerEvents:'none' }}>
-          {ambientParticles.map(p => (
-            <div key={p.id} style={{
-              position:'absolute', left:`${p.x}%`, top:`${p.y}%`,
-              width:p.size, height:p.size, borderRadius:'50%',
-              background:p.color, boxShadow:`0 0 4px ${p.color}`,
-              opacity: phase >= 1 ? 1 : 0,
-              transition:'opacity 1s',
-              animation:`ambientFloat ${p.speed}s ease-in-out infinite ${p.delay}s`,
-            }}/>
-          ))}
-        </div>
+        {/* PHASE 6-8 — Logo */}
+        {phase >= 6 && (
+          <div style={{ animation:'IS_logoIn 0.9s cubic-bezier(0.34,1.3,0.64,1) forwards' }}>
 
-        {/* ── LAYER 4: FRONT CONTENT ── */}
-        <div style={{ position:'absolute', inset:0, zIndex:3, display:'flex', alignItems:'center', justifyContent:'center' }}>
-
-          {/* ── PHASE 0: VOID AWAKENING ── */}
-          {phase === 0 && (
-            <div style={{ position:'relative', textAlign:'center' }}>
-              <div style={{
-                width:8, height:8, borderRadius:'50%',
-                background:'white', margin:'0 auto',
-                boxShadow:'0 0 20px white, 0 0 60px rgba(168,85,247,0.5)',
-                animation:'voidPulse 1s ease-in-out infinite',
-              }}/>
-              <svg style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:300, height:300 }} viewBox="0 0 300 300">
-                {[0,45,90,135,180,225,270,315].map((a,i) => {
-                  const rad = a * Math.PI/180;
-                  const x2 = 150 + Math.cos(rad)*130;
-                  const y2 = 150 + Math.sin(rad)*130;
-                  return (
-                    <line key={i} x1="150" y1="150" x2={x2} y2={y2}
-                      stroke={['#a855f7','#3b82f6','#ec4899','#8b5cf6'][i%4]}
-                      strokeWidth="0.8" strokeDasharray="200" strokeDashoffset="200"
-                      opacity="0.6"
-                      style={{ animation:`energyCrack 0.5s ease-out ${i*0.05}s both` }}
-                    />
-                  );
-                })}
-              </svg>
-            </div>
-          )}
-
-          {/* ── PHASE 1-3: PORTAL + GATHERING ── */}
-          {phase >= 1 && phase < 6 && (
-            <div style={{ position:'relative', textAlign:'center' }}>
-
-              {/* Portal rings */}
-              <div style={{ position:'relative', width:220, height:220, margin:'0 auto' }}>
-                {/* Outer ring */}
+            {/* Aura */}
+            {phase >= 7 && (
+              <>
                 <div style={{
-                  position:'absolute', inset:0, borderRadius:'50%',
-                  border:'2px solid transparent',
-                  background:'linear-gradient(#000,#000) padding-box, linear-gradient(135deg,#a855f7,#3b82f6,#ec4899) border-box',
-                  animation:'portalSpin 3s linear infinite',
-                  opacity: phase >= 1 ? 1 : 0,
-                  transition:'opacity 0.5s',
-                  boxShadow: phase >= 3 ? '0 0 60px rgba(168,85,247,0.8), 0 0 120px rgba(59,130,246,0.4)' : '0 0 30px rgba(168,85,247,0.5)',
-                  transform: phase === 4 ? 'scale(1.1)' : 'scale(1)',
+                  position:'absolute', top:'50%', left:'50%',
+                  width:340, height:180, borderRadius:'50%',
+                  background:'radial-gradient(ellipse,rgba(139,92,246,0.3) 0%,transparent 70%)',
+                  filter:'blur(24px)',
+                  animation:'IS_auraPulse 2.8s ease-in-out infinite',
                 }}/>
-                {/* Middle ring */}
                 <div style={{
-                  position:'absolute', inset:20, borderRadius:'50%',
-                  border:'1.5px dashed rgba(168,85,247,0.5)',
-                  animation:'portalSpinRev 5s linear infinite',
+                  position:'absolute', top:'50%', left:'50%',
+                  width:520, height:260, borderRadius:'50%',
+                  background:'radial-gradient(ellipse,rgba(59,130,246,0.15) 0%,transparent 70%)',
+                  filter:'blur(36px)',
+                  animation:'IS_auraPulse 3.5s ease-in-out infinite 0.5s',
                 }}/>
-                {/* Inner ring */}
-                <div style={{
-                  position:'absolute', inset:40, borderRadius:'50%',
-                  border:'1px solid rgba(59,130,246,0.4)',
-                  animation:'portalSpin 2s linear infinite',
-                }}/>
-                {/* Portal center */}
-                <div style={{
-                  position:'absolute', inset:50, borderRadius:'50%',
-                  background:'radial-gradient(circle, rgba(139,92,246,0.4) 0%, rgba(59,130,246,0.2) 50%, transparent 100%)',
-                  filter: phase >= 3 ? 'brightness(2)' : 'brightness(1)',
-                  transition:'filter 0.3s',
-                }}/>
-
-                {/* Freeze glow */}
-                {phase === 4 && (
-                  <div style={{
-                    position:'absolute', inset:-30, borderRadius:'50%',
-                    background:'radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%)',
-                    animation:'voidPulse 0.15s ease-in-out infinite',
+                {/* Light rays */}
+                {[0,30,60,90,120,150,180,210,240,270,300,330].map((deg,i)=>(
+                  <div key={i} style={{
+                    position:'absolute', top:'40%', left:'50%',
+                    width:2, height:180,
+                    background:'linear-gradient(to bottom,rgba(168,85,247,0.35),transparent)',
+                    transformOrigin:'top center',
+                    '--deg':`${deg}deg`,
+                    animation:`IS_ray ${3+i*0.2}s ease-in-out infinite ${i*0.12}s`,
                   }}/>
+                ))}
+              </>
+            )}
+
+            {/* Logo text */}
+            <div style={{
+              position:'relative', zIndex:10,
+              animation: phase >= 7 ? 'IS_float 4s ease-in-out infinite' : 'none',
+            }}>
+              <h1 style={{
+                fontFamily:"'Orbitron',sans-serif",
+                fontSize:'clamp(3rem,9vw,5.5rem)',
+                fontWeight:900, letterSpacing:'0.08em', lineHeight:1,
+                marginBottom:12,
+                filter:'drop-shadow(0 0 40px rgba(168,85,247,0.9)) drop-shadow(0 0 80px rgba(59,130,246,0.5))',
+              }}>
+                <span style={{ background:'linear-gradient(135deg,#a855f7,#3b82f6)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>
+                  {typedText.slice(0,4)}
+                </span>
+                <span style={{ color:'white' }}>
+                  {typedText.slice(4)}
+                </span>
+                {showCursor && phase < 8 && (
+                  <span style={{ color:'#a855f7', WebkitTextFillColor:'#a855f7' }}>|</span>
                 )}
-              </div>
+              </h1>
 
-              {/* Game objects flying in - phase 2 */}
-              {phase >= 2 && phase < 5 && gameObjects.map((obj, i) => (
-                <div key={i} style={{
-                  position:'absolute',
-                  top:'50%', left:'50%',
-                  fontSize:'2rem',
-                  transform:'translate(-50%,-50%)',
-                  '--sx': `${obj.startX}px`,
-                  '--sy': `${obj.startY}px`,
-                  animation:`gatherObj 1.2s ease-in ${obj.delay}s both`,
-                  filter:'drop-shadow(0 0 8px rgba(168,85,247,0.8))',
-                }}>{obj.emoji}</div>
-              ))}
-            </div>
-          )}
-
-          {/* ── PHASE 5: EXPLOSION ── */}
-          {phase === 5 && (
-            <div style={{ position:'relative', width:300, height:300 }}>
-              {/* Shockwave */}
-              <div style={{
-                position:'absolute', top:'50%', left:'50%',
-                width:60, height:60,
-                borderRadius:'50%',
-                border:'3px solid rgba(255,255,255,0.8)',
-                transform:'translate(-50%,-50%)',
-                animation:'shockwave 0.8s ease-out forwards',
-              }}/>
-              <div style={{
-                position:'absolute', top:'50%', left:'50%',
-                width:40, height:40, borderRadius:'50%',
-                border:'2px solid rgba(168,85,247,0.6)',
-                transform:'translate(-50%,-50%)',
-                animation:'shockwave 0.8s ease-out 0.1s forwards',
-              }}/>
-              {/* Explosion particles */}
-              {explosionParticles.map(p => {
-                const rad = p.angle * Math.PI/180;
-                const ex = Math.cos(rad) * p.distance;
-                const ey = Math.sin(rad) * p.distance;
-                return (
-                  <div key={p.id} style={{
-                    position:'absolute', top:'50%', left:'50%',
-                    width:p.size, height:p.size, borderRadius:'50%',
-                    background:p.color,
-                    boxShadow:`0 0 6px ${p.color}`,
-                    '--ex': `${ex}px`,
-                    '--ey': `${ey}px`,
-                    animation:`explodeParticle ${p.speed}s ease-out forwards`,
-                    transform:'translate(-50%,-50%)',
-                  }}/>
-                );
-              })}
-            </div>
-          )}
-
-          {/* ── PHASE 6-8: LOGO ── */}
-          {phase >= 6 && (
-            <div style={{ textAlign:'center', animation:'logoBlur 0.8s cubic-bezier(0.34,1.56,0.64,1) forwards' }}>
-
-              {/* Light rays behind logo */}
               {phase >= 7 && (
-                <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:400, height:400, pointerEvents:'none' }}>
-                  {[0,30,60,90,120,150,180,210,240,270,300,330].map((deg,i) => (
-                    <div key={i} style={{
-                      position:'absolute', top:'50%', left:'50%',
-                      width:2, height:200,
-                      background:`linear-gradient(to bottom, rgba(168,85,247,0.3), transparent)`,
-                      transformOrigin:'top center',
-                      '--deg': `${deg}deg`,
-                      transform:`rotate(${deg}deg) translateX(-50%)`,
-                      animation:`lightRay ${3+i*0.2}s ease-in-out infinite ${i*0.15}s`,
-                    }}/>
-                  ))}
-                </div>
-              )}
-
-              {/* Aura behind logo */}
-              {phase >= 7 && (
-                <>
-                  <div className="aura-ring" style={{
-                    position:'absolute', top:'50%', left:'50%',
-                    width:300, height:200, borderRadius:'50%',
-                    background:'radial-gradient(ellipse, rgba(139,92,246,0.25) 0%, transparent 70%)',
-                    transform:'translate(-50%,-50%)',
-                    filter:'blur(20px)',
-                  }}/>
-                  <div className="aura-ring" style={{
-                    position:'absolute', top:'50%', left:'50%',
-                    width:500, height:300, borderRadius:'50%',
-                    background:'radial-gradient(ellipse, rgba(59,130,246,0.12) 0%, transparent 70%)',
-                    transform:'translate(-50%,-50%)',
-                    filter:'blur(30px)',
-                    animationDelay:'0.5s',
-                  }}/>
-                </>
-              )}
-
-              {/* Smoke particles */}
-              {phase >= 6 && Array.from({length:12},(_, i)=>(
-                <div key={i} style={{
-                  position:'absolute',
-                  left:`${40 + Math.random()*20}%`,
-                  top:`${40 + Math.random()*20}%`,
-                  width: 20+Math.random()*30,
-                  height: 20+Math.random()*30,
-                  borderRadius:'50%',
-                  background:'rgba(139,92,246,0.15)',
-                  filter:'blur(8px)',
-                  animation:`smokeFloat ${2+Math.random()*2}s ease-out ${Math.random()*1}s both`,
-                }}/>
-              ))}
-
-              {/* GAMEHUB Logo */}
-              <div style={{ position:'relative', zIndex:10, marginBottom: phase >= 8 ? 16 : 8 }}>
-                <h1 style={{
-                  fontFamily:"'Orbitron',sans-serif",
-                  fontSize:'clamp(2.8rem,8vw,5rem)',
-                  fontWeight:900,
-                  letterSpacing:'0.08em',
-                  lineHeight:1,
-                  marginBottom:12,
-                  filter:'drop-shadow(0 0 40px rgba(168,85,247,0.8)) drop-shadow(0 0 80px rgba(59,130,246,0.4))',
+                <p style={{
+                  color:'#475569', fontSize:'0.68rem',
+                  letterSpacing:'0.3em',
+                  fontFamily:"'Space Mono',monospace",
+                  marginBottom: phase >= 8 ? 40 : 0,
+                  animation:'IS_fadeUp 1s ease-out forwards',
                 }}>
-                  <span style={{ background:'linear-gradient(135deg,#a855f7,#3b82f6)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>
-                    {typedText.slice(0,4)}
-                  </span>
-                  <span style={{ color:'white' }}>
-                    {typedText.slice(4)}
-                  </span>
-                  {showCursor && phase < 8 && (
-                    <span style={{ color:'#a855f7', WebkitTextFillColor:'#a855f7', fontSize:'0.8em' }}>|</span>
-                  )}
-                </h1>
-                {phase >= 7 && (
-                  <p style={{
-                    color:'#475569', fontSize:'0.68rem',
-                    letterSpacing:'0.3em',
-                    fontFamily:"'Space Mono',monospace",
-                    animation:'ctaFadeIn 1s ease-out forwards',
-                    marginBottom: phase >= 8 ? 36 : 0,
-                  }}>
-                    YOUR ULTIMATE GAMING UNIVERSE
-                  </p>
-                )}
-              </div>
+                  YOUR ULTIMATE GAMING UNIVERSE
+                </p>
+              )}
+            </div>
 
-              {/* PRESS START */}
-              {phase >= 8 && (
+            {/* PRESS START */}
+            {phase >= 8 && (
+              <div style={{ animation:'IS_fadeUp 0.8s ease-out forwards' }}>
                 <button
                   onClick={handleStart}
-                  className="intro-press"
                   style={{
-                    background:'none', border:'2px solid #a855f7',
-                    borderRadius:'8px', color:'#a855f7',
-                    fontSize:'0.85rem', letterSpacing:'0.25em',
-                    fontWeight:700, padding:'14px 40px',
+                    background:'none',
+                    border:'2px solid #a855f7',
+                    borderRadius:'8px',
+                    color:'#a855f7',
+                    fontSize:'0.85rem',
+                    letterSpacing:'0.25em',
+                    fontWeight:700,
+                    padding:'14px 44px',
                     cursor:'pointer',
                     fontFamily:"'Space Mono',monospace",
-                    animation:'ctaFadeIn 0.8s ease-out forwards, pressPulse 1.1s ease-in-out 0.8s infinite',
+                    animation:'IS_pressPulse 1.1s ease-in-out infinite',
                   }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.background='rgba(168,85,247,0.15)';
-                    e.currentTarget.style.boxShadow='0 0 50px rgba(168,85,247,0.6)';
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.background='none';
-                    e.currentTarget.style.boxShadow='none';
-                  }}
+                  onMouseEnter={e=>{e.currentTarget.style.background='rgba(168,85,247,0.15)';e.currentTarget.style.boxShadow='0 0 50px rgba(168,85,247,0.6)';}}
+                  onMouseLeave={e=>{e.currentTarget.style.background='none';e.currentTarget.style.boxShadow='none';}}
                 >
                   ▶ &nbsp;PRESS START
                 </button>
-              )}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
+        )}
 
-        </div>
       </div>
     </div>
   );
