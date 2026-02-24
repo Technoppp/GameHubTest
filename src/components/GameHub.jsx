@@ -1194,8 +1194,8 @@ function IntroScreen({ onComplete }) {
                 const r = a*Math.PI/180;
                 return (
                   <line key={i}
-                    x1="140" y1="140"
-                    x2={140+Math.cos(r)*120} y2={140+Math.sin(r)*120}
+                    x1="150" y1="150"
+                    x2={150+Math.cos(r)*120} y2={150+Math.sin(r)*120}
                     stroke={['#a855f7','#3b82f6','#ec4899','#8b5cf6'][i%4]}
                     strokeWidth="0.8" strokeDasharray="200" strokeDashoffset="200"
                     style={{ animation:`IS_crack 0.4s ease-out ${i*0.05}s both` }}
@@ -1248,18 +1248,21 @@ function IntroScreen({ onComplete }) {
             {/* Game objects — phase 2 */}
             {phase >= 2 && phase <= 4 && gameObjects.map((obj, i) => {
               const rad = (obj.angle - 90) * Math.PI / 180;
-              const sx = Math.cos(rad) * 160;
-              const sy = Math.sin(rad) * 160;
+              const sx = Math.cos(rad) * 280;
+              const sy = Math.sin(rad) * 280;
               return (
                 <div key={i} style={{
                   position:'absolute',
                   top:'50%', left:'50%',
-                  fontSize:'1.8rem',
+                  fontSize:'2.6rem',
+                  lineHeight:1,
+                  marginTop:'-1.3rem',
+                  marginLeft:'-1.3rem',
                   '--sx': `${sx}px`,
                   '--sy': `${sy}px`,
                   animation:`IS_gather 1.4s ease-in-out ${i*0.12}s both`,
-                  filter:'drop-shadow(0 0 10px rgba(168,85,247,0.9))',
-                  zIndex:2,
+                  filter:'drop-shadow(0 0 14px rgba(168,85,247,1))',
+                  zIndex:10,
                 }}>{obj.emoji}</div>
               );
             })}
@@ -1344,11 +1347,8 @@ function IntroScreen({ onComplete }) {
                   {typedText.slice(0,4)}
                 </span>
                 <span style={{ color:'white' }}>
-                  {typedText.slice(4)}
+                  {typedText.slice(4)}{showCursor && phase < 8 ? <span style={{ color:'#a855f7', WebkitTextFillColor:'#a855f7' }}>|</span> : null}
                 </span>
-                {showCursor && phase < 8 && (
-                  <span style={{ color:'#a855f7', WebkitTextFillColor:'#a855f7' }}>|</span>
-                )}
               </h1>
 
               {phase >= 7 && (
