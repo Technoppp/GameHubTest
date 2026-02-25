@@ -1137,87 +1137,54 @@ function IntroScreen({ onComplete }) {
       {/* ── CENTER STAGE — everything centered perfectly ── */}
       <div style={{ position:'relative', zIndex:5, display:'flex', alignItems:'center', justifyContent:'center', animation: shaking ? 'IS_shake 0.08s linear infinite' : 'none' }}>
 
-        {/* PHASE 0-4 — unified portal */}
+        {/* PHASE 0-4 — all in one container, SVG crossfades to spinning divs */}
         {phase >= 0 && phase <= 4 && (
           <div style={{ position:'relative', width:W, height:W, display:'flex', alignItems:'center', justifyContent:'center' }}>
 
-            {/* Phase 0: SVG draws circles — fixed position, no rotation */}
-            {phase === 0 && (
-              <svg width={W} height={W} viewBox={`0 0 ${W} ${W}`}
-                style={{ position:'absolute', top:0, left:0 }}>
-                <defs>
-                  <filter id="IS_glow">
-                    <feGaussianBlur stdDeviation="5" result="b"/>
-                    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-                  </filter>
-                </defs>
-                <circle cx="150" cy="150" r="110" stroke="#a855f7" strokeWidth="2" fill="none"
-                  strokeDasharray="692" strokeDashoffset="692" filter="url(#IS_glow)"
-                  style={{ animation:'IS_drawOuter 0.5s ease-out 0s forwards' }}/>
-                <circle cx="150" cy="150" r="80" stroke="#a855f7" strokeWidth="1.5" fill="none"
-                  strokeDasharray="503" strokeDashoffset="503" opacity="0.6"
-                  style={{ animation:'IS_drawMid 0.5s ease-out 0.08s forwards' }}/>
-                <circle cx="150" cy="150" r="50" stroke="#3b82f6" strokeWidth="1" fill="none"
-                  strokeDasharray="314" strokeDashoffset="314" opacity="0.45"
-                  style={{ animation:'IS_drawInner 0.5s ease-out 0.16s forwards' }}/>
-                <circle cx="150" cy="150" r="6" fill="white" filter="url(#IS_glow)"
-                  style={{ animation:'IS_dotPulse 0.7s ease-in-out infinite' }}/>
-              </svg>
-            )}
+            {/* SVG: always mounted, fades out when phase >= 1 */}
+            <svg width={W} height={W} viewBox={`0 0 ${W} ${W}`}
+              style={{ position:'absolute', top:0, left:0, opacity: phase >= 1 ? 0 : 1, transition:'opacity 0.25s ease', pointerEvents:'none' }}>
+              <defs>
+                <filter id="IS_glow">
+                  <feGaussianBlur stdDeviation="5" result="b"/>
+                  <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
+              </defs>
+              <circle cx="150" cy="150" r="110" stroke="#a855f7" strokeWidth="2" fill="none"
+                strokeDasharray="692" strokeDashoffset="692" filter="url(#IS_glow)"
+                style={{ animation:'IS_drawOuter 0.45s ease-out 0s forwards' }}/>
+              <circle cx="150" cy="150" r="80" stroke="#a855f7" strokeWidth="1.5" fill="none"
+                strokeDasharray="503" strokeDashoffset="503" opacity="0.6"
+                style={{ animation:'IS_drawMid 0.45s ease-out 0.06s forwards' }}/>
+              <circle cx="150" cy="150" r="50" stroke="#3b82f6" strokeWidth="1" fill="none"
+                strokeDasharray="314" strokeDashoffset="314" opacity="0.45"
+                style={{ animation:'IS_drawInner 0.45s ease-out 0.12s forwards' }}/>
+              <circle cx="150" cy="150" r="6" fill="white" filter="url(#IS_glow)"
+                style={{ animation:'IS_dotPulse 0.7s ease-in-out infinite' }}/>
+            </svg>
 
-            {/* Phase 1+: div rings spin in place — each ring is a centered square that rotates */}
-            {phase >= 1 && (
-              <>
-                {/* Outer ring */}
-                <div style={{
-                  position:'absolute',
-                  width:220, height:220, borderRadius:'50%',
-                  border:`2px solid ${phase >= 4 ? 'white' : '#a855f7'}`,
-                  boxShadow: phase >= 4
-                    ? '0 0 60px white, 0 0 120px rgba(168,85,247,.8)'
-                    : phase >= 3
-                    ? '0 0 40px rgba(168,85,247,.9)'
-                    : '0 0 20px rgba(168,85,247,.5)',
-                  transition:'border-color 0.3s, box-shadow 0.3s',
-                  animation:'IS_portalSpin 3s linear infinite',
-                }}/>
-                {/* Middle ring */}
-                <div style={{
-                  position:'absolute',
-                  width:170, height:170, borderRadius:'50%',
-                  border:'1.5px dashed rgba(168,85,247,.5)',
-                  animation:'IS_portalSpinR 5s linear infinite',
-                }}/>
-                {/* Inner ring */}
-                <div style={{
-                  position:'absolute',
-                  width:120, height:120, borderRadius:'50%',
-                  border:'1px solid rgba(59,130,246,.4)',
-                  animation:'IS_portalSpin 2s linear infinite',
-                }}/>
-                {/* Core glow */}
-                <div style={{
-                  position:'absolute',
-                  width:90, height:90, borderRadius:'50%',
-                  background: phase >= 4
-                    ? 'radial-gradient(circle, rgba(255,255,255,.5) 0%, transparent 100%)'
-                    : phase >= 3
-                    ? 'radial-gradient(circle, rgba(168,85,247,.5) 0%, transparent 100%)'
-                    : 'radial-gradient(circle, rgba(139,92,246,.3) 0%, transparent 100%)',
-                  filter:'blur(8px)',
-                  transition:'background 0.3s',
-                }}/>
-              </>
-            )}
+            {/* Div rings: always mounted, fades in when phase >= 1 */}
+            <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center',
+              opacity: phase >= 1 ? 1 : 0, transition:'opacity 0.25s ease' }}>
+              <div style={{ position:'absolute', width:220, height:220, borderRadius:'50%',
+                border:`2px solid ${phase >= 4 ? 'white' : '#a855f7'}`,
+                boxShadow: phase >= 4 ? '0 0 60px white,0 0 120px rgba(168,85,247,.8)' : phase >= 3 ? '0 0 40px rgba(168,85,247,.9)' : '0 0 20px rgba(168,85,247,.5)',
+                transition:'border-color 0.3s,box-shadow 0.3s', animation:'IS_portalSpin 3s linear infinite' }}/>
+              <div style={{ position:'absolute', width:170, height:170, borderRadius:'50%',
+                border:'1.5px dashed rgba(168,85,247,.5)', animation:'IS_portalSpinR 5s linear infinite' }}/>
+              <div style={{ position:'absolute', width:120, height:120, borderRadius:'50%',
+                border:'1px solid rgba(59,130,246,.4)', animation:'IS_portalSpin 2s linear infinite' }}/>
+              <div style={{ position:'absolute', width:90, height:90, borderRadius:'50%',
+                background: phase >= 4 ? 'radial-gradient(circle,rgba(255,255,255,.5) 0%,transparent 100%)' : phase >= 3 ? 'radial-gradient(circle,rgba(168,85,247,.5) 0%,transparent 100%)' : 'radial-gradient(circle,rgba(139,92,246,.3) 0%,transparent 100%)',
+                filter:'blur(8px)', transition:'background 0.3s' }}/>
+            </div>
 
-            {/* Game objects — in DOM from phase 1, use absolute delay so no stutter */}
+            {/* Game objects — mount from phase 1, animation starts immediately */}
             {phase >= 1 && phase <= 4 && gameObjects.map((obj, i) => (
               <div key={i} style={{
-                position:'absolute',
-                top:'50%', left:'50%',
+                position:'absolute', top:'50%', left:'50%',
                 fontSize:'3.2rem', lineHeight:1,
-                '--tx': `${obj.tx}px`,
-                '--ty': `${obj.ty}px`,
+                '--tx': `${obj.tx}px`, '--ty': `${obj.ty}px`,
                 animation:`IS_gather 1.4s ease-in-out ${i*0.1}s both`,
                 filter:'drop-shadow(0 0 16px rgba(168,85,247,1))',
                 zIndex:10,
