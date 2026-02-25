@@ -999,9 +999,8 @@ function IntroScreen({ onComplete }) {
   useEffect(() => {
     const timers = [
       setTimeout(() => setPhase(1), 400),
-      setTimeout(() => setPhase(2), 900),
-      setTimeout(() => { setPhase(3); setShaking(true); }, 2300),
-      setTimeout(() => { setPhase(4); setShaking(false); }, 2900),
+      setTimeout(() => { setPhase(3); setShaking(true); }, 2200),
+      setTimeout(() => { setPhase(4); setShaking(false); }, 2800),
       setTimeout(() => {
         setPhase(5);
         setWhiteFlash(true);
@@ -1179,13 +1178,13 @@ function IntroScreen({ onComplete }) {
                 filter:'blur(8px)', transition:'background 0.3s' }}/>
             </div>
 
-            {/* Game objects — mount from phase 1, animation starts immediately */}
+            {/* Game objects — mount at phase 1, delay 0.3s so portal is visible first */}
             {phase >= 1 && phase <= 4 && gameObjects.map((obj, i) => (
               <div key={i} style={{
                 position:'absolute', top:'50%', left:'50%',
                 fontSize:'3.2rem', lineHeight:1,
                 '--tx': `${obj.tx}px`, '--ty': `${obj.ty}px`,
-                animation:`IS_gather 1.4s ease-in-out ${i*0.1}s both`,
+                animation:`IS_gather 1.5s ease-in-out ${0.3 + i*0.12}s both`,
                 filter:'drop-shadow(0 0 16px rgba(168,85,247,1))',
                 zIndex:10,
               }}>{obj.emoji}</div>
