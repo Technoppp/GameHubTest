@@ -1343,7 +1343,7 @@ export default function GameHub() {
   return (
     <AuthContext.Provider value={{ user, auth }}>
     <RawgImagesContext.Provider value={rawgImages}>
-    <div className="min-h-screen bg-slate-950 text-slate-100" style={{ fontFamily: "'Space Mono', monospace" }}>
+    <div className="min-h-screen bg-slate-950 text-slate-100" style={{ fontFamily: "'Inter', 'Noto Sans', system-ui, -apple-system, sans-serif" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Orbitron:wght@700;900&display=swap');
 
@@ -2533,10 +2533,10 @@ function GameDetailPage({ game, navigateTo }) {
       </div>
 
       <div className="container mx-auto px-6 py-10">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
           {/* ── Left: Tabbed Content ── */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 lg:order-1 order-2">
 
             <div className="space-y-10">
                 <div>
@@ -2578,7 +2578,7 @@ function GameDetailPage({ game, navigateTo }) {
           </div>
 
           {/* ── Right: Sidebar ── */}
-          <div className="space-y-6">
+          <div className="space-y-6 lg:order-2 order-1">
             {/* Wishlist button */}
             <button
               onClick={toggleWishlist}
@@ -2601,17 +2601,17 @@ function GameDetailPage({ game, navigateTo }) {
                 "Tom Clancy's Rainbow Six Siege X":      { steam: 'https://store.steampowered.com/app/359550', epic: 'https://www.epicgames.com/store/en-US/p/rainbow-six-siege', official: null },
                 'Apex Legends':                          { steam: 'https://store.steampowered.com/app/1172470', epic: 'https://www.epicgames.com/store/en-US/p/apex-legends', official: null },
                 'Call of Duty: Warzone':                 { steam: null, epic: null, official: 'https://www.callofduty.com/warzone' },
-                'ROV (Arena of Valor)':                  { steam: null, epic: null, official: 'https://www.rovmobile.com' },
-                'Mobile Legends: Bang Bang':             { steam: null, epic: null, official: 'https://mobilelegends.com' },
+                'ROV (Arena of Valor)':                  { mobileOnly: true },
+                'Mobile Legends: Bang Bang':             { mobileOnly: true },
                 'Dota 2':                                { steam: 'https://store.steampowered.com/app/570', epic: null, official: null },
                 'League of Legends':                     { steam: null, epic: null, official: 'https://www.leagueoflegends.com' },
-                'EA Sports FC 26':                       { steam: 'https://store.steampowered.com/app/2195250', epic: null, official: 'https://www.ea.com/games/ea-sports-fc' },
-                'NBA 2K26':                              { steam: 'https://store.steampowered.com/app/2338770', epic: null, official: 'https://nba.2k.com' },
-                'WWE 2K26':                              { steam: 'https://store.steampowered.com/app/2139550', epic: null, official: 'https://wwe.2k.com' },
-                'Madden NFL 26':                         { steam: null, epic: null, official: 'https://www.ea.com/games/madden-nfl' },
-                'F1 25':                                 { steam: 'https://store.steampowered.com/app/2466550', epic: null, official: 'https://www.ea.com/games/f1' },
-                'Football Manager 2026':                 { steam: 'https://store.steampowered.com/app/2252570', epic: null, official: 'https://www.footballmanager.com' },
-                'Overcooked! All You Can Eat':           { steam: 'https://store.steampowered.com/app/1388790', epic: 'https://www.epicgames.com/store/en-US/p/overcooked-all-you-can-eat', official: null },
+                'EA Sports FC 26':                       { steam: 'https://store.steampowered.com/app/3405690', epic: null, official: 'https://www.ea.com/games/ea-sports-fc' },
+                'NBA 2K26':                              { steam: 'https://store.steampowered.com/app/3472040', epic: null, official: 'https://nba.2k.com' },
+                'WWE 2K26':                              { steam: 'https://store.steampowered.com/app/3717070', epic: null, official: 'https://wwe.2k.com' },
+                'Madden NFL 26':                         { steam: 'https://store.steampowered.com/app/3230400', epic: null, official: 'https://www.ea.com/games/madden-nfl' },
+                'F1 25':                                 { steam: 'https://store.steampowered.com/app/3059520', epic: null, official: 'https://www.ea.com/games/f1' },
+                'Football Manager 2026':                 { steam: 'https://store.steampowered.com/app/3551340', epic: null, official: 'https://www.footballmanager.com' },
+                'Overcooked! All You Can Eat':           { steam: 'https://store.steampowered.com/app/1243830', epic: 'https://www.epicgames.com/store/en-US/p/overcooked-all-you-can-eat', official: null },
                 'Gang Beasts':                           { steam: 'https://store.steampowered.com/app/285900', epic: null, official: null },
                 'Among Us':                              { steam: 'https://store.steampowered.com/app/945360', epic: null, official: 'https://www.innersloth.com/games/among-us' },
                 'Mario Party Superstars':                { steam: null, epic: null, official: 'https://www.nintendo.com/store/products/mario-party-superstars-switch' },
@@ -2622,33 +2622,60 @@ function GameDetailPage({ game, navigateTo }) {
                 'Civilization VI':                       { steam: 'https://store.steampowered.com/app/289070', epic: 'https://www.epicgames.com/store/en-US/p/sid-meiers-civilization-vi', official: null },
                 'Age of Empires IV':                     { steam: 'https://store.steampowered.com/app/1466860', epic: null, official: 'https://www.ageofempires.com/games/age-of-empires-iv' },
                 'StarCraft II':                          { steam: null, epic: null, official: 'https://starcraft2.blizzard.com' },
-                'Clash of Clans':                        { steam: null, epic: null, official: 'https://apps.apple.com/app/clash-of-clans/id529479190' },
+                'Clash of Clans':                        { mobileOnly: true },
               };
               const stores = storeMap[game.title];
               if (!stores) return null;
-              const buttons = [
+
+              // Mobile-only games: show download info instead of buttons
+              const mobileOnly = stores.mobileOnly;
+
+              const buttons = mobileOnly ? [] : [
                 stores.steam    && { label: 'Steam',        url: stores.steam,    bg: '#1b2838', border: '#4a90d9', icon: '🎮' },
                 stores.epic     && { label: 'Epic Games',   url: stores.epic,     bg: '#2a2a2a', border: '#0078f2', icon: '⚡' },
                 stores.official && { label: 'Official Site',url: stores.official, bg: '#1a1a2e', border: color,     icon: '🌐' },
               ].filter(Boolean);
-              if (buttons.length === 0) return null;
+
+              if (buttons.length === 0 && !mobileOnly) return null;
+
               return (
                 <div className="rounded-2xl overflow-hidden border border-slate-800 bg-slate-900 p-5">
                   <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Get This Game</h4>
-                  <div className="space-y-3">
-                    {buttons.map((btn, i) => (
-                      <a key={i} href={btn.url} target="_blank" rel="noopener noreferrer"
-                        className="flex items-center gap-3 w-full py-3 px-4 rounded-xl font-bold text-sm transition-all duration-200 hover:scale-[1.02]"
-                        style={{ background: btn.bg, border: `1.5px solid ${btn.border}55`, color: '#fff' }}
-                        onMouseEnter={e => e.currentTarget.style.borderColor = btn.border}
-                        onMouseLeave={e => e.currentTarget.style.borderColor = `${btn.border}55`}
-                      >
-                        <span className="text-lg">{btn.icon}</span>
-                        <span>Play on {btn.label}</span>
-                        <span className="ml-auto text-slate-400">→</span>
-                      </a>
-                    ))}
-                  </div>
+                  {mobileOnly ? (
+                    <div className="space-y-3">
+                      <p className="text-slate-300 text-sm mb-3">เกมนี้เล่นได้บนมือถือ ดาวน์โหลดได้ฟรีที่</p>
+                      <div className="flex items-center gap-3 py-3 px-4 rounded-xl bg-slate-800 border border-slate-700">
+                        <span className="text-2xl">🍎</span>
+                        <div>
+                          <p className="font-bold text-white text-sm">App Store</p>
+                          <p className="text-slate-400 text-xs">สำหรับ iPhone / iPad</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 py-3 px-4 rounded-xl bg-slate-800 border border-slate-700">
+                        <span className="text-2xl">🤖</span>
+                        <div>
+                          <p className="font-bold text-white text-sm">Google Play Store</p>
+                          <p className="text-slate-400 text-xs">สำหรับ Android</p>
+                        </div>
+                      </div>
+                      <p className="text-slate-500 text-xs text-center pt-1">ค้นหาชื่อเกมใน Store ได้เลย</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {buttons.map((btn, i) => (
+                        <a key={i} href={btn.url} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-3 w-full py-3 px-4 rounded-xl font-bold text-sm transition-all duration-200 hover:scale-[1.02]"
+                          style={{ background: btn.bg, border: `1.5px solid ${btn.border}55`, color: '#fff' }}
+                          onMouseEnter={e => e.currentTarget.style.borderColor = btn.border}
+                          onMouseLeave={e => e.currentTarget.style.borderColor = `${btn.border}55`}
+                        >
+                          <span className="text-lg">{btn.icon}</span>
+                          <span>Play on {btn.label}</span>
+                          <span className="ml-auto text-slate-400">→</span>
+                        </a>
+                      ))}
+                    </div>
+                  )}
                 </div>
               );
             })()}
