@@ -2592,6 +2592,67 @@ function GameDetailPage({ game, navigateTo }) {
               {isWishlisted ? '♥ Remove from Wishlist' : '♡ Add to Wishlist'}
             </button>
 
+            {/* Store Links */}
+            {(() => {
+              const storeMap = {
+                'Valorant':            { steam: null,                                          epic: 'https://www.epicgames.com/store/en-US/p/valorant', official: 'https://playvalorant.com' },
+                "PUBG: PlayerUnknown's Battlegrounds": { steam: 'https://store.steampowered.com/app/578080', epic: null, official: null },
+                'Apex Legends':        { steam: 'https://store.steampowered.com/app/1172470', epic: 'https://www.epicgames.com/store/en-US/p/apex-legends', official: null },
+                'Counter-Strike 2':    { steam: 'https://store.steampowered.com/app/730',     epic: null, official: null },
+                'Overwatch 2':         { steam: null,                                          epic: null, official: 'https://overwatch.blizzard.com' },
+                'Rainbow Six Siege':   { steam: 'https://store.steampowered.com/app/359550',  epic: 'https://www.epicgames.com/store/en-US/p/rainbow-six-siege', official: null },
+                'Clash of Clans':      { steam: null, epic: null, official: 'https://apps.apple.com/app/clash-of-clans/id529479190' },
+                'PUBG Mobile':         { steam: null, epic: null, official: 'https://www.pubgmobile.com' },
+                'League of Legends':   { steam: null, epic: null, official: 'https://www.leagueoflegends.com' },
+                'Dota 2':              { steam: 'https://store.steampowered.com/app/570',     epic: null, official: null },
+                'Fortnite':            { steam: null,                                          epic: 'https://www.epicgames.com/fortnite', official: null },
+                'Rocket League':       { steam: 'https://store.steampowered.com/app/252950',  epic: 'https://www.epicgames.com/store/en-US/p/rocket-league', official: null },
+                'FIFA 24':             { steam: 'https://store.steampowered.com/app/2195250', epic: null, official: null },
+                'NBA 2K24':            { steam: 'https://store.steampowered.com/app/2338770', epic: null, official: null },
+                'eFootball 2024':      { steam: 'https://store.steampowered.com/app/1665460', epic: null, official: null },
+                'Minecraft':           { steam: null, epic: null, official: 'https://www.minecraft.net' },
+                'The Sims 4':          { steam: 'https://store.steampowered.com/app/1222670', epic: null, official: null },
+                'Stardew Valley':      { steam: 'https://store.steampowered.com/app/413150',  epic: null, official: null },
+                'Civilization VI':     { steam: 'https://store.steampowered.com/app/289070',  epic: 'https://www.epicgames.com/store/en-US/p/sid-meiers-civilization-vi', official: null },
+                'Clash Royale':        { steam: null, epic: null, official: 'https://clashroyale.com' },
+                'Among Us':            { steam: 'https://store.steampowered.com/app/945360',  epic: null, official: null },
+                'Fall Guys':           { steam: 'https://store.steampowered.com/app/1097150', epic: 'https://www.epicgames.com/store/en-US/p/fall-guys', official: null },
+                'Gang Beasts':         { steam: 'https://store.steampowered.com/app/285900',  epic: null, official: null },
+                'It Takes Two':        { steam: 'https://store.steampowered.com/app/1426210', epic: 'https://www.epicgames.com/store/en-US/p/it-takes-two', official: null },
+                'Pummel Party':        { steam: 'https://store.steampowered.com/app/880940',  epic: null, official: null },
+                'Mobile Legends':      { steam: null, epic: null, official: 'https://mobilelegends.com' },
+                'Free Fire':           { steam: null, epic: null, official: 'https://ff.garena.com' },
+                'Arena of Valor':      { steam: null, epic: null, official: 'https://www.arenaofvalor.com' },
+              };
+              const stores = storeMap[game.title];
+              if (!stores) return null;
+              const buttons = [
+                stores.steam    && { label: 'Steam',        url: stores.steam,    bg: '#1b2838', border: '#4a90d9', icon: '🎮' },
+                stores.epic     && { label: 'Epic Games',   url: stores.epic,     bg: '#2a2a2a', border: '#0078f2', icon: '⚡' },
+                stores.official && { label: 'Official Site',url: stores.official, bg: '#1a1a2e', border: color,     icon: '🌐' },
+              ].filter(Boolean);
+              if (buttons.length === 0) return null;
+              return (
+                <div className="rounded-2xl overflow-hidden border border-slate-800 bg-slate-900 p-5">
+                  <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Get This Game</h4>
+                  <div className="space-y-3">
+                    {buttons.map((btn, i) => (
+                      <a key={i} href={btn.url} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-3 w-full py-3 px-4 rounded-xl font-bold text-sm transition-all duration-200 hover:scale-[1.02]"
+                        style={{ background: btn.bg, border: `1.5px solid ${btn.border}55`, color: '#fff' }}
+                        onMouseEnter={e => e.currentTarget.style.borderColor = btn.border}
+                        onMouseLeave={e => e.currentTarget.style.borderColor = `${btn.border}55`}
+                      >
+                        <span className="text-lg">{btn.icon}</span>
+                        <span>Play on {btn.label}</span>
+                        <span className="ml-auto text-slate-400">→</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* Info card */}
             <div className="cyber-border rounded-2xl">
               <div className="bg-slate-900 rounded-2xl p-6">
