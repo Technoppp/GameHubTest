@@ -46,10 +46,10 @@ const RAWG_SLUGS = {
   'League of Legends': 'league-of-legends',
   'EA Sports FC 26': 'ea-sports-fc-25',
   'NBA 2K26': 'nba-2k25',
-  'WWE 2K26': 'wwe-2k24',
+  'WWE 2K26': 'wwe-2k25',
   'Madden NFL 26': 'madden-nfl-25',
-  'F1 25': 'f1-2024',
-  'Football Manager 2026': 'football-manager-2024',
+  'F1 25': 'f1-25',
+  'Football Manager 2026': 'football-manager-2025',
   'Overcooked! All You Can Eat': 'overcooked-all-you-can-eat',
   'Gang Beasts': 'gang-beasts',
   'Among Us': 'among-us',
@@ -173,7 +173,7 @@ const GAMES_DATA = [
     title: 'Valorant',
     category: 'fps',
     subcategory: 'Tactical',
-    image: 'https://media.rawg.io/media/games/b11/b11127b9ee3c3701bd15b9af3286d20e.jpg',
+    image: '/images/games/rov.jpg',
     description: 'A 5v5 character-based tactical shooter where precise gunplay meets unique agent abilities. Every round is a high-stakes test of strategy and skill.',
     releaseDate: '2020-06-02',
     rating: 4.8,
@@ -951,6 +951,8 @@ function AuthNavButton({ navigateTo, currentPage, user, authLoading }) {
 const RawgImagesContext = React.createContext({});
 export const useGameImage = (game) => {
   const images = React.useContext(RawgImagesContext);
+  // If game has a local image path (uploaded by user), always use it
+  if (game.image && game.image.startsWith('/images/')) return game.image;
   return images[game.title] || game.image;
 };
 
@@ -2505,7 +2507,7 @@ function GameDetailPage({ game, navigateTo }) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
         <div className="absolute inset-0 flex items-end">
-          <div className="container mx-auto px-6 pb-14">
+          <div className="container mx-auto px-6 pb-24 sm:pb-14">
             {/* Breadcrumb */}
             <div className="flex items-center gap-2 text-sm text-slate-400 mb-5">
               <button className="breadcrumb-item hover:text-blue-400" onClick={() => navigateTo('games')}>Games</button>
