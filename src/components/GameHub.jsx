@@ -811,10 +811,10 @@ const TOURNAMENTS_DATA = [
   { id: 3, joinable: false, name: 'LoL World Championship 2026', game: 'League of Legends', date: 'October 1-November 2, 2026', prize: '$2,250,000', status: 'Upcoming', type: 'LAN', description: 'The annual LoL Worlds crowns the best team on the planet. 70M+ viewers. Qualification via regional splits only.', watchUrl: 'https://www.twitch.tv/riotgames', teams: 22, region: 'International' },
   { id: 4, joinable: false, name: 'CS2 Major: Copenhagen 2026', game: 'Counter-Strike 2', date: 'April 14-27, 2026', prize: '$1,250,000', status: 'Upcoming', type: 'LAN', description: 'Valve-sponsored CS2 Major. 24 top teams from Regional Major Rankings only. Qualification through RMR events.', watchUrl: 'https://www.twitch.tv/esl_csgo', teams: 24, region: 'International' },
   // JOINABLE (Public)
-  { id: 5, joinable: true, name: 'GameHub Weekly Valorant Cup', game: 'Valorant', date: 'Every Saturday', prize: '$500', status: 'Registration Open', type: 'Online', description: 'Weekly open tournament for all ranks. Register your team of 5 and compete every weekend. No invite required!', maxTeams: 32, registered: 18, region: 'Southeast Asia', requirements: 'ทีม 5 คน • ไม่จำกัด Rank • PC เท่านั้น' },
-  { id: 6, joinable: true, name: 'GameHub ROV Community Cup', game: 'ROV (Arena of Valor)', date: 'April 20, 2026', prize: '฿5,000', status: 'Registration Open', type: 'Online', description: 'Open ROV tournament for Thai players. Solo queue or pre-made team of 5. Join and prove your skills!', maxTeams: 64, registered: 41, region: 'Thailand', requirements: 'ทีม 5 คน • Gold+ ขึ้นไป • มือถือ / PC' },
-  { id: 7, joinable: true, name: 'GameHub CS2 Open Qualifier', game: 'Counter-Strike 2', date: 'May 3-4, 2026', prize: '$300', status: 'Registration Open', type: 'Online', description: 'Open CS2 5v5 tournament. Any team can register. Top teams advance to monthly finals. FACEIT accounts required.', maxTeams: 128, registered: 67, region: 'Asia-Pacific', requirements: 'ทีม 5 คน • FACEIT Account • PC เท่านั้น' },
-  { id: 8, joinable: true, name: 'GameHub Mobile Legends Cup', game: 'Mobile Legends: Bang Bang', date: 'April 27, 2026', prize: '฿3,000', status: 'Coming Soon', type: 'Online', description: 'Open MLBB tournament for mobile players across SEA. Form your team and compete for prizes!', maxTeams: 64, registered: 0, region: 'Southeast Asia', requirements: 'ทีม 5 คน • Epic+ ขึ้นไป • มือถือ' },
+  { id: 5, joinable: true, name: 'GameHub Weekly Valorant Cup', game: 'Valorant', date: 'Every Saturday', prize: '$500', status: 'Registration Open', type: 'Online', description: 'Weekly open tournament for all ranks. Register your team of 5 and compete every weekend. No invite required!', maxTeams: 32, registered: 18, region: 'Southeast Asia', requirements: '5-player team • Any rank • PC only' },
+  { id: 6, joinable: true, name: 'GameHub ROV Community Cup', game: 'ROV (Arena of Valor)', date: 'April 20, 2026', prize: '฿5,000', status: 'Registration Open', type: 'Online', description: 'Open ROV tournament for Thai players. Solo queue or pre-made team of 5. Join and prove your skills!', maxTeams: 64, registered: 41, region: 'Thailand', requirements: '5-player team • Gold+ rank • Mobile / PC' },
+  { id: 7, joinable: true, name: 'GameHub CS2 Open Qualifier', game: 'Counter-Strike 2', date: 'May 3-4, 2026', prize: '$300', status: 'Registration Open', type: 'Online', description: 'Open CS2 5v5 tournament. Any team can register. Top teams advance to monthly finals. FACEIT accounts required.', maxTeams: 128, registered: 67, region: 'Asia-Pacific', requirements: '5-player team • FACEIT Account • PC only' },
+  { id: 8, joinable: true, name: 'GameHub Mobile Legends Cup', game: 'Mobile Legends: Bang Bang', date: 'April 27, 2026', prize: '฿3,000', status: 'Coming Soon', type: 'Online', description: 'Open MLBB tournament for mobile players across SEA. Form your team and compete for prizes!', maxTeams: 64, registered: 0, region: 'Southeast Asia', requirements: '5-player team • Epic+ rank • Mobile' },
 ];
 
 // ─────────────────────────────────────────────
@@ -1488,17 +1488,8 @@ export default function GameHub() {
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-slate-950/95 backdrop-blur-lg shadow-lg shadow-blue-500/10' : 'bg-transparent'}`}>
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            {/* Logo + Back button */}
+            {/* Logo */}
             <div className="flex items-center gap-2 flex-shrink-0">
-              {(currentPage === 'category' || currentPage === 'game-detail') && navHistory.length > 0 && (
-                <button
-                  onClick={goBack}
-                  className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all"
-                  title="ย้อนกลับ"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-              )}
               <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigateTo('home')}>
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center glow-effect">
                   <Gamepad2 className="w-6 h-6" />
@@ -2273,6 +2264,11 @@ function CategoryPage({ category, navigateTo }) {
         <div className="container mx-auto px-6 py-20 relative z-10">
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-sm text-slate-500 mb-8 fade-in-up">
+            {navHistory.length > 0 && (
+              <button onClick={goBack} className="breadcrumb-item hover:text-white flex items-center gap-1 mr-1">
+                <ChevronLeft className="w-4 h-4" /> Back
+              </button>
+            )}
             <button className="breadcrumb-item hover:text-blue-400" onClick={() => navigateTo('games')}>Games</button>
             <ChevronRight className="w-4 h-4" />
             <span style={{ color: category.color }}>{category.label}</span>
@@ -2544,6 +2540,11 @@ function GameDetailPage({ game, navigateTo }) {
           <div className="container mx-auto px-6 pb-24 sm:pb-14">
             {/* Breadcrumb */}
             <div className="flex items-center gap-2 text-sm text-slate-400 mb-5">
+              {navHistory.length > 0 && (
+                <button onClick={goBack} className="breadcrumb-item hover:text-white flex items-center gap-1 mr-1">
+                  <ChevronLeft className="w-4 h-4" /> Back
+                </button>
+              )}
               <button className="breadcrumb-item hover:text-blue-400" onClick={() => navigateTo('games')}>Games</button>
               <ChevronRight className="w-4 h-4 text-slate-600" />
               <button className="breadcrumb-item" style={{ color }} onClick={() => navigateTo('category', cat)}>{cat?.label}</button>
@@ -2679,22 +2680,22 @@ function GameDetailPage({ game, navigateTo }) {
                   <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Get This Game</h4>
                   {mobileOnly ? (
                     <div className="space-y-3">
-                      <p className="text-slate-300 text-sm mb-3">เกมนี้เล่นได้บนมือถือ ดาวน์โหลดได้ฟรีที่</p>
+                      <p className="text-slate-300 text-sm mb-3">This game is available on mobile. Download for free on</p>
                       <div className="flex items-center gap-3 py-3 px-4 rounded-xl bg-slate-800 border border-slate-700">
                         <span className="text-2xl">🍎</span>
                         <div>
                           <p className="font-bold text-white text-sm">App Store</p>
-                          <p className="text-slate-400 text-xs">สำหรับ iPhone / iPad</p>
+                          <p className="text-slate-400 text-xs">For iPhone / iPad</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 py-3 px-4 rounded-xl bg-slate-800 border border-slate-700">
                         <span className="text-2xl">🤖</span>
                         <div>
                           <p className="font-bold text-white text-sm">Google Play Store</p>
-                          <p className="text-slate-400 text-xs">สำหรับ Android</p>
+                          <p className="text-slate-400 text-xs">For Android</p>
                         </div>
                       </div>
-                      <p className="text-slate-500 text-xs text-center pt-1">ค้นหาชื่อเกมใน Store ได้เลย</p>
+                      <p className="text-slate-500 text-xs text-center pt-1">Search the game name in your app store</p>
                     </div>
                   ) : (
                     <div className="space-y-3">
@@ -3427,18 +3428,18 @@ function TournamentsPage({ navigateTo }) {
         <h2 className="text-4xl font-black mb-3" style={{ fontFamily: "'Orbitron', sans-serif" }}>
           <span className="text-yellow-400">TOURNAMENTS</span> & COMPETITIONS
         </h2>
-        <p className="text-slate-400">ดูทัวร์นาเมนต์ระดับโปร หรือสมัครแข่งขันทัวร์นาเมนต์ที่เปิดรับสมัคร</p>
+        <p className="text-slate-400">Watch pro-level tournaments or join open competitions</p>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-2 mb-8 bg-slate-900 p-1 rounded-xl w-fit">
         <button onClick={() => setTab('join')}
           className={`px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${tab === 'join' ? 'bg-yellow-500 text-black' : 'text-slate-400 hover:text-white'}`}>
-          🎮 เข้าร่วมได้
+          🎮 Joinable
         </button>
         <button onClick={() => setTab('watch')}
           className={`px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${tab === 'watch' ? 'bg-blue-500 text-white' : 'text-slate-400 hover:text-white'}`}>
-          👁️ ดูอย่างเดียว
+          👁️ Watch Only
         </button>
       </div>
 
@@ -3472,8 +3473,8 @@ function TournamentsPage({ navigateTo }) {
                       {/* Slots bar */}
                       <div>
                         <div className="flex justify-between text-xs text-slate-400 mb-1.5">
-                          <span>ทีมที่สมัครแล้ว</span>
-                          <span className={full ? 'text-red-400 font-bold' : 'text-green-400 font-bold'}>{t.registered} / {t.maxTeams} ทีม{full ? ' - เต็มแล้ว' : ''}</span>
+                          <span>Teams Registered</span>
+                          <span className={full ? 'text-red-400 font-bold' : 'text-green-400 font-bold'}>{t.registered} / {t.maxTeams} teams{full ? ' — Full' : ''}</span>
                         </div>
                         <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
                           <div className={`h-full rounded-full transition-all ${full ? 'bg-red-500' : pct > 70 ? 'bg-yellow-500' : 'bg-green-500'}`} style={{ width: `${pct}%` }}/>
@@ -3488,15 +3489,15 @@ function TournamentsPage({ navigateTo }) {
                       {t.status === 'Registration Open' && !full ? (
                         <button onClick={() => handleRegister(t)}
                           className="w-full lg:w-auto bg-yellow-500 hover:bg-yellow-400 text-black font-black px-6 py-3 rounded-xl transition-all hover:scale-105 text-sm">
-                          ✍️ สมัครเลย
+                          ✍️ Join Now
                         </button>
                       ) : t.status === 'Coming Soon' ? (
                         <button className="w-full lg:w-auto bg-slate-700 text-slate-400 font-bold px-6 py-3 rounded-xl text-sm cursor-not-allowed" disabled>
-                          เร็วๆ นี้
+                          Coming Soon
                         </button>
                       ) : full ? (
                         <button className="w-full lg:w-auto bg-red-900/40 text-red-400 font-bold px-6 py-3 rounded-xl text-sm cursor-not-allowed" disabled>
-                          เต็มแล้ว
+                          Full
                         </button>
                       ) : null}
                     </div>
@@ -3512,7 +3513,7 @@ function TournamentsPage({ navigateTo }) {
       {tab === 'watch' && (
         <div className="space-y-5">
           <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl px-5 py-3 text-sm text-blue-300 mb-6">
-            👁️ ทัวร์นาเมนต์เหล่านี้เป็นระดับโปรและ Invitational - <strong>ดูได้อย่างเดียว</strong> ไม่เปิดรับสมัครทั่วไป
+            👁️ These are pro-level and invitational tournaments — <strong>Watch only</strong>. Not open for public registration.
           </div>
           {watchable.map((t, i) => (
             <div key={t.id} className="bg-slate-900 border-2 border-slate-800 rounded-2xl overflow-hidden hover:border-blue-500/40 transition-all fade-in-up" style={{ animationDelay: `${i*0.08}s` }}>
@@ -3529,7 +3530,7 @@ function TournamentsPage({ navigateTo }) {
                     <div className="flex flex-wrap gap-4 text-sm">
                       <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4 text-blue-400"/>{t.date}</span>
                       <span className="flex items-center gap-1.5"><Zap className="w-4 h-4 text-purple-400"/>{t.type}</span>
-                      <span className="flex items-center gap-1.5 text-slate-400">👥 {t.teams} ทีม</span>
+                      <span className="flex items-center gap-1.5 text-slate-400">👥 {t.teams} teams</span>
                       <span className="flex items-center gap-1.5 text-slate-400">🌏 {t.region}</span>
                     </div>
                   </div>
@@ -3544,7 +3545,7 @@ function TournamentsPage({ navigateTo }) {
                         📺 ดูสด
                       </a>
                     )}
-                    <p className="text-xs text-slate-600 italic">ไม่เปิดรับสมัคร</p>
+                    <p className="text-xs text-slate-600 italic">Not open for registration</p>
                   </div>
                 </div>
               </div>
@@ -3557,7 +3558,7 @@ function TournamentsPage({ navigateTo }) {
       {registerModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setRegisterModal(null)}>
           <div className="bg-slate-900 border border-yellow-500/40 rounded-2xl p-8 max-w-md w-full" onClick={e => e.stopPropagation()}>
-            <h3 className="text-xl font-black mb-1">สมัครเข้าร่วม</h3>
+            <h3 className="text-xl font-black mb-1">Register to Join</h3>
             <p className="text-yellow-400 font-bold mb-4">{registerModal.name}</p>
             <div className="space-y-2 text-sm text-slate-400 mb-6">
               <p>📅 {registerModal.date}</p>
@@ -3566,16 +3567,16 @@ function TournamentsPage({ navigateTo }) {
               <p>🏆 Prize: <span className="text-yellow-400 font-bold">{registerModal.prize}</span></p>
             </div>
             <div className="bg-slate-800 rounded-xl p-4 mb-6 text-sm text-slate-300">
-              ระบบลงทะเบียนผ่าน Discord ของ GameHub ทีมงานจะติดต่อกลับภายใน 24 ชั่วโมงหลังสมัคร
+              Registration is handled via GameHub's Discord. Our team will contact you within 24 hours after signing up.
             </div>
             <div className="flex gap-3">
               <button onClick={() => setRegisterModal(null)}
                 className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-400 font-bold hover:bg-slate-700 transition-colors">
-                ยกเลิก
+                Cancel
               </button>
               <a href="https://discord.gg/gamehub" target="_blank" rel="noopener noreferrer"
                 className="flex-1 py-3 rounded-xl bg-yellow-500 text-black font-black hover:bg-yellow-400 transition-all text-center">
-                ✅ ยืนยันสมัคร
+                ✅ Confirm Registration
               </a>
             </div>
           </div>
@@ -3653,7 +3654,7 @@ function CommunityPage({ navigateTo }) {
 
   const handleDelete = async (postId, authorId) => {
     if (!user || user.uid !== authorId) return;
-    if (!window.confirm('ลบโพสต์นี้?')) return;
+    if (!window.confirm('DeletePostนี้?')) return;
     await deleteDoc(doc(db, 'community_posts', postId));
   };
 
@@ -3665,10 +3666,10 @@ function CommunityPage({ navigateTo }) {
     if (!ts) return '';
     const d = ts.toDate ? ts.toDate() : new Date(ts);
     const diff = Math.floor((Date.now() - d) / 1000);
-    if (diff < 60) return 'เมื่อกี้';
-    if (diff < 3600) return `${Math.floor(diff/60)} นาทีที่แล้ว`;
-    if (diff < 86400) return `${Math.floor(diff/3600)} ชั่วโมงที่แล้ว`;
-    return `${Math.floor(diff/86400)} วันที่แล้ว`;
+    if (diff < 60) return 'Just now';
+    if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
+    return `${Math.floor(diff/86400)}d ago`;
   };
 
   const avatar = (name) => {
@@ -3684,7 +3685,7 @@ function CommunityPage({ navigateTo }) {
         <h2 className="text-4xl font-black mb-2" style={{ fontFamily: "'Orbitron', sans-serif" }}>
           <span className="text-purple-400">COMMUNITY</span>
         </h2>
-        <p className="text-slate-400">พื้นที่สำหรับนักเล่นเกมทุกคน — แชร์ความคิด ถามตอบ และคุยเรื่องเกม</p>
+        <p className="text-slate-400">A space for all gamers — share thoughts, ask questions, and talk games</p>
       </div>
 
       {/* Create Post */}
@@ -3699,7 +3700,7 @@ function CommunityPage({ navigateTo }) {
               <textarea
                 value={postText}
                 onChange={e => setPostText(e.target.value)}
-                placeholder="แชร์อะไรกับชุมชน..."
+                placeholder="Share something with the community..."
                 rows={3}
                 className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 resize-none focus:outline-none focus:border-purple-500 transition-colors"
               />
@@ -3708,7 +3709,7 @@ function CommunityPage({ navigateTo }) {
               <input
                 value={postImage}
                 onChange={e => setPostImage(e.target.value)}
-                placeholder="🔗 URL รูปภาพ (ไม่บังคับ)"
+                placeholder="🔗 Image URL (optional)"
                 className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-300 placeholder-slate-600 focus:outline-none focus:border-purple-500 transition-colors ml-13"
               />
               <button
@@ -3716,16 +3717,16 @@ function CommunityPage({ navigateTo }) {
                 disabled={submitting || !postText.trim()}
                 className="bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold px-5 py-2 rounded-lg text-sm transition-all"
               >
-                {submitting ? '...' : 'โพสต์'}
+                {submitting ? '...' : 'Post'}
               </button>
             </div>
           </>
         ) : (
           <div className="text-center py-4">
-            <p className="text-slate-400 mb-3 text-sm">เข้าสู่ระบบเพื่อโพสต์และมีส่วนร่วมในชุมชน</p>
+            <p className="text-slate-400 mb-3 text-sm">Sign in to post and participate in the community</p>
             <button onClick={requireLogin}
               className="bg-purple-600 hover:bg-purple-500 text-white font-bold px-6 py-2.5 rounded-xl text-sm transition-all">
-              🔐 เข้าสู่ระบบ
+              🔐 Sign In
             </button>
           </div>
         )}
@@ -3739,8 +3740,8 @@ function CommunityPage({ navigateTo }) {
       ) : posts.length === 0 ? (
         <div className="text-center py-20 text-slate-500">
           <p className="text-4xl mb-3">💬</p>
-          <p className="font-bold">ยังไม่มีโพสต์</p>
-          <p className="text-sm">เป็นคนแรกที่โพสต์ในชุมชน!</p>
+          <p className="font-bold">No posts yet</p>
+          <p className="text-sm">Be the first to post in the community!</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -3799,7 +3800,7 @@ function PostCard({ post, user, openComments, commentText, setCommentText, onLik
           {isOwner && (
             <button onClick={() => onDelete(post.id, post.authorId)}
               className="text-slate-600 hover:text-red-400 text-xs transition-colors px-2 py-1 rounded">
-              ลบ
+              Delete
             </button>
           )}
         </div>
@@ -3819,7 +3820,7 @@ function PostCard({ post, user, openComments, commentText, setCommentText, onLik
           </button>
           <button onClick={() => onToggleComments(post.id)}
             className={`flex items-center gap-1.5 text-sm font-bold transition-colors ${openComments[post.id] ? 'text-blue-400' : 'text-slate-500 hover:text-blue-400'}`}>
-            💬 <span>{commentCount > 0 ? commentCount : 'คอมเมนต์'}</span>
+            💬 <span>{commentCount > 0 ? commentCount : 'Comments'}</span>
           </button>
         </div>
       </div>
@@ -3828,9 +3829,9 @@ function PostCard({ post, user, openComments, commentText, setCommentText, onLik
       {openComments[post.id] && (
         <div className="border-t border-slate-800 bg-slate-950/50 px-5 py-4">
           {loadingComments && comments.length === 0 ? (
-            <p className="text-xs text-slate-500 mb-3">กำลังโหลด...</p>
+            <p className="text-xs text-slate-500 mb-3">Loading...</p>
           ) : comments.length === 0 ? (
-            <p className="text-xs text-slate-600 mb-3">ยังไม่มีคอมเมนต์ — เป็นคนแรก!</p>
+            <p className="text-xs text-slate-600 mb-3">No comments yet — be the first!</p>
           ) : (
             <div className="space-y-3 mb-4">
               {comments.map(c => {
@@ -3854,18 +3855,18 @@ function PostCard({ post, user, openComments, commentText, setCommentText, onLik
                 value={commentText[post.id] || ''}
                 onChange={e => setCommentText(p => ({ ...p, [post.id]: e.target.value }))}
                 onKeyDown={e => e.key === 'Enter' && onComment(post.id)}
-                placeholder="เขียนคอมเมนต์..."
+                placeholder="Write a comment..."
                 className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-purple-500 transition-colors"
               />
               <button onClick={() => onComment(post.id)}
                 className="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold px-3 py-2 rounded-xl transition-colors">
-                ส่ง
+                Send
               </button>
             </div>
           ) : (
             <button onClick={onRequireLogin}
               className="text-xs text-purple-400 hover:text-purple-300 transition-colors">
-              เข้าสู่ระบบเพื่อคอมเมนต์
+              Sign in to comment
             </button>
           )}
         </div>
