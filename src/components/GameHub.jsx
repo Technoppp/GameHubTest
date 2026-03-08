@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ChevronRight, ChevronLeft, Trophy, Calendar, Zap, Gamepad2, Newspaper, Info, Target, Swords, Users, Laugh, Crown, Brain, Car, Shield } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from 'firebase/auth';
-import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs, onSnapshot, orderBy, query, updateDoc, arrayUnion, arrayRemove, deleteDoc, serverTimestamp } from 'firebase/firestore';
 
 // ─────────────────────────────────────────────
 // FIREBASE AUTH
@@ -1517,6 +1517,8 @@ export default function GameHub() {
                 { name: 'Games', icon: Zap, page: 'games' },
                 { name: 'Tournaments', icon: Trophy, page: 'tournaments' },
                 { name: 'Leaderboard', icon: Crown, page: 'leaderboard' },
+                { name: 'Community', icon: Users, page: 'community' },
+                { name: 'Community', icon: Users, page: 'community' },
                 { name: 'News', icon: Newspaper, page: 'news' },
                 { name: 'About', icon: Info, page: 'about' },
               ].map((item) => (
@@ -1570,6 +1572,8 @@ export default function GameHub() {
                 { name: 'Games', icon: Zap, page: 'games' },
                 { name: 'Tournaments', icon: Trophy, page: 'tournaments' },
                 { name: 'Leaderboard', icon: Crown, page: 'leaderboard' },
+                { name: 'Community', icon: Users, page: 'community' },
+                { name: 'Community', icon: Users, page: 'community' },
                 { name: 'News', icon: Newspaper, page: 'news' },
                 { name: 'About', icon: Info, page: 'about' },
               ].map((item) => (
@@ -1637,6 +1641,7 @@ export default function GameHub() {
         {currentPage === 'tournaments' && <TournamentsPage navigateTo={navigateTo} />}
         {currentPage === 'leaderboard' && <LeaderboardPage navigateTo={navigateTo} />}
         {currentPage === 'wishlist' && <WishlistPage navigateTo={navigateTo} />}
+        {currentPage === 'community' && <CommunityPage navigateTo={navigateTo} />}
         {currentPage === 'news' && <NewsPage navigateTo={navigateTo} />}
         {currentPage === 'about' && <AboutPage />}
         {currentPage === 'login' && <LoginPage navigateTo={navigateTo} />}
@@ -3576,6 +3581,295 @@ function TournamentsPage({ navigateTo }) {
               </a>
             </div>
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// COMMUNITY PAGE
+// ─────────────────────────────────────────────
+
+function CommunityPage({ navigateTo }) {
+  const { user } = useAuth();
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [postText, setPostText] = useState('');
+  const [postImage, setPostImage] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [openComments, setOpenComments] = useState({});
+  const [commentText, setCommentText] = useState({});
+
+  // Real-time posts listener
+  useEffect(() => {
+    const q = query(collection(db, 'community_posts'), orderBy('createdAt', 'desc'));
+    const unsub = onSnapshot(q, (snap) => {
+      setPosts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setLoading(false);
+    });
+    return () => unsub();
+  }, []);
+
+  const requireLogin = () => { navigateTo('login'); };
+
+  const handlePost = async () => {
+    if (!user) { requireLogin(); return; }
+    if (!postText.trim()) return;
+    setSubmitting(true);
+    try {
+      await addDoc(collection(db, 'community_posts'), {
+        text: postText.trim(),
+        imageUrl: postImage.trim() || null,
+        authorId: user.uid,
+        authorName: user.displayName || user.email.split('@')[0],
+        authorEmail: user.email,
+        likes: [],
+        createdAt: serverTimestamp(),
+      });
+      setPostText('');
+      setPostImage('');
+    } catch (e) { console.error(e); }
+    setSubmitting(false);
+  };
+
+  const handleLike = async (post) => {
+    if (!user) { requireLogin(); return; }
+    const ref = doc(db, 'community_posts', post.id);
+    const liked = (post.likes || []).includes(user.uid);
+    await updateDoc(ref, { likes: liked ? arrayRemove(user.uid) : arrayUnion(user.uid) });
+  };
+
+  const handleComment = async (postId) => {
+    if (!user) { requireLogin(); return; }
+    const text = (commentText[postId] || '').trim();
+    if (!text) return;
+    await addDoc(collection(db, 'community_posts', postId, 'comments'), {
+      text,
+      authorId: user.uid,
+      authorName: user.displayName || user.email.split('@')[0],
+      createdAt: serverTimestamp(),
+    });
+    setCommentText(p => ({ ...p, [postId]: '' }));
+  };
+
+  const handleDelete = async (postId, authorId) => {
+    if (!user || user.uid !== authorId) return;
+    if (!window.confirm('ลบโพสต์นี้?')) return;
+    await deleteDoc(doc(db, 'community_posts', postId));
+  };
+
+  const toggleComments = (postId) => {
+    setOpenComments(p => ({ ...p, [postId]: !p[postId] }));
+  };
+
+  const timeAgo = (ts) => {
+    if (!ts) return '';
+    const d = ts.toDate ? ts.toDate() : new Date(ts);
+    const diff = Math.floor((Date.now() - d) / 1000);
+    if (diff < 60) return 'เมื่อกี้';
+    if (diff < 3600) return `${Math.floor(diff/60)} นาทีที่แล้ว`;
+    if (diff < 86400) return `${Math.floor(diff/3600)} ชั่วโมงที่แล้ว`;
+    return `${Math.floor(diff/86400)} วันที่แล้ว`;
+  };
+
+  const avatar = (name) => {
+    const colors = ['#6366f1','#8b5cf6','#ec4899','#f59e0b','#10b981','#3b82f6'];
+    const i = (name || 'U').charCodeAt(0) % colors.length;
+    return { bg: colors[i], letter: (name || 'U')[0].toUpperCase() };
+  };
+
+  return (
+    <div className="container mx-auto px-4 lg:px-6 py-16 max-w-2xl">
+      {/* Header */}
+      <div className="mb-8 fade-in-up">
+        <h2 className="text-4xl font-black mb-2" style={{ fontFamily: "'Orbitron', sans-serif" }}>
+          <span className="text-purple-400">COMMUNITY</span>
+        </h2>
+        <p className="text-slate-400">พื้นที่สำหรับนักเล่นเกมทุกคน — แชร์ความคิด ถามตอบ และคุยเรื่องเกม</p>
+      </div>
+
+      {/* Create Post */}
+      <div className="bg-slate-900 border border-slate-700 rounded-2xl p-5 mb-6 fade-in-up">
+        {user ? (
+          <>
+            <div className="flex gap-3 mb-3">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white flex-shrink-0"
+                style={{ background: avatar(user.displayName || user.email).bg }}>
+                {avatar(user.displayName || user.email).letter}
+              </div>
+              <textarea
+                value={postText}
+                onChange={e => setPostText(e.target.value)}
+                placeholder="แชร์อะไรกับชุมชน..."
+                rows={3}
+                className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 resize-none focus:outline-none focus:border-purple-500 transition-colors"
+              />
+            </div>
+            <div className="flex items-center gap-3 pl-13">
+              <input
+                value={postImage}
+                onChange={e => setPostImage(e.target.value)}
+                placeholder="🔗 URL รูปภาพ (ไม่บังคับ)"
+                className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-300 placeholder-slate-600 focus:outline-none focus:border-purple-500 transition-colors ml-13"
+              />
+              <button
+                onClick={handlePost}
+                disabled={submitting || !postText.trim()}
+                className="bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold px-5 py-2 rounded-lg text-sm transition-all"
+              >
+                {submitting ? '...' : 'โพสต์'}
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="text-center py-4">
+            <p className="text-slate-400 mb-3 text-sm">เข้าสู่ระบบเพื่อโพสต์และมีส่วนร่วมในชุมชน</p>
+            <button onClick={requireLogin}
+              className="bg-purple-600 hover:bg-purple-500 text-white font-bold px-6 py-2.5 rounded-xl text-sm transition-all">
+              🔐 เข้าสู่ระบบ
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Posts Feed */}
+      {loading ? (
+        <div className="space-y-4">
+          {[1,2,3].map(i => <div key={i} className="bg-slate-900 rounded-2xl p-5 animate-pulse h-32"/>)}
+        </div>
+      ) : posts.length === 0 ? (
+        <div className="text-center py-20 text-slate-500">
+          <p className="text-4xl mb-3">💬</p>
+          <p className="font-bold">ยังไม่มีโพสต์</p>
+          <p className="text-sm">เป็นคนแรกที่โพสต์ในชุมชน!</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {posts.map(post => {
+            const av = avatar(post.authorName);
+            const liked = user && (post.likes || []).includes(user.uid);
+            const likeCount = (post.likes || []).length;
+            const isOwner = user && user.uid === post.authorId;
+            return (
+              <PostCard key={post.id} post={post} av={av} liked={liked} likeCount={likeCount}
+                isOwner={isOwner} user={user} openComments={openComments}
+                commentText={commentText} setCommentText={setCommentText}
+                onLike={handleLike} onComment={handleComment} onDelete={handleDelete}
+                onToggleComments={toggleComments} onRequireLogin={requireLogin}
+                timeAgo={timeAgo} avatar={avatar} db={db}
+              />
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PostCard({ post, av, liked, likeCount, isOwner, user, openComments, commentText, setCommentText, onLike, onComment, onDelete, onToggleComments, onRequireLogin, timeAgo, avatar, db }) {
+  const [comments, setComments] = useState([]);
+  const [loadingComments, setLoadingComments] = useState(false);
+
+  useEffect(() => {
+    if (!openComments[post.id]) return;
+    setLoadingComments(true);
+    const q = query(collection(db, 'community_posts', post.id, 'comments'), orderBy('createdAt', 'asc'));
+    const unsub = onSnapshot(q, (snap) => {
+      setComments(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setLoadingComments(false);
+    });
+    return () => unsub();
+  }, [openComments[post.id]]);
+
+  return (
+    <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden fade-in-up hover:border-slate-700 transition-colors">
+      <div className="p-5">
+        {/* Author */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white flex-shrink-0"
+              style={{ background: av.bg }}>
+              {av.letter}
+            </div>
+            <div>
+              <p className="font-bold text-sm">{post.authorName}</p>
+              <p className="text-xs text-slate-500">{timeAgo(post.createdAt)}</p>
+            </div>
+          </div>
+          {isOwner && (
+            <button onClick={() => onDelete(post.id, post.authorId)}
+              className="text-slate-600 hover:text-red-400 text-xs transition-colors px-2 py-1 rounded">
+              ลบ
+            </button>
+          )}
+        </div>
+
+        {/* Content */}
+        <p className="text-slate-200 text-sm leading-relaxed mb-3 whitespace-pre-wrap">{post.text}</p>
+        {post.imageUrl && (
+          <img src={post.imageUrl} alt="" className="w-full rounded-xl object-cover max-h-80 mb-3"
+            onError={e => e.target.style.display='none'}/>
+        )}
+
+        {/* Actions */}
+        <div className="flex items-center gap-4 pt-2 border-t border-slate-800">
+          <button onClick={() => onLike(post)}
+            className={`flex items-center gap-1.5 text-sm font-bold transition-all hover:scale-110 ${liked ? 'text-red-400' : 'text-slate-500 hover:text-red-400'}`}>
+            {liked ? '❤️' : '🤍'} <span>{likeCount > 0 ? likeCount : ''}</span>
+          </button>
+          <button onClick={() => onToggleComments(post.id)}
+            className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-blue-400 font-bold transition-colors">
+            💬 <span>คอมเมนต์</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Comments Section */}
+      {openComments[post.id] && (
+        <div className="border-t border-slate-800 bg-slate-950/50 px-5 py-4">
+          {loadingComments ? (
+            <p className="text-xs text-slate-500 mb-3">กำลังโหลด...</p>
+          ) : comments.length === 0 ? (
+            <p className="text-xs text-slate-600 mb-3">ยังไม่มีคอมเมนต์</p>
+          ) : (
+            <div className="space-y-3 mb-4">
+              {comments.map(c => {
+                const cav = avatar(c.authorName);
+                return (
+                  <div key={c.id} className="flex gap-2.5">
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+                      style={{ background: cav.bg }}>{cav.letter}</div>
+                    <div className="bg-slate-800 rounded-xl px-3 py-2 flex-1">
+                      <p className="text-xs font-bold text-slate-300 mb-0.5">{c.authorName}</p>
+                      <p className="text-xs text-slate-400">{c.text}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {/* Comment input */}
+          {user ? (
+            <div className="flex gap-2">
+              <input
+                value={commentText[post.id] || ''}
+                onChange={e => setCommentText(p => ({ ...p, [post.id]: e.target.value }))}
+                onKeyDown={e => e.key === 'Enter' && onComment(post.id)}
+                placeholder="เขียนคอมเมนต์..."
+                className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-purple-500 transition-colors"
+              />
+              <button onClick={() => onComment(post.id)}
+                className="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold px-3 py-2 rounded-xl transition-colors">
+                ส่ง
+              </button>
+            </div>
+          ) : (
+            <button onClick={onRequireLogin}
+              className="text-xs text-purple-400 hover:text-purple-300 transition-colors">
+              เข้าสู่ระบบเพื่อคอมเมนต์
+            </button>
+          )}
         </div>
       )}
     </div>
