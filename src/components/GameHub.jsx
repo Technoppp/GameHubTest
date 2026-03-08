@@ -1518,7 +1518,6 @@ export default function GameHub() {
                 { name: 'Tournaments', icon: Trophy, page: 'tournaments' },
                 { name: 'Leaderboard', icon: Crown, page: 'leaderboard' },
                 { name: 'Community', icon: Users, page: 'community' },
-                { name: 'Community', icon: Users, page: 'community' },
                 { name: 'News', icon: Newspaper, page: 'news' },
                 { name: 'About', icon: Info, page: 'about' },
               ].map((item) => (
@@ -1572,7 +1571,6 @@ export default function GameHub() {
                 { name: 'Games', icon: Zap, page: 'games' },
                 { name: 'Tournaments', icon: Trophy, page: 'tournaments' },
                 { name: 'Leaderboard', icon: Crown, page: 'leaderboard' },
-                { name: 'Community', icon: Users, page: 'community' },
                 { name: 'Community', icon: Users, page: 'community' },
                 { name: 'News', icon: Newspaper, page: 'news' },
                 { name: 'About', icon: Info, page: 'about' },
