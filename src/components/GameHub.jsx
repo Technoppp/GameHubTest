@@ -3675,6 +3675,7 @@ function CommunityPage({ navigateTo }) {
       authorId: user.uid,
       authorName: user.displayName || user.email.split('@')[0],
       likes: [],
+      replyToId: null,
       createdAt: serverTimestamp(),
     });
     setCommentText(p => ({ ...p, [postId]: '' }));
@@ -3838,10 +3839,19 @@ function PostCard({ post, user, openComments, commentText, setCommentText, onLik
     await updateDoc(ref, { likes: liked ? arrayRemove(user.uid) : arrayUnion(user.uid) });
   };
 
-  const handleSendComment = () => {
-    const text = commentText[post.id] || '';
-    if (!text.trim()) return;
-    onComment(post.id, replyTo ? `@${replyTo.name} ` : '');
+  const handleSendComment = async () => {
+    if (!user) { onRequireLogin(); return; }
+    const text = (commentText[post.id] || '').trim();
+    if (!text) return;
+    await addDoc(collection(db, 'community_posts', post.id, 'comments'), {
+      text,
+      authorId: user.uid,
+      authorName: user ? (user.displayName || user.email.split('@')[0]) : 'User',
+      likes: [],
+      replyToId: replyTo ? replyTo.id : null,
+      createdAt: serverTimestamp(),
+    });
+    setCommentText(p => ({ ...p, [post.id]: '' }));
     setReplyTo(null);
   };
 
@@ -3893,36 +3903,74 @@ function PostCard({ post, user, openComments, commentText, setCommentText, onLik
           {comments.length === 0 ? (
             <p className="text-xs text-slate-600 mb-3">No comments yet — be the first!</p>
           ) : (
-            <div className="space-y-2 mb-4">
-              {comments.map(c => {
+            <div className="space-y-3 mb-4">
+              {comments.filter(c => !c.replyToId).map(c => {
+                const replies = comments.filter(r => r.replyToId === c.id);
                 const cLiked = user && (c.likes || []).includes(user.uid);
                 const cLikeCount = (c.likes || []).length;
                 return (
-                  <div key={c.id} className="flex gap-2.5 group">
-                    <UserAvatar uid={c.authorId} name={c.authorName} size="sm" db={db} />
-                    <div className="flex-1">
-                      <div className="bg-slate-800 rounded-xl px-3 py-2">
-                        <p className="text-xs font-bold text-slate-300 mb-0.5">{c.authorName}</p>
-                        <p className="text-xs text-slate-400 whitespace-pre-wrap">{c.text}</p>
-                      </div>
-                      {/* Comment actions */}
-                      <div className="flex items-center gap-3 mt-1 ml-1">
-                        <button onClick={() => handleLikeComment(c)}
-                          className={`text-xs font-bold transition-colors ${cLiked ? 'text-red-400' : 'text-slate-600 hover:text-red-400'}`}>
-                          {cLiked ? '❤️' : '♡'} {cLikeCount > 0 ? cLikeCount : ''}
-                        </button>
-                        {user && (
-                          <button onClick={() => {
-                            setReplyTo({ id: c.id, name: c.authorName });
-                            setCommentText(p => ({ ...p, [post.id]: `@${c.authorName} ` }));
-                          }}
-                            className="text-xs text-slate-600 hover:text-blue-400 font-bold transition-colors">
-                            Reply
+                  <div key={c.id}>
+                    {/* Main comment */}
+                    <div className="flex gap-2.5">
+                      <UserAvatar uid={c.authorId} name={c.authorName} size="sm" db={db} />
+                      <div className="flex-1">
+                        <div className="bg-slate-800 rounded-xl px-3 py-2">
+                          <p className="text-xs font-bold text-slate-300 mb-0.5">{c.authorName}</p>
+                          <p className="text-xs text-slate-400 whitespace-pre-wrap">{c.text}</p>
+                        </div>
+                        <div className="flex items-center gap-3 mt-1 ml-1">
+                          <button onClick={() => handleLikeComment(c)}
+                            className={`text-xs font-bold transition-colors ${cLiked ? 'text-red-400' : 'text-slate-600 hover:text-red-400'}`}>
+                            {cLiked ? '❤️' : '♡'} {cLikeCount > 0 ? cLikeCount : ''}
                           </button>
-                        )}
-                        <span className="text-xs text-slate-700">{timeAgo(c.createdAt)}</span>
+                          {user && (
+                            <button onClick={() => {
+                              setReplyTo({ id: c.id, name: c.authorName });
+                              setCommentText(p => ({ ...p, [post.id]: `@${c.authorName} ` }));
+                            }} className="text-xs text-slate-600 hover:text-blue-400 font-bold transition-colors">
+                              Reply
+                            </button>
+                          )}
+                          <span className="text-xs text-slate-700">{timeAgo(c.createdAt)}</span>
+                        </div>
                       </div>
                     </div>
+
+                    {/* Nested replies */}
+                    {replies.length > 0 && (
+                      <div className="ml-9 mt-2 space-y-2 border-l-2 border-slate-800 pl-3">
+                        {replies.map(r => {
+                          const rLiked = user && (r.likes || []).includes(user.uid);
+                          const rLikeCount = (r.likes || []).length;
+                          return (
+                            <div key={r.id} className="flex gap-2">
+                              <UserAvatar uid={r.authorId} name={r.authorName} size="sm" db={db} />
+                              <div className="flex-1">
+                                <div className="bg-slate-800/70 rounded-xl px-3 py-2">
+                                  <p className="text-xs font-bold text-slate-300 mb-0.5">{r.authorName}</p>
+                                  <p className="text-xs text-slate-400 whitespace-pre-wrap">{r.text}</p>
+                                </div>
+                                <div className="flex items-center gap-3 mt-1 ml-1">
+                                  <button onClick={() => handleLikeComment(r)}
+                                    className={`text-xs font-bold transition-colors ${rLiked ? 'text-red-400' : 'text-slate-600 hover:text-red-400'}`}>
+                                    {rLiked ? '❤️' : '♡'} {rLikeCount > 0 ? rLikeCount : ''}
+                                  </button>
+                                  {user && (
+                                    <button onClick={() => {
+                                      setReplyTo({ id: c.id, name: r.authorName });
+                                      setCommentText(p => ({ ...p, [post.id]: `@${r.authorName} ` }));
+                                    }} className="text-xs text-slate-600 hover:text-blue-400 font-bold transition-colors">
+                                      Reply
+                                    </button>
+                                  )}
+                                  <span className="text-xs text-slate-700">{timeAgo(r.createdAt)}</span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 );
               })}
