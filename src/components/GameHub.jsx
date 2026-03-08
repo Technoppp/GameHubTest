@@ -1490,7 +1490,7 @@ export default function GameHub() {
           <div className="flex items-center justify-between">
             {/* Logo + Back button */}
             <div className="flex items-center gap-2 flex-shrink-0">
-              {navHistory.length > 0 && (
+              {(currentPage === 'category' || currentPage === 'game-detail') && navHistory.length > 0 && (
                 <button
                   onClick={goBack}
                   className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all"
