@@ -3747,13 +3747,8 @@ function CommunityPage({ navigateTo }) {
       ) : (
         <div className="space-y-4">
           {posts.map(post => {
-            const av = avatar(post.authorName);
-            const liked = user && (post.likes || []).includes(user.uid);
-            const likeCount = (post.likes || []).length;
-            const isOwner = user && user.uid === post.authorId;
             return (
-              <PostCard key={post.id} post={post} av={av} liked={liked} likeCount={likeCount}
-                isOwner={isOwner} user={user} openComments={openComments}
+              <PostCard key={post.id} post={post} user={user} openComments={openComments}
                 commentText={commentText} setCommentText={setCommentText}
                 onLike={handleLike} onComment={handleComment} onDelete={handleDelete}
                 onToggleComments={toggleComments} onRequireLogin={requireLogin}
@@ -3767,20 +3762,125 @@ function CommunityPage({ navigateTo }) {
   );
 }
 
-function PostCard({ post, av, liked, likeCount, isOwner, user, openComments, commentText, setCommentText, onLike, onComment, onDelete, onToggleComments, onRequireLogin, timeAgo, avatar, db }) {
+function PostCard({ post, user, openComments, commentText, setCommentText, onLike, onComment, onDelete, onToggleComments, onRequireLogin, timeAgo, avatar, db }) {
   const [comments, setComments] = useState([]);
+  const [commentCount, setCommentCount] = useState(0);
   const [loadingComments, setLoadingComments] = useState(false);
 
+  const av = avatar(post.authorName);
+  const liked = user && (post.likes || []).includes(user.uid);
+  const likeCount = (post.likes || []).length;
+  const isOwner = user && user.uid === post.authorId;
+
+  // Load comment count always
   useEffect(() => {
-    if (!openComments[post.id]) return;
-    setLoadingComments(true);
     const q = query(collection(db, 'community_posts', post.id, 'comments'), orderBy('createdAt', 'asc'));
     const unsub = onSnapshot(q, (snap) => {
-      setComments(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-      setLoadingComments(false);
+      setCommentCount(snap.size);
+      if (openComments[post.id]) {
+        setComments(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        setLoadingComments(false);
+      }
     });
     return () => unsub();
+  }, [post.id]);
+
+  useEffect(() => {
+    if (openComments[post.id]) setLoadingComments(true);
   }, [openComments[post.id]]);
+
+  return (
+    <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden fade-in-up hover:border-slate-700 transition-colors">
+      <div className="p-5">
+        {/* Author */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white flex-shrink-0"
+              style={{ background: av.bg }}>
+              {av.letter}
+            </div>
+            <div>
+              <p className="font-bold text-sm">{post.authorName}</p>
+              <p className="text-xs text-slate-500">{timeAgo(post.createdAt)}</p>
+            </div>
+          </div>
+          {isOwner && (
+            <button onClick={() => onDelete(post.id, post.authorId)}
+              className="text-slate-600 hover:text-red-400 text-xs transition-colors px-2 py-1 rounded">
+              ลบ
+            </button>
+          )}
+        </div>
+
+        {/* Content */}
+        <p className="text-slate-200 text-sm leading-relaxed mb-3 whitespace-pre-wrap">{post.text}</p>
+        {post.imageUrl && (
+          <img src={post.imageUrl} alt="" className="w-full rounded-xl object-cover max-h-80 mb-3"
+            onError={e => e.target.style.display='none'}/>
+        )}
+
+        {/* Actions */}
+        <div className="flex items-center gap-5 pt-2 border-t border-slate-800">
+          <button onClick={() => onLike(post)}
+            className={`flex items-center gap-1.5 text-sm font-bold transition-all hover:scale-110 ${liked ? 'text-red-400' : 'text-slate-500 hover:text-red-400'}`}>
+            {liked ? '❤️' : '🤍'} <span>{likeCount > 0 ? likeCount : ''}</span>
+          </button>
+          <button onClick={() => onToggleComments(post.id)}
+            className={`flex items-center gap-1.5 text-sm font-bold transition-colors ${openComments[post.id] ? 'text-blue-400' : 'text-slate-500 hover:text-blue-400'}`}>
+            💬 <span>{commentCount > 0 ? commentCount : 'คอมเมนต์'}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Comments Section */}
+      {openComments[post.id] && (
+        <div className="border-t border-slate-800 bg-slate-950/50 px-5 py-4">
+          {loadingComments && comments.length === 0 ? (
+            <p className="text-xs text-slate-500 mb-3">กำลังโหลด...</p>
+          ) : comments.length === 0 ? (
+            <p className="text-xs text-slate-600 mb-3">ยังไม่มีคอมเมนต์ — เป็นคนแรก!</p>
+          ) : (
+            <div className="space-y-3 mb-4">
+              {comments.map(c => {
+                const cav = avatar(c.authorName);
+                return (
+                  <div key={c.id} className="flex gap-2.5">
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+                      style={{ background: cav.bg }}>{cav.letter}</div>
+                    <div className="bg-slate-800 rounded-xl px-3 py-2 flex-1">
+                      <p className="text-xs font-bold text-slate-300 mb-0.5">{c.authorName}</p>
+                      <p className="text-xs text-slate-400">{c.text}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {user ? (
+            <div className="flex gap-2">
+              <input
+                value={commentText[post.id] || ''}
+                onChange={e => setCommentText(p => ({ ...p, [post.id]: e.target.value }))}
+                onKeyDown={e => e.key === 'Enter' && onComment(post.id)}
+                placeholder="เขียนคอมเมนต์..."
+                className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-purple-500 transition-colors"
+              />
+              <button onClick={() => onComment(post.id)}
+                className="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold px-3 py-2 rounded-xl transition-colors">
+                ส่ง
+              </button>
+            </div>
+          ) : (
+            <button onClick={onRequireLogin}
+              className="text-xs text-purple-400 hover:text-purple-300 transition-colors">
+              เข้าสู่ระบบเพื่อคอมเมนต์
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden fade-in-up hover:border-slate-700 transition-colors">
@@ -3874,7 +3974,7 @@ function PostCard({ post, av, liked, likeCount, isOwner, user, openComments, com
       )}
     </div>
   );
-}
+
 
 // ─────────────────────────────────────────────
 // NEWS PAGE
