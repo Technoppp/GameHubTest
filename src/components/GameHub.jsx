@@ -2,8 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ChevronRight, ChevronLeft, Trophy, Calendar, Zap, Gamepad2, Newspaper, Info, Target, Swords, Users, Laugh, Crown, Brain, Car, Shield } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from 'firebase/auth';
-import { getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs, onSnapshot, orderBy, query, updateDoc, arrayUnion, arrayRemove, deleteDoc, serverTimestamp } from 'firebase/firestore';
-import { getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs, onSnapshot, orderBy, query, where, writeBatch, updateDoc, arrayUnion, arrayRemove, deleteDoc, serverTimestamp } from 'firebase/firestore';
 
 // ─────────────────────────────────────────────
 // FIREBASE AUTH
@@ -22,7 +21,6 @@ const firebaseConfig = {
 const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
 const db = getFirestore(firebaseApp);
-const storage = getStorage(firebaseApp);
 
 // Auth context - accessible anywhere in the app
 const AuthContext = React.createContext(null);
@@ -3026,10 +3024,37 @@ function ProfilePage({ navigateTo }) {
     if (!newName.trim()) return;
     setSaving(true);
     try {
-      await updateProfile(user, { displayName: newName.trim() });
+      const trimmed = newName.trim();
+
+      // 1. Update Firebase Auth displayName
+      await updateProfile(user, { displayName: trimmed });
+
+      // 2. Batch update all posts by this user
+      const postsSnap = await getDocs(query(collection(db, 'community_posts'), where('authorId', '==', user.uid)));
+      if (!postsSnap.empty) {
+        const batch = writeBatch(db);
+        postsSnap.docs.forEach(d => batch.update(d.ref, { authorName: trimmed }));
+        await batch.commit();
+      }
+
+      // 3. Batch update all comments across all posts
+      const allPostsSnap = await getDocs(collection(db, 'community_posts'));
+      const commentBatch = writeBatch(db);
+      let commentCount = 0;
+      for (const postDoc of allPostsSnap.docs) {
+        const commentsSnap = await getDocs(
+          query(collection(db, 'community_posts', postDoc.id, 'comments'), where('authorId', '==', user.uid))
+        );
+        commentsSnap.docs.forEach(d => {
+          commentBatch.update(d.ref, { authorName: trimmed });
+          commentCount++;
+        });
+      }
+      if (commentCount > 0) await commentBatch.commit();
+
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
-    } catch (_) {}
+    } catch (e) { console.error(e); }
     setSaving(false);
   };
 
@@ -3598,13 +3623,9 @@ function CommunityPage({ navigateTo }) {
   const [loading, setLoading] = useState(true);
   const [postText, setPostText] = useState('');
   const [postImage, setPostImage] = useState('');
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [openComments, setOpenComments] = useState({});
   const [commentText, setCommentText] = useState({});
-  const fileInputRef = useRef(null);
 
   // Real-time posts listener
   useEffect(() => {
@@ -3618,45 +3639,14 @@ function CommunityPage({ navigateTo }) {
 
   const requireLogin = () => { navigateTo('login'); };
 
-  const handleFileSelect = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { alert('Image must be under 5MB'); return; }
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
-  };
-
-  const removeImage = () => {
-    setImageFile(null);
-    setImagePreview(null);
-    setUploadProgress(0);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
   const handlePost = async () => {
     if (!user) { requireLogin(); return; }
     if (!postText.trim()) return;
     setSubmitting(true);
     try {
-      let imageUrl = postImage.trim() || null;
-
-      // Upload file if selected
-      if (imageFile) {
-        const path = `community/${user.uid}/${Date.now()}_${imageFile.name}`;
-        const sRef = storageRef(storage, path);
-        await new Promise((resolve, reject) => {
-          const task = uploadBytesResumable(sRef, imageFile);
-          task.on('state_changed',
-            snap => setUploadProgress(Math.round(snap.bytesTransferred / snap.totalBytes * 100)),
-            reject,
-            async () => { imageUrl = await getDownloadURL(task.snapshot.ref); resolve(); }
-          );
-        });
-      }
-
       await addDoc(collection(db, 'community_posts'), {
         text: postText.trim(),
-        imageUrl,
+        imageUrl: postImage.trim() || null,
         authorId: user.uid,
         authorName: user.displayName || user.email.split('@')[0],
         authorEmail: user.email,
@@ -3665,10 +3655,8 @@ function CommunityPage({ navigateTo }) {
       });
       setPostText('');
       setPostImage('');
-      removeImage();
     } catch (e) { console.error(e); }
     setSubmitting(false);
-    setUploadProgress(0);
   };
 
   const handleLike = async (post) => {
@@ -3742,43 +3730,19 @@ function CommunityPage({ navigateTo }) {
                 className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 resize-none focus:outline-none focus:border-purple-500 transition-colors"
               />
             </div>
-
-            {/* Image preview */}
-            {imagePreview && (
-              <div className="relative mb-3 ml-13 rounded-xl overflow-hidden border border-slate-700">
-                <img src={imagePreview} alt="preview" className="w-full max-h-56 object-cover"/>
-                <button onClick={removeImage}
-                  className="absolute top-2 right-2 w-7 h-7 bg-black/60 hover:bg-black/80 rounded-full text-white text-xs flex items-center justify-center transition-colors">
-                  ✕
-                </button>
-              </div>
-            )}
-
-            {/* Upload progress */}
-            {submitting && uploadProgress > 0 && uploadProgress < 100 && (
-              <div className="mb-3 ml-13">
-                <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
-                  <div className="h-full bg-purple-500 transition-all" style={{ width: `${uploadProgress}%` }}/>
-                </div>
-                <p className="text-xs text-slate-500 mt-1">Uploading... {uploadProgress}%</p>
-              </div>
-            )}
-
-            <div className="flex items-center gap-2 ml-13">
-              {/* Hidden file input */}
-              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden"/>
-              {/* Attach button */}
-              <button onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-purple-400 bg-slate-800 hover:bg-slate-700 px-3 py-2 rounded-lg transition-all border border-slate-700">
-                🖼️ {imageFile ? 'Change Image' : 'Add Image'}
-              </button>
-              <div className="flex-1"/>
+            <div className="flex items-center gap-3">
+              <input
+                value={postImage}
+                onChange={e => setPostImage(e.target.value)}
+                placeholder="🔗 Image URL (optional)"
+                className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-300 placeholder-slate-600 focus:outline-none focus:border-purple-500 transition-colors"
+              />
               <button
                 onClick={handlePost}
                 disabled={submitting || !postText.trim()}
-                className="bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold px-5 py-2 rounded-lg text-sm transition-all"
+                className="bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold px-5 py-2 rounded-lg text-sm transition-all flex-shrink-0"
               >
-                {submitting ? (uploadProgress > 0 ? `${uploadProgress}%` : 'Posting...') : 'Post'}
+                {submitting ? '...' : 'Post'}
               </button>
             </div>
           </>
