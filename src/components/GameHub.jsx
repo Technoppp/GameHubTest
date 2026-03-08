@@ -3,6 +3,7 @@ import { ChevronRight, ChevronLeft, Trophy, Calendar, Zap, Gamepad2, Newspaper, 
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs, onSnapshot, orderBy, query, updateDoc, arrayUnion, arrayRemove, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 
 // ─────────────────────────────────────────────
 // FIREBASE AUTH
@@ -21,6 +22,7 @@ const firebaseConfig = {
 const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
 const db = getFirestore(firebaseApp);
+const storage = getStorage(firebaseApp);
 
 // Auth context - accessible anywhere in the app
 const AuthContext = React.createContext(null);
@@ -3596,9 +3598,13 @@ function CommunityPage({ navigateTo }) {
   const [loading, setLoading] = useState(true);
   const [postText, setPostText] = useState('');
   const [postImage, setPostImage] = useState('');
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [openComments, setOpenComments] = useState({});
   const [commentText, setCommentText] = useState({});
+  const fileInputRef = useRef(null);
 
   // Real-time posts listener
   useEffect(() => {
@@ -3612,14 +3618,45 @@ function CommunityPage({ navigateTo }) {
 
   const requireLogin = () => { navigateTo('login'); };
 
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { alert('Image must be under 5MB'); return; }
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    setUploadProgress(0);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const handlePost = async () => {
     if (!user) { requireLogin(); return; }
     if (!postText.trim()) return;
     setSubmitting(true);
     try {
+      let imageUrl = postImage.trim() || null;
+
+      // Upload file if selected
+      if (imageFile) {
+        const path = `community/${user.uid}/${Date.now()}_${imageFile.name}`;
+        const sRef = storageRef(storage, path);
+        await new Promise((resolve, reject) => {
+          const task = uploadBytesResumable(sRef, imageFile);
+          task.on('state_changed',
+            snap => setUploadProgress(Math.round(snap.bytesTransferred / snap.totalBytes * 100)),
+            reject,
+            async () => { imageUrl = await getDownloadURL(task.snapshot.ref); resolve(); }
+          );
+        });
+      }
+
       await addDoc(collection(db, 'community_posts'), {
         text: postText.trim(),
-        imageUrl: postImage.trim() || null,
+        imageUrl,
         authorId: user.uid,
         authorName: user.displayName || user.email.split('@')[0],
         authorEmail: user.email,
@@ -3628,8 +3665,10 @@ function CommunityPage({ navigateTo }) {
       });
       setPostText('');
       setPostImage('');
+      removeImage();
     } catch (e) { console.error(e); }
     setSubmitting(false);
+    setUploadProgress(0);
   };
 
   const handleLike = async (post) => {
@@ -3639,14 +3678,15 @@ function CommunityPage({ navigateTo }) {
     await updateDoc(ref, { likes: liked ? arrayRemove(user.uid) : arrayUnion(user.uid) });
   };
 
-  const handleComment = async (postId) => {
+  const handleComment = async (postId, prefix = '') => {
     if (!user) { requireLogin(); return; }
-    const text = (commentText[postId] || '').trim();
+    const text = ((commentText[postId] || '')).trim();
     if (!text) return;
     await addDoc(collection(db, 'community_posts', postId, 'comments'), {
       text,
       authorId: user.uid,
       authorName: user.displayName || user.email.split('@')[0],
+      likes: [],
       createdAt: serverTimestamp(),
     });
     setCommentText(p => ({ ...p, [postId]: '' }));
@@ -3705,19 +3745,43 @@ function CommunityPage({ navigateTo }) {
                 className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 resize-none focus:outline-none focus:border-purple-500 transition-colors"
               />
             </div>
-            <div className="flex items-center gap-3 pl-13">
-              <input
-                value={postImage}
-                onChange={e => setPostImage(e.target.value)}
-                placeholder="🔗 Image URL (optional)"
-                className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-300 placeholder-slate-600 focus:outline-none focus:border-purple-500 transition-colors ml-13"
-              />
+
+            {/* Image preview */}
+            {imagePreview && (
+              <div className="relative mb-3 ml-13 rounded-xl overflow-hidden border border-slate-700">
+                <img src={imagePreview} alt="preview" className="w-full max-h-56 object-cover"/>
+                <button onClick={removeImage}
+                  className="absolute top-2 right-2 w-7 h-7 bg-black/60 hover:bg-black/80 rounded-full text-white text-xs flex items-center justify-center transition-colors">
+                  ✕
+                </button>
+              </div>
+            )}
+
+            {/* Upload progress */}
+            {submitting && uploadProgress > 0 && uploadProgress < 100 && (
+              <div className="mb-3 ml-13">
+                <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                  <div className="h-full bg-purple-500 transition-all" style={{ width: `${uploadProgress}%` }}/>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">Uploading... {uploadProgress}%</p>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 ml-13">
+              {/* Hidden file input */}
+              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden"/>
+              {/* Attach button */}
+              <button onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-purple-400 bg-slate-800 hover:bg-slate-700 px-3 py-2 rounded-lg transition-all border border-slate-700">
+                🖼️ {imageFile ? 'Change Image' : 'Add Image'}
+              </button>
+              <div className="flex-1"/>
               <button
                 onClick={handlePost}
                 disabled={submitting || !postText.trim()}
                 className="bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold px-5 py-2 rounded-lg text-sm transition-all"
               >
-                {submitting ? '...' : 'Post'}
+                {submitting ? (uploadProgress > 0 ? `${uploadProgress}%` : 'Posting...') : 'Post'}
               </button>
             </div>
           </>
@@ -3751,7 +3815,7 @@ function CommunityPage({ navigateTo }) {
                 commentText={commentText} setCommentText={setCommentText}
                 onLike={handleLike} onComment={handleComment} onDelete={handleDelete}
                 onToggleComments={toggleComments} onRequireLogin={requireLogin}
-                timeAgo={timeAgo} avatar={avatar} db={db}
+                timeAgo={timeAgo} db={db}
               />
             );
           })}
@@ -3761,26 +3825,76 @@ function CommunityPage({ navigateTo }) {
   );
 }
 
-function PostCard({ post, user, openComments, commentText, setCommentText, onLike, onComment, onDelete, onToggleComments, onRequireLogin, timeAgo, avatar, db }) {
+// Avatar display using Firestore emoji+color (same as ProfilePage)
+function UserAvatar({ uid, name, size = 'md', db }) {
+  const AVATAR_COLORS_LOCAL = [
+    { from: '#3b82f6', to: '#8b5cf6' },
+    { from: '#ec4899', to: '#f43f5e' },
+    { from: '#10b981', to: '#06b6d4' },
+    { from: '#f59e0b', to: '#f97316' },
+    { from: '#8b5cf6', to: '#6366f1' },
+    { from: '#14b8a6', to: '#3b82f6' },
+    { from: '#f43f5e', to: '#f59e0b' },
+    { from: '#6366f1', to: '#ec4899' },
+  ];
+  const [emoji, setEmoji] = useState(null);
+  const [colorIdx, setColorIdx] = useState(0);
+
+  useEffect(() => {
+    if (!uid) return;
+    getDoc(doc(db, 'avatars', uid)).then(snap => {
+      if (snap.exists()) {
+        setEmoji(snap.data().emoji || null);
+        setColorIdx(snap.data().colorIndex ?? 0);
+      }
+    }).catch(() => {});
+  }, [uid]);
+
+  const color = AVATAR_COLORS_LOCAL[colorIdx % AVATAR_COLORS_LOCAL.length];
+  const fallbackLetter = (name || 'U')[0].toUpperCase();
+  const sizeClass = size === 'sm' ? 'w-7 h-7 text-xs' : 'w-10 h-10 text-sm';
+
+  return (
+    <div className={`${sizeClass} rounded-full flex items-center justify-center font-bold text-white flex-shrink-0`}
+      style={{ background: `linear-gradient(135deg, ${color.from}, ${color.to})` }}>
+      {emoji || fallbackLetter}
+    </div>
+  );
+}
+
+function PostCard({ post, user, openComments, commentText, setCommentText, onLike, onComment, onDelete, onToggleComments, onRequireLogin, timeAgo, db }) {
   const [comments, setComments] = useState([]);
   const [commentCount, setCommentCount] = useState(0);
-  const [loadingComments, setLoadingComments] = useState(false);
+  const [replyTo, setReplyTo] = useState(null); // { id, name }
 
-  const av = avatar(post.authorName);
   const liked = user && (post.likes || []).includes(user.uid);
   const likeCount = (post.likes || []).length;
   const isOwner = user && user.uid === post.authorId;
 
-  // Load comments realtime always (for count + display)
   useEffect(() => {
     const q = query(collection(db, 'community_posts', post.id, 'comments'), orderBy('createdAt', 'asc'));
     const unsub = onSnapshot(q, (snap) => {
       setComments(snap.docs.map(d => ({ id: d.id, ...d.data() })));
       setCommentCount(snap.size);
-      setLoadingComments(false);
-    }, () => setLoadingComments(false));
+    }, () => {});
     return () => unsub();
   }, [post.id]);
+
+  const handleLikeComment = async (c) => {
+    if (!user) { onRequireLogin(); return; }
+    const ref = doc(db, 'community_posts', post.id, 'comments', c.id);
+    const liked = (c.likes || []).includes(user.uid);
+    await updateDoc(ref, { likes: liked ? arrayRemove(user.uid) : arrayUnion(user.uid) });
+  };
+
+  const handleSendComment = () => {
+    const text = commentText[post.id] || '';
+    if (!text.trim()) return;
+    onComment(post.id, replyTo ? `@${replyTo.name} ` : '');
+    setReplyTo(null);
+  };
+
+  const currentInput = commentText[post.id] || '';
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden fade-in-up hover:border-slate-700 transition-colors">
@@ -3788,10 +3902,7 @@ function PostCard({ post, user, openComments, commentText, setCommentText, onLik
         {/* Author */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white flex-shrink-0"
-              style={{ background: av.bg }}>
-              {av.letter}
-            </div>
+            <UserAvatar uid={post.authorId} name={post.authorName} db={db} />
             <div>
               <p className="font-bold text-sm">{post.authorName}</p>
               <p className="text-xs text-slate-500">{timeAgo(post.createdAt)}</p>
@@ -3828,37 +3939,64 @@ function PostCard({ post, user, openComments, commentText, setCommentText, onLik
       {/* Comments Section */}
       {openComments[post.id] && (
         <div className="border-t border-slate-800 bg-slate-950/50 px-5 py-4">
-          {loadingComments && comments.length === 0 ? (
-            <p className="text-xs text-slate-500 mb-3">Loading...</p>
-          ) : comments.length === 0 ? (
+          {comments.length === 0 ? (
             <p className="text-xs text-slate-600 mb-3">No comments yet — be the first!</p>
           ) : (
-            <div className="space-y-3 mb-4">
+            <div className="space-y-2 mb-4">
               {comments.map(c => {
-                const cav = avatar(c.authorName);
+                const cLiked = user && (c.likes || []).includes(user.uid);
+                const cLikeCount = (c.likes || []).length;
                 return (
-                  <div key={c.id} className="flex gap-2.5">
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
-                      style={{ background: cav.bg }}>{cav.letter}</div>
-                    <div className="bg-slate-800 rounded-xl px-3 py-2 flex-1">
-                      <p className="text-xs font-bold text-slate-300 mb-0.5">{c.authorName}</p>
-                      <p className="text-xs text-slate-400">{c.text}</p>
+                  <div key={c.id} className="flex gap-2.5 group">
+                    <UserAvatar uid={c.authorId} name={c.authorName} size="sm" db={db} />
+                    <div className="flex-1">
+                      <div className="bg-slate-800 rounded-xl px-3 py-2">
+                        <p className="text-xs font-bold text-slate-300 mb-0.5">{c.authorName}</p>
+                        <p className="text-xs text-slate-400 whitespace-pre-wrap">{c.text}</p>
+                      </div>
+                      {/* Comment actions */}
+                      <div className="flex items-center gap-3 mt-1 ml-1">
+                        <button onClick={() => handleLikeComment(c)}
+                          className={`text-xs font-bold transition-colors ${cLiked ? 'text-red-400' : 'text-slate-600 hover:text-red-400'}`}>
+                          {cLiked ? '❤️' : '♡'} {cLikeCount > 0 ? cLikeCount : ''}
+                        </button>
+                        {user && (
+                          <button onClick={() => {
+                            setReplyTo({ id: c.id, name: c.authorName });
+                            setCommentText(p => ({ ...p, [post.id]: `@${c.authorName} ` }));
+                          }}
+                            className="text-xs text-slate-600 hover:text-blue-400 font-bold transition-colors">
+                            Reply
+                          </button>
+                        )}
+                        <span className="text-xs text-slate-700">{timeAgo(c.createdAt)}</span>
+                      </div>
                     </div>
                   </div>
                 );
               })}
             </div>
           )}
+
+          {/* Reply indicator */}
+          {replyTo && (
+            <div className="flex items-center gap-2 bg-slate-800/60 rounded-lg px-3 py-1.5 mb-2 text-xs text-slate-400">
+              <span>↩️ Replying to <span className="text-blue-400 font-bold">@{replyTo.name}</span></span>
+              <button onClick={() => { setReplyTo(null); setCommentText(p => ({ ...p, [post.id]: '' })); }}
+                className="ml-auto text-slate-600 hover:text-slate-400">✕</button>
+            </div>
+          )}
+
           {user ? (
             <div className="flex gap-2">
               <input
-                value={commentText[post.id] || ''}
+                value={currentInput}
                 onChange={e => setCommentText(p => ({ ...p, [post.id]: e.target.value }))}
-                onKeyDown={e => e.key === 'Enter' && onComment(post.id)}
-                placeholder="Write a comment..."
+                onKeyDown={e => e.key === 'Enter' && handleSendComment()}
+                placeholder={replyTo ? `Reply to @${replyTo.name}...` : 'Write a comment...'}
                 className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-purple-500 transition-colors"
               />
-              <button onClick={() => onComment(post.id)}
+              <button onClick={handleSendComment}
                 className="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold px-3 py-2 rounded-xl transition-colors">
                 Send
               </button>
