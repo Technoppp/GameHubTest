@@ -3733,10 +3733,7 @@ function CommunityPage({ navigateTo }) {
         {user ? (
           <>
             <div className="flex gap-3 mb-3">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white flex-shrink-0"
-                style={{ background: avatar(user.displayName || user.email).bg }}>
-                {avatar(user.displayName || user.email).letter}
-              </div>
+              <UserAvatar uid={user.uid} name={user.displayName || user.email} db={db} />
               <textarea
                 value={postText}
                 onChange={e => setPostText(e.target.value)}
