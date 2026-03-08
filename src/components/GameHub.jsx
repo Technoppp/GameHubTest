@@ -3880,6 +3880,11 @@ function PostCard({ post, user, openComments, commentText, setCommentText, onLik
     return () => unsub();
   }, [post.id]);
 
+  const handleDeleteComment = async (commentId) => {
+    if (!user) return;
+    await deleteDoc(doc(db, 'community_posts', post.id, 'comments', commentId));
+  };
+
   const handleLikeComment = async (c) => {
     if (!user) { onRequireLogin(); return; }
     const ref = doc(db, 'community_posts', post.id, 'comments', c.id);
@@ -3980,6 +3985,12 @@ function PostCard({ post, user, openComments, commentText, setCommentText, onLik
                             </button>
                           )}
                           <span className="text-xs text-slate-700">{timeAgo(c.createdAt)}</span>
+                          {user && user.uid === c.authorId && (
+                            <button onClick={() => handleDeleteComment(c.id)}
+                              className="text-xs text-slate-700 hover:text-red-400 transition-colors ml-auto">
+                              Delete
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -4012,6 +4023,12 @@ function PostCard({ post, user, openComments, commentText, setCommentText, onLik
                                     </button>
                                   )}
                                   <span className="text-xs text-slate-700">{timeAgo(r.createdAt)}</span>
+                                  {user && user.uid === r.authorId && (
+                                    <button onClick={() => handleDeleteComment(r.id)}
+                                      className="text-xs text-slate-700 hover:text-red-400 transition-colors ml-auto">
+                                      Delete
+                                    </button>
+                                  )}
                                 </div>
                               </div>
                             </div>
