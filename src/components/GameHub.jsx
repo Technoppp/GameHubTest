@@ -3623,9 +3623,12 @@ function CommunityPage({ navigateTo }) {
   const [loading, setLoading] = useState(true);
   const [postText, setPostText] = useState('');
   const [postImage, setPostImage] = useState('');
+  const [imagePreview, setImagePreview] = useState(null);
+  const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [openComments, setOpenComments] = useState({});
   const [commentText, setCommentText] = useState({});
+  const fileInputRef = useRef(null);
 
   // Real-time posts listener
   useEffect(() => {
@@ -3639,14 +3642,40 @@ function CommunityPage({ navigateTo }) {
 
   const requireLogin = () => { navigateTo('login'); };
 
+  const handleFileSelect = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) { alert('Image must be under 10MB'); return; }
+    setImagePreview(URL.createObjectURL(file));
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', 'GameHub');
+      const res = await fetch('https://api.cloudinary.com/v1_1/dz7hage1z/image/upload', {
+        method: 'POST', body: formData
+      });
+      const data = await res.json();
+      setPostImage(data.secure_url);
+    } catch (e) { alert('Upload failed, please try again'); setImagePreview(null); }
+    setUploading(false);
+  };
+
+  const removeImage = () => {
+    setImagePreview(null);
+    setPostImage('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const handlePost = async () => {
     if (!user) { requireLogin(); return; }
     if (!postText.trim()) return;
+    if (uploading) return;
     setSubmitting(true);
     try {
       await addDoc(collection(db, 'community_posts'), {
         text: postText.trim(),
-        imageUrl: postImage.trim() || null,
+        imageUrl: postImage || null,
         authorId: user.uid,
         authorName: user.displayName || user.email.split('@')[0],
         authorEmail: user.email,
@@ -3655,6 +3684,8 @@ function CommunityPage({ navigateTo }) {
       });
       setPostText('');
       setPostImage('');
+      setImagePreview(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (e) { console.error(e); }
     setSubmitting(false);
   };
@@ -3731,19 +3762,36 @@ function CommunityPage({ navigateTo }) {
                 className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 resize-none focus:outline-none focus:border-purple-500 transition-colors"
               />
             </div>
-            <div className="flex items-center gap-3">
-              <input
-                value={postImage}
-                onChange={e => setPostImage(e.target.value)}
-                placeholder="🔗 Image URL (optional)"
-                className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-300 placeholder-slate-600 focus:outline-none focus:border-purple-500 transition-colors"
-              />
-              <button
-                onClick={handlePost}
-                disabled={submitting || !postText.trim()}
-                className="bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold px-5 py-2 rounded-lg text-sm transition-all flex-shrink-0"
-              >
-                {submitting ? '...' : 'Post'}
+
+            {/* Image preview */}
+            {imagePreview && (
+              <div className="relative mb-3 rounded-xl overflow-hidden border border-slate-700">
+                <img src={imagePreview} alt="preview" className="w-full max-h-56 object-cover"/>
+                {uploading && (
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                    <div className="text-white text-sm font-bold animate-pulse">Uploading...</div>
+                  </div>
+                )}
+                {!uploading && (
+                  <button onClick={removeImage}
+                    className="absolute top-2 right-2 w-7 h-7 bg-black/60 hover:bg-black/80 rounded-full text-white text-xs flex items-center justify-center transition-colors">
+                    ✕
+                  </button>
+                )}
+              </div>
+            )}
+
+            <div className="flex items-center gap-2">
+              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden"/>
+              <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
+                className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-purple-400 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 px-3 py-2 rounded-lg transition-all border border-slate-700">
+                🖼️ {imagePreview ? 'Change' : 'Add Image'}
+              </button>
+              <div className="flex-1"/>
+              <button onClick={handlePost}
+                disabled={submitting || uploading || !postText.trim()}
+                className="bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold px-5 py-2 rounded-lg text-sm transition-all">
+                {uploading ? 'Uploading...' : submitting ? 'Posting...' : 'Post'}
               </button>
             </div>
           </>
