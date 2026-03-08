@@ -1625,8 +1625,8 @@ export default function GameHub() {
       <main className="pt-20">
         {currentPage === 'home' && <HomePage navigateTo={navigateTo} />}
         {currentPage === 'games' && <GamesPage navigateTo={navigateTo} />}
-        {currentPage === 'category' && selectedCategory && <CategoryPage category={selectedCategory} navigateTo={navigateTo} />}
-        {currentPage === 'game-detail' && selectedGame && <GameDetailPage game={selectedGame} navigateTo={navigateTo} />}
+        {currentPage === 'category' && selectedCategory && <CategoryPage category={selectedCategory} navigateTo={navigateTo} goBack={goBack} navHistory={navHistory} />}
+        {currentPage === 'game-detail' && selectedGame && <GameDetailPage game={selectedGame} navigateTo={navigateTo} goBack={goBack} navHistory={navHistory} />}
         {currentPage === 'tournaments' && <TournamentsPage navigateTo={navigateTo} />}
         {currentPage === 'leaderboard' && <LeaderboardPage navigateTo={navigateTo} />}
         {currentPage === 'wishlist' && <WishlistPage navigateTo={navigateTo} />}
@@ -2247,7 +2247,7 @@ function GamesPage({ navigateTo }) {
 // CATEGORY PAGE  - Subcategory filter + game list
 // ─────────────────────────────────────────────
 
-function CategoryPage({ category, navigateTo }) {
+function CategoryPage({ category, navigateTo, goBack, navHistory }) {
   const [activeSub, setActiveSub] = useState('All');
   const Icon = category.icon;
 
@@ -2424,7 +2424,7 @@ function RelatedGameCard({ game, navigateTo }) {
 // GAME DETAIL PAGE  - with Community Features
 // ─────────────────────────────────────────────
 
-function GameDetailPage({ game, navigateTo }) {
+function GameDetailPage({ game, navigateTo, goBack, navHistory }) {
   const cat = CATEGORIES.find(c => c.id === game.category);
   const color = cat?.color || '#3b82f6';
   const Icon = cat?.icon || Gamepad2;
