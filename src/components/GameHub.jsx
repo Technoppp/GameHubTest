@@ -3770,22 +3770,16 @@ function PostCard({ post, user, openComments, commentText, setCommentText, onLik
   const likeCount = (post.likes || []).length;
   const isOwner = user && user.uid === post.authorId;
 
-  // Load comment count always
+  // Load comments realtime always (for count + display)
   useEffect(() => {
     const q = query(collection(db, 'community_posts', post.id, 'comments'), orderBy('createdAt', 'asc'));
     const unsub = onSnapshot(q, (snap) => {
+      setComments(snap.docs.map(d => ({ id: d.id, ...d.data() })));
       setCommentCount(snap.size);
-      if (openComments[post.id]) {
-        setComments(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-        setLoadingComments(false);
-      }
-    });
+      setLoadingComments(false);
+    }, () => setLoadingComments(false));
     return () => unsub();
   }, [post.id]);
-
-  useEffect(() => {
-    if (openComments[post.id]) setLoadingComments(true);
-  }, [openComments[post.id]]);
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden fade-in-up hover:border-slate-700 transition-colors">
