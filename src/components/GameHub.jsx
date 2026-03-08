@@ -3824,16 +3824,6 @@ function CommunityPage({ navigateTo }) {
 
 // Avatar display using Firestore emoji+color (same as ProfilePage)
 function UserAvatar({ uid, name, size = 'md', db }) {
-  const AVATAR_COLORS_LOCAL = [
-    { from: '#3b82f6', to: '#8b5cf6' },
-    { from: '#ec4899', to: '#f43f5e' },
-    { from: '#10b981', to: '#06b6d4' },
-    { from: '#f59e0b', to: '#f97316' },
-    { from: '#8b5cf6', to: '#6366f1' },
-    { from: '#14b8a6', to: '#3b82f6' },
-    { from: '#f43f5e', to: '#f59e0b' },
-    { from: '#6366f1', to: '#ec4899' },
-  ];
   const [emoji, setEmoji] = useState(null);
   const [colorIdx, setColorIdx] = useState(0);
 
@@ -3847,7 +3837,7 @@ function UserAvatar({ uid, name, size = 'md', db }) {
     }).catch(() => {});
   }, [uid]);
 
-  const color = AVATAR_COLORS_LOCAL[colorIdx % AVATAR_COLORS_LOCAL.length];
+  const color = AVATAR_COLORS[colorIdx % AVATAR_COLORS.length];
   const fallbackLetter = (name || 'U')[0].toUpperCase();
   const sizeClass = size === 'sm' ? 'w-7 h-7 text-xs' : 'w-10 h-10 text-sm';
 
