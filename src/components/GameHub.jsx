@@ -22,7 +22,7 @@ const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
 const db = getFirestore(firebaseApp);
 
-// Auth context — accessible anywhere in the app
+// Auth context - accessible anywhere in the app
 const AuthContext = React.createContext(null);
 const useAuth = () => React.useContext(AuthContext);
 
@@ -199,7 +199,7 @@ const GAMES_DATA = [
     description: 'The game that defined the battle royale genre. Drop onto a massive island with 99 other players, scavenge for gear, and be the last one standing.',
     releaseDate: '2017-12-20',
     rating: 4.5,
-    players: '1–100 Online',
+    players: '1-100 Online',
     developer: 'PUBG Studios',
     publisher: 'Krafton',
     platforms: ['PC', 'PS5', 'Xbox Series X', 'Mobile'],
@@ -265,7 +265,7 @@ const GAMES_DATA = [
     description: 'A hero-based battle royale where squad synergy and fluid movement define the fight. Drop in, master your Legend, and become champion.',
     releaseDate: '2019-02-04',
     rating: 4.7,
-    players: '1–60 Online',
+    players: '1-60 Online',
     developer: 'Respawn Entertainment',
     publisher: 'Electronic Arts',
     platforms: ['PC', 'PS5', 'Xbox Series X', 'Mobile'],
@@ -287,7 +287,7 @@ const GAMES_DATA = [
     description: 'The massive free-to-play Call of Duty battle royale. Drop into Verdansk with 150 players, survive the Gulag, and claim victory.',
     releaseDate: '2020-03-10',
     rating: 4.4,
-    players: '1–150 Online',
+    players: '1-150 Online',
     developer: 'Infinity Ward / Raven Software',
     publisher: 'Activision',
     platforms: ['PC', 'PS5', 'Xbox Series X'],
@@ -338,10 +338,10 @@ const GAMES_DATA = [
     publisher: 'Moonton',
     platforms: ['Mobile'],
     tags: ['Mobile', 'Free-to-Play', 'Esports'],
-    details: 'MLBB delivers fast 10–15 minute 5v5 matches on mobile. With 120+ heroes and a massive global playerbase, it\'s one of the most played games in Southeast Asia and beyond.',
+    details: 'MLBB delivers fast 10-15 minute 5v5 matches on mobile. With 120+ heroes and a massive global playerbase, it\'s one of the most played games in Southeast Asia and beyond.',
     features: [
       '120+ heroes with unique abilities',
-      'Fast 10–15 minute match length',
+      'Fast 10-15 minute match length',
       'Large global esports ecosystem (MPL)',
       'Regular hero releases and balancing',
     ],
@@ -360,11 +360,11 @@ const GAMES_DATA = [
     publisher: 'Valve',
     platforms: ['PC'],
     tags: ['PC', 'Free-to-Play', 'High Skill Cap'],
-    details: 'Dota 2 is a complex, endlessly deep MOBA with a fully free hero roster and cosmetic-only monetization. Home to The International — the world\'s most prestigious esports tournament with prize pools exceeding $30 million.',
+    details: 'Dota 2 is a complex, endlessly deep MOBA with a fully free hero roster and cosmetic-only monetization. Home to The International - the world\'s most prestigious esports tournament with prize pools exceeding $30 million.',
     features: [
       '120+ heroes, all free to play',
       'Cosmetic-only monetization',
-      'The International — $30M+ prize pool',
+      'The International - $30M+ prize pool',
       'Extensive in-game guides and coaching tools',
     ],
   },
@@ -401,7 +401,7 @@ const GAMES_DATA = [
     description: 'The world\'s #1 football game, reimagined. Experience authentic football with real clubs, players, and leagues across the globe.',
     releaseDate: '2025-09-26',
     rating: 4.5,
-    players: '1–22 Online',
+    players: '1-22 Online',
     developer: 'EA Vancouver',
     publisher: 'Electronic Arts',
     platforms: ['PC', 'PS5', 'Xbox Series X', 'Switch', 'Mobile'],
@@ -423,7 +423,7 @@ const GAMES_DATA = [
     description: 'The gold standard in basketball simulation. Play as your favorite NBA stars, build your MyPlayer, and dominate the courts online.',
     releaseDate: '2025-09-05',
     rating: 4.4,
-    players: '1–10 Online',
+    players: '1-10 Online',
     developer: 'Visual Concepts',
     publisher: '2K Sports',
     platforms: ['PC', 'PS5', 'Xbox Series X'],
@@ -445,7 +445,7 @@ const GAMES_DATA = [
     description: 'Step into the ring with the most comprehensive WWE game ever made. Battle 200+ superstars and create your own legend.',
     releaseDate: '2026-03-07',
     rating: 4.3,
-    players: '1–8 Online/Local',
+    players: '1-8 Online/Local',
     developer: 'Visual Concepts',
     publisher: '2K Sports',
     platforms: ['PC', 'PS5', 'Xbox Series X'],
@@ -467,7 +467,7 @@ const GAMES_DATA = [
     description: 'The NFL is in your hands. Take your franchise to the Super Bowl or build the ultimate team in Madden\'s most feature-rich entry yet.',
     releaseDate: '2025-08-15',
     rating: 4.3,
-    players: '1–2 Online',
+    players: '1-2 Online',
     developer: 'EA Tiburon',
     publisher: 'Electronic Arts',
     platforms: ['PC', 'PS5', 'Xbox Series X'],
@@ -489,7 +489,7 @@ const GAMES_DATA = [
     description: 'Get behind the wheel of the fastest cars on earth. F1 25 delivers the authentic Formula 1 experience with all teams, drivers, and circuits.',
     releaseDate: '2025-05-30',
     rating: 4.6,
-    players: '1–20 Online',
+    players: '1-20 Online',
     developer: 'Codemasters',
     publisher: 'Electronic Arts',
     platforms: ['PC', 'PS5', 'Xbox Series X'],
@@ -532,10 +532,10 @@ const GAMES_DATA = [
     category: 'party',
     subcategory: 'Co-op',
     image: 'https://media.rawg.io/media/games/fd9/fd985db2d44a3e951080fa6a60fe4f09.jpg',
-    description: 'The ultimate co-op cooking chaos game. Work together to serve orders in the most ridiculous kitchens imaginable — or destroy your friendships trying.',
+    description: 'The ultimate co-op cooking chaos game. Work together to serve orders in the most ridiculous kitchens imaginable - or destroy your friendships trying.',
     releaseDate: '2020-11-10',
     rating: 4.8,
-    players: '1–4 Local/Online',
+    players: '1-4 Local/Online',
     developer: 'Ghost Town Games',
     publisher: 'Team17',
     platforms: ['PC', 'PS5', 'Xbox Series X', 'Switch'],
@@ -557,12 +557,12 @@ const GAMES_DATA = [
     description: 'Punch, grab, and throw your wobbly opponents off platforms in this hilariously chaotic brawler. Easily the most fun you can have falling over.',
     releaseDate: '2017-12-12',
     rating: 4.6,
-    players: '1–8 Local/Online',
+    players: '1-8 Local/Online',
     developer: 'Boneloaf',
     publisher: 'Double Fine Presents',
     platforms: ['PC', 'PS5', 'Xbox Series X'],
     tags: ['Brawler', 'Couch Gaming', 'Versus'],
-    details: 'Gang Beasts features gummy bear-style characters with ragdoll physics in increasingly absurd arenas. Grab a friend\'s head and throw them into a moving fan — it\'s always hilarious.',
+    details: 'Gang Beasts features gummy bear-style characters with ragdoll physics in increasingly absurd arenas. Grab a friend\'s head and throw them into a moving fan - it\'s always hilarious.',
     features: [
       'Hilarious ragdoll physics engine',
       'Online and local multiplayer',
@@ -576,10 +576,10 @@ const GAMES_DATA = [
     category: 'party',
     subcategory: 'Social',
     image: 'https://media.rawg.io/media/games/e74/e74458058b35e01c1ae3feeb39a3f724.jpg',
-    description: 'Complete tasks on a space station — but Impostors walk among the crew. Discuss, deceive, and deduce your way to victory.',
+    description: 'Complete tasks on a space station - but Impostors walk among the crew. Discuss, deceive, and deduce your way to victory.',
     releaseDate: '2018-06-15',
     rating: 4.5,
-    players: '4–15 Online',
+    players: '4-15 Online',
     developer: 'Innersloth',
     publisher: 'Innersloth',
     platforms: ['PC', 'Mobile', 'PS5', 'Xbox Series X', 'Switch'],
@@ -601,7 +601,7 @@ const GAMES_DATA = [
     description: 'The classic board game party experience returns with 5 iconic boards, 100 classic minigames, and full online play for the whole family.',
     releaseDate: '2021-10-29',
     rating: 4.7,
-    players: '1–4 Local/Online',
+    players: '1-4 Local/Online',
     developer: 'NDcube',
     publisher: 'Nintendo',
     platforms: ['Switch'],
@@ -644,7 +644,7 @@ const GAMES_DATA = [
     category: 'rpg',
     subcategory: 'Open World',
     image: 'https://media.rawg.io/media/games/26d/26d4437715bee60138dab4a7c8c59c92.jpg',
-    description: 'Welcome to Night City — a megalopolis of crime, technology, and broken dreams. Build your legend as V in this sprawling first-person open-world RPG.',
+    description: 'Welcome to Night City - a megalopolis of crime, technology, and broken dreams. Build your legend as V in this sprawling first-person open-world RPG.',
     releaseDate: '2020-12-10',
     rating: 4.7,
     players: 'Single Player',
@@ -666,7 +666,7 @@ const GAMES_DATA = [
     category: 'rpg',
     subcategory: 'Action RPG',
     image: 'https://media.rawg.io/media/games/b29/b294fdd866dcdb643e7bab370a552855.jpg',
-    description: 'From the minds of Hidetaka Miyazaki and George R.R. Martin — a brutal, breathtaking open-world action RPG set in the shattered Lands Between.',
+    description: 'From the minds of Hidetaka Miyazaki and George R.R. Martin - a brutal, breathtaking open-world action RPG set in the shattered Lands Between.',
     releaseDate: '2022-02-25',
     rating: 4.9,
     players: 'Single Player / Co-op',
@@ -676,7 +676,7 @@ const GAMES_DATA = [
     tags: ['Action RPG', 'Soulslike', 'Open World'],
     details: 'Elden Ring won Game of the Year 2022 and redefined the action RPG genre. Its vast open world, cryptic lore by George R.R. Martin, and punishing-but-fair combat make it an essential experience.',
     features: [
-      'Massive open world — The Lands Between',
+      'Massive open world - The Lands Between',
       'Lore co-created by George R.R. Martin',
       'Online co-op and PvP invasion system',
       'Shadow of the Erdtree expansion',
@@ -715,7 +715,7 @@ const GAMES_DATA = [
     description: 'Build an empire to stand the test of time. Guide your civilization from the Stone Age to the Space Age through war, diplomacy, culture, and science.',
     releaseDate: '2016-10-21',
     rating: 4.7,
-    players: '1–12 Online',
+    players: '1-12 Online',
     developer: 'Firaxis Games',
     publisher: '2K',
     platforms: ['PC', 'PS5', 'Xbox Series X', 'Switch', 'Mobile'],
@@ -737,7 +737,7 @@ const GAMES_DATA = [
     description: 'One of history\'s greatest real-time strategy series returns. Command armies, build civilizations, and rewrite history across rich historical campaigns.',
     releaseDate: '2021-10-28',
     rating: 4.5,
-    players: '1–8 Online',
+    players: '1-8 Online',
     developer: 'Relic Entertainment',
     publisher: 'Xbox Game Studios',
     platforms: ['PC'],
@@ -756,10 +756,10 @@ const GAMES_DATA = [
     category: 'strategy',
     subcategory: 'RTS',
     image: 'https://media.rawg.io/media/games/051/051f74b8bbf9e8d0db7a2b3d83c9c0fe.jpg',
-    description: 'The definitive real-time strategy game. Master one of three asymmetric races — Terran, Zerg, or Protoss — and compete in one of esports\' most enduring scenes.',
+    description: 'The definitive real-time strategy game. Master one of three asymmetric races - Terran, Zerg, or Protoss - and compete in one of esports\' most enduring scenes.',
     releaseDate: '2010-07-27',
     rating: 4.8,
-    players: '1–8 Online',
+    players: '1-8 Online',
     developer: 'Blizzard Entertainment',
     publisher: 'Blizzard Entertainment',
     platforms: ['PC'],
@@ -805,10 +805,16 @@ const NEWS_DATA = [
 ];
 
 const TOURNAMENTS_DATA = [
-  { id: 1, name: 'Valorant Champions Tour 2026', game: 'Valorant', date: 'March 10–30, 2026', prize: '$1,000,000', status: 'Registration Open', type: 'Online + LAN Finals', description: 'The premier Valorant global event. Regional leagues feed into the international Champions event with the world\'s best teams.' },
-  { id: 2, name: 'Dota 2: The International 2026', game: 'Dota 2', date: 'August 5–17, 2026', prize: '$20,000,000+', status: 'Upcoming', type: 'LAN', description: 'The most prestigious esports tournament in history. Prize pool grows with community Battle Pass contributions every year.' },
-  { id: 3, name: 'League of Legends World Championship', game: 'League of Legends', date: 'October 1–November 2, 2026', prize: '$2,250,000', status: 'Upcoming', type: 'LAN', description: 'The annual LoL World Championship crowns the best team on the planet. Viewership regularly exceeds 70 million.' },
-  { id: 4, name: 'CS2 Major: GameHub Invitational', game: 'Counter-Strike 2', date: 'April 14–27, 2026', prize: '$1,250,000', status: 'Registration Open', type: 'Online + LAN Finals', description: 'A Valve-sponsored CS2 Major featuring 24 top teams from global Regional Major Rankings. Held in Stockholm.' },
+  // WATCHABLE ONLY
+  { id: 1, joinable: false, name: 'Valorant Champions Tour 2026', game: 'Valorant', date: 'March 10-30, 2026', prize: '$1,000,000', status: 'Live Now', type: 'LAN Finals', description: 'The premier Valorant global event. Only top VCT regional teams qualify. Open for spectators worldwide.', watchUrl: 'https://www.twitch.tv/valorant', teams: 16, region: 'International' },
+  { id: 2, joinable: false, name: 'Dota 2: The International 2026', game: 'Dota 2', date: 'August 5-17, 2026', prize: '$20,000,000+', status: 'Upcoming', type: 'LAN', description: 'The most prestigious esports event. Invite-only for the top 18 teams in the world. Prize pool grows via Battle Pass.', watchUrl: 'https://www.twitch.tv/dota2ti', teams: 18, region: 'International' },
+  { id: 3, joinable: false, name: 'LoL World Championship 2026', game: 'League of Legends', date: 'October 1-November 2, 2026', prize: '$2,250,000', status: 'Upcoming', type: 'LAN', description: 'The annual LoL Worlds crowns the best team on the planet. 70M+ viewers. Qualification via regional splits only.', watchUrl: 'https://www.twitch.tv/riotgames', teams: 22, region: 'International' },
+  { id: 4, joinable: false, name: 'CS2 Major: Copenhagen 2026', game: 'Counter-Strike 2', date: 'April 14-27, 2026', prize: '$1,250,000', status: 'Upcoming', type: 'LAN', description: 'Valve-sponsored CS2 Major. 24 top teams from Regional Major Rankings only. Qualification through RMR events.', watchUrl: 'https://www.twitch.tv/esl_csgo', teams: 24, region: 'International' },
+  // JOINABLE (Public)
+  { id: 5, joinable: true, name: 'GameHub Weekly Valorant Cup', game: 'Valorant', date: 'Every Saturday', prize: '$500', status: 'Registration Open', type: 'Online', description: 'Weekly open tournament for all ranks. Register your team of 5 and compete every weekend. No invite required!', maxTeams: 32, registered: 18, region: 'Southeast Asia', requirements: 'ทีม 5 คน • ไม่จำกัด Rank • PC เท่านั้น' },
+  { id: 6, joinable: true, name: 'GameHub ROV Community Cup', game: 'ROV (Arena of Valor)', date: 'April 20, 2026', prize: '฿5,000', status: 'Registration Open', type: 'Online', description: 'Open ROV tournament for Thai players. Solo queue or pre-made team of 5. Join and prove your skills!', maxTeams: 64, registered: 41, region: 'Thailand', requirements: 'ทีม 5 คน • Gold+ ขึ้นไป • มือถือ / PC' },
+  { id: 7, joinable: true, name: 'GameHub CS2 Open Qualifier', game: 'Counter-Strike 2', date: 'May 3-4, 2026', prize: '$300', status: 'Registration Open', type: 'Online', description: 'Open CS2 5v5 tournament. Any team can register. Top teams advance to monthly finals. FACEIT accounts required.', maxTeams: 128, registered: 67, region: 'Asia-Pacific', requirements: 'ทีม 5 คน • FACEIT Account • PC เท่านั้น' },
+  { id: 8, joinable: true, name: 'GameHub Mobile Legends Cup', game: 'Mobile Legends: Bang Bang', date: 'April 27, 2026', prize: '฿3,000', status: 'Coming Soon', type: 'Online', description: 'Open MLBB tournament for mobile players across SEA. Form your team and compete for prizes!', maxTeams: 64, registered: 0, region: 'Southeast Asia', requirements: 'ทีม 5 คน • Epic+ ขึ้นไป • มือถือ' },
 ];
 
 // ─────────────────────────────────────────────
@@ -846,7 +852,7 @@ function WishlistNavButton({ navigateTo, currentPage }) {
   );
 }
 
-// Auth button — shows login/register or user avatar+dropdown
+// Auth button - shows login/register or user avatar+dropdown
 function AuthNavButton({ navigateTo, currentPage, user, authLoading }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [avatarEmoji, setAvatarEmoji] = useState(null);
@@ -1135,10 +1141,10 @@ function IntroScreen({ onComplete }) {
         </div>
       )}
 
-      {/* ── CENTER STAGE — everything centered perfectly ── */}
+      {/* ── CENTER STAGE - everything centered perfectly ── */}
       <div style={{ position:'relative', zIndex:5, display:'flex', alignItems:'center', justifyContent:'center', animation: shaking ? 'IS_shake 0.08s linear infinite' : 'none' }}>
 
-        {/* PHASE 0-4 — all in one container, SVG crossfades to spinning divs */}
+        {/* PHASE 0-4 - all in one container, SVG crossfades to spinning divs */}
         {phase >= 0 && phase <= 4 && (
           <div style={{ position:'relative', width:W, height:W, display:'flex', alignItems:'center', justifyContent:'center' }}>
 
@@ -1180,7 +1186,7 @@ function IntroScreen({ onComplete }) {
                 filter:'blur(8px)', transition:'background 0.3s' }}/>
             </div>
 
-            {/* Game objects — mount at phase 1, delay 0.3s so portal is visible first */}
+            {/* Game objects - mount at phase 1, delay 0.3s so portal is visible first */}
             {phase >= 1 && phase <= 4 && gameObjects.map((obj, i) => (
               <div key={i} style={{
                 position:'absolute', top:'50%', left:'50%',
@@ -1194,7 +1200,7 @@ function IntroScreen({ onComplete }) {
           </div>
         )}
 
-        {/* PHASE 5 — Explosion */}
+        {/* PHASE 5 - Explosion */}
         {phase === 5 && (
           <div style={{ position:'relative', width:W, height:W, display:'flex', alignItems:'center', justifyContent:'center' }}>
             {[0,0.1,0.2].map((d,i) => (
@@ -1217,7 +1223,7 @@ function IntroScreen({ onComplete }) {
           </div>
         )}
 
-        {/* PHASE 6-8 — Logo */}
+        {/* PHASE 6-8 - Logo */}
         {phase >= 6 && (
           <div style={{ textAlign:'center', animation:'IS_logoIn 0.9s cubic-bezier(0.34,1.3,0.64,1) forwards' }}>
 
@@ -1308,6 +1314,7 @@ export default function GameHub() {
   const [authLoading, setAuthLoading] = useState(true);
   const [showIntro, setShowIntro] = useState(() => !sessionStorage.getItem('introSeen'));
   const rawgImages = useRawgImages();
+  const [navHistory, setNavHistory] = useState([]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -1332,11 +1339,24 @@ export default function GameHub() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const navigateTo = (page, data = null) => {
+    // Save current state to history before navigating
+    setNavHistory(prev => [...prev, { page: currentPage, game: selectedGame, category: selectedCategory }]);
     setCurrentPage(page);
     setMenuOpen(false);
     if (page === 'game-detail') setSelectedGame(data);
     else if (page === 'category') setSelectedCategory(data);
     else if (page === 'games') { setSelectedCategory(null); setSelectedGame(null); }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const goBack = () => {
+    if (navHistory.length === 0) return;
+    const prev = navHistory[navHistory.length - 1];
+    setNavHistory(h => h.slice(0, -1));
+    setCurrentPage(prev.page);
+    setMenuOpen(false);
+    if (prev.game) setSelectedGame(prev.game);
+    if (prev.category) setSelectedCategory(prev.category);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -1468,15 +1488,26 @@ export default function GameHub() {
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-slate-950/95 backdrop-blur-lg shadow-lg shadow-blue-500/10' : 'bg-transparent'}`}>
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            {/* Logo */}
-            <div className="flex items-center gap-3 cursor-pointer flex-shrink-0" onClick={() => navigateTo('home')}>
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center glow-effect">
-                <Gamepad2 className="w-6 h-6" />
+            {/* Logo + Back button */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {navHistory.length > 0 && (
+                <button
+                  onClick={goBack}
+                  className="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all"
+                  title="ย้อนกลับ"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+              )}
+              <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigateTo('home')}>
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center glow-effect">
+                  <Gamepad2 className="w-6 h-6" />
+                </div>
+                <h1 className="text-2xl font-bold" style={{ fontFamily: "'Orbitron', sans-serif" }}>
+                  <span className="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">GAME</span>
+                  <span className="text-white">HUB</span>
+                </h1>
               </div>
-              <h1 className="text-2xl font-bold" style={{ fontFamily: "'Orbitron', sans-serif" }}>
-                <span className="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">GAME</span>
-                <span className="text-white">HUB</span>
-              </h1>
             </div>
 
             {/* Desktop Nav */}
@@ -1603,7 +1634,7 @@ export default function GameHub() {
         {currentPage === 'games' && <GamesPage navigateTo={navigateTo} />}
         {currentPage === 'category' && selectedCategory && <CategoryPage category={selectedCategory} navigateTo={navigateTo} />}
         {currentPage === 'game-detail' && selectedGame && <GameDetailPage game={selectedGame} navigateTo={navigateTo} />}
-        {currentPage === 'tournaments' && <TournamentsPage />}
+        {currentPage === 'tournaments' && <TournamentsPage navigateTo={navigateTo} />}
         {currentPage === 'leaderboard' && <LeaderboardPage navigateTo={navigateTo} />}
         {currentPage === 'wishlist' && <WishlistPage navigateTo={navigateTo} />}
         {currentPage === 'news' && <NewsPage navigateTo={navigateTo} />}
@@ -1783,7 +1814,7 @@ function HomePage({ navigateTo }) {
           </div>
         </div>
 
-        {/* ── Hero Selector — right side thumbnails ── */}
+        {/* ── Hero Selector - right side thumbnails ── */}
         <div className="hidden sm:flex absolute right-8 top-1/2 -translate-y-1/2 z-20 flex-col gap-3">
           {FEATURED_GAMES.map((g, i) => {
             const c = CATEGORIES.find(cat => cat.id === g.category);
@@ -2025,7 +2056,7 @@ function HomePage({ navigateTo }) {
 }
 
 // ─────────────────────────────────────────────
-// GAMES PAGE  — Category Grid + Search + Filter
+// GAMES PAGE  - Category Grid + Search + Filter
 // ─────────────────────────────────────────────
 
 function GamesPage({ navigateTo }) {
@@ -2141,7 +2172,7 @@ function GamesPage({ navigateTo }) {
           <p className="text-sm text-slate-500 mb-6">
             {searchResults.length > 0
               ? `Found ${searchResults.length} game${searchResults.length > 1 ? 's' : ''}`
-              : 'No games found — try a different search'}
+              : 'No games found - try a different search'}
           </p>
           {searchResults.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
@@ -2219,7 +2250,7 @@ function GamesPage({ navigateTo }) {
 }
 
 // ─────────────────────────────────────────────
-// CATEGORY PAGE  — Subcategory filter + game list
+// CATEGORY PAGE  - Subcategory filter + game list
 // ─────────────────────────────────────────────
 
 function CategoryPage({ category, navigateTo }) {
@@ -2302,7 +2333,7 @@ function CategoryPage({ category, navigateTo }) {
 }
 
 // ─────────────────────────────────────────────
-// GAME CARD  — shared component
+// GAME CARD  - shared component
 // ─────────────────────────────────────────────
 
 function GameCard({ game, index, navigateTo, accentColor = '#3b82f6' }) {
@@ -2360,7 +2391,7 @@ function GameCard({ game, index, navigateTo, accentColor = '#3b82f6' }) {
   );
 }
 
-// Small card used in the "More X Games" section — needs its own hook call
+// Small card used in the "More X Games" section - needs its own hook call
 function RelatedGameCard({ game, navigateTo }) {
   const image = useGameImage(game);
   const [loaded, setLoaded] = useState(false);
@@ -2391,7 +2422,7 @@ function RelatedGameCard({ game, navigateTo }) {
 }
 
 // ─────────────────────────────────────────────
-// GAME DETAIL PAGE  — with Community Features
+// GAME DETAIL PAGE  - with Community Features
 // ─────────────────────────────────────────────
 
 function GameDetailPage({ game, navigateTo }) {
@@ -3366,51 +3397,187 @@ function WishlistPage({ navigateTo }) {
 // TOURNAMENTS PAGE
 // ─────────────────────────────────────────────
 
-function TournamentsPage() {
+function TournamentsPage({ navigateTo }) {
+  const [tab, setTab] = useState('join');
+  const [registerModal, setRegisterModal] = useState(null);
+  const { user } = useAuth();
+
+  const watchable = TOURNAMENTS_DATA.filter(t => !t.joinable);
+  const joinable  = TOURNAMENTS_DATA.filter(t => t.joinable);
+
+  const handleRegister = (tournament) => {
+    if (!user) { navigateTo('login'); return; }
+    setRegisterModal(tournament);
+  };
+
+  const statusColor = (s) => {
+    if (s === 'Registration Open') return 'bg-green-500/20 text-green-400';
+    if (s === 'Live Now')          return 'bg-red-500/20 text-red-400';
+    if (s === 'Coming Soon')       return 'bg-slate-500/20 text-slate-400';
+    return 'bg-blue-500/20 text-blue-400';
+  };
+
   return (
-    <div className="container mx-auto px-6 py-20">
-      <div className="mb-12 fade-in-up">
-        <h2 className="text-4xl font-black mb-4" style={{ fontFamily: "'Orbitron', sans-serif" }}>
+    <div className="container mx-auto px-6 py-16">
+      {/* Header */}
+      <div className="mb-10 fade-in-up">
+        <h2 className="text-4xl font-black mb-3" style={{ fontFamily: "'Orbitron', sans-serif" }}>
           <span className="text-yellow-400">TOURNAMENTS</span> & COMPETITIONS
         </h2>
-        <p className="text-slate-400">Join competitive gaming events and win amazing prizes</p>
+        <p className="text-slate-400">ดูทัวร์นาเมนต์ระดับโปร หรือสมัครแข่งขันทัวร์นาเมนต์ที่เปิดรับสมัคร</p>
       </div>
-      <div className="space-y-6">
-        {TOURNAMENTS_DATA.map((tournament, index) => (
-          <div key={tournament.id} className="bg-slate-900 border-2 border-slate-800 rounded-xl overflow-hidden hover:border-yellow-500/50 transition-all slide-in-right" style={{ animationDelay: `${index * 0.1}s` }}>
-            <div className="p-8">
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-3">
-                    <Trophy className="w-6 h-6 text-yellow-400" />
-                    <span className="text-sm text-slate-500">{tournament.game}</span>
-                    <span className={`text-xs font-bold px-3 py-1 rounded-full ${tournament.status === 'Registration Open' ? 'bg-green-500/20 text-green-400 status-badge' : 'bg-blue-500/20 text-blue-400'}`}>
-                      {tournament.status}
-                    </span>
-                  </div>
-                  <h3 className="text-2xl font-bold mb-2">{tournament.name}</h3>
-                  <p className="text-slate-400 mb-4">{tournament.description}</p>
-                  <div className="flex flex-wrap gap-4 text-sm">
-                    <div className="flex items-center gap-2"><Calendar className="w-4 h-4 text-blue-400" /><span>{tournament.date}</span></div>
-                    <div className="flex items-center gap-2"><Zap className="w-4 h-4 text-purple-400" /><span>{tournament.type}</span></div>
+
+      {/* Tabs */}
+      <div className="flex gap-2 mb-8 bg-slate-900 p-1 rounded-xl w-fit">
+        <button onClick={() => setTab('join')}
+          className={`px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${tab === 'join' ? 'bg-yellow-500 text-black' : 'text-slate-400 hover:text-white'}`}>
+          🎮 เข้าร่วมได้
+        </button>
+        <button onClick={() => setTab('watch')}
+          className={`px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${tab === 'watch' ? 'bg-blue-500 text-white' : 'text-slate-400 hover:text-white'}`}>
+          👁️ ดูอย่างเดียว
+        </button>
+      </div>
+
+      {/* JOINABLE TAB */}
+      {tab === 'join' && (
+        <div className="space-y-5">
+          {joinable.map((t, i) => {
+            const pct = Math.round((t.registered / t.maxTeams) * 100);
+            const full = t.registered >= t.maxTeams;
+            return (
+              <div key={t.id} className="bg-slate-900 border-2 border-slate-800 rounded-2xl overflow-hidden hover:border-yellow-500/40 transition-all fade-in-up" style={{ animationDelay: `${i*0.08}s` }}>
+                <div className="p-6 lg:p-8">
+                  <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
+                    <div className="flex-1">
+                      <div className="flex flex-wrap items-center gap-2 mb-3">
+                        <span className="text-xs font-bold px-3 py-1 rounded-full bg-yellow-500/15 text-yellow-400">🏆 Open Tournament</span>
+                        <span className="text-xs text-slate-500">{t.game}</span>
+                        <span className={`text-xs font-bold px-3 py-1 rounded-full ${statusColor(t.status)}`}>{t.status}</span>
+                      </div>
+                      <h3 className="text-xl font-black mb-2">{t.name}</h3>
+                      <p className="text-slate-400 text-sm mb-4">{t.description}</p>
+                      <div className="flex flex-wrap gap-4 text-sm mb-4">
+                        <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4 text-blue-400"/>{t.date}</span>
+                        <span className="flex items-center gap-1.5"><Zap className="w-4 h-4 text-purple-400"/>{t.type}</span>
+                        <span className="flex items-center gap-1.5 text-slate-400">🌏 {t.region}</span>
+                      </div>
+                      {/* Requirements */}
+                      <div className="bg-slate-800/60 rounded-lg px-4 py-2.5 text-xs text-slate-300 mb-4 inline-block">
+                        📋 {t.requirements}
+                      </div>
+                      {/* Slots bar */}
+                      <div>
+                        <div className="flex justify-between text-xs text-slate-400 mb-1.5">
+                          <span>ทีมที่สมัครแล้ว</span>
+                          <span className={full ? 'text-red-400 font-bold' : 'text-green-400 font-bold'}>{t.registered} / {t.maxTeams} ทีม{full ? ' - เต็มแล้ว' : ''}</span>
+                        </div>
+                        <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full transition-all ${full ? 'bg-red-500' : pct > 70 ? 'bg-yellow-500' : 'bg-green-500'}`} style={{ width: `${pct}%` }}/>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-start lg:items-end gap-3 lg:min-w-[160px]">
+                      <div>
+                        <p className="text-xs text-slate-500 mb-0.5">Prize Pool</p>
+                        <p className="text-2xl font-black text-yellow-400">{t.prize}</p>
+                      </div>
+                      {t.status === 'Registration Open' && !full ? (
+                        <button onClick={() => handleRegister(t)}
+                          className="w-full lg:w-auto bg-yellow-500 hover:bg-yellow-400 text-black font-black px-6 py-3 rounded-xl transition-all hover:scale-105 text-sm">
+                          ✍️ สมัครเลย
+                        </button>
+                      ) : t.status === 'Coming Soon' ? (
+                        <button className="w-full lg:w-auto bg-slate-700 text-slate-400 font-bold px-6 py-3 rounded-xl text-sm cursor-not-allowed" disabled>
+                          เร็วๆ นี้
+                        </button>
+                      ) : full ? (
+                        <button className="w-full lg:w-auto bg-red-900/40 text-red-400 font-bold px-6 py-3 rounded-xl text-sm cursor-not-allowed" disabled>
+                          เต็มแล้ว
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
-                <div className="flex flex-col items-end gap-4">
-                  <div className="text-right">
-                    <p className="text-sm text-slate-500 mb-1">Prize Pool</p>
-                    <p className="text-3xl font-black text-yellow-400">{tournament.prize}</p>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* WATCHABLE TAB */}
+      {tab === 'watch' && (
+        <div className="space-y-5">
+          <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl px-5 py-3 text-sm text-blue-300 mb-6">
+            👁️ ทัวร์นาเมนต์เหล่านี้เป็นระดับโปรและ Invitational - <strong>ดูได้อย่างเดียว</strong> ไม่เปิดรับสมัครทั่วไป
+          </div>
+          {watchable.map((t, i) => (
+            <div key={t.id} className="bg-slate-900 border-2 border-slate-800 rounded-2xl overflow-hidden hover:border-blue-500/40 transition-all fade-in-up" style={{ animationDelay: `${i*0.08}s` }}>
+              <div className="p-6 lg:p-8">
+                <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
+                  <div className="flex-1">
+                    <div className="flex flex-wrap items-center gap-2 mb-3">
+                      <span className="text-xs font-bold px-3 py-1 rounded-full bg-blue-500/15 text-blue-400">🌍 Pro / Invitational</span>
+                      <span className="text-xs text-slate-500">{t.game}</span>
+                      <span className={`text-xs font-bold px-3 py-1 rounded-full ${statusColor(t.status)}`}>{t.status}</span>
+                    </div>
+                    <h3 className="text-xl font-black mb-2">{t.name}</h3>
+                    <p className="text-slate-400 text-sm mb-4">{t.description}</p>
+                    <div className="flex flex-wrap gap-4 text-sm">
+                      <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4 text-blue-400"/>{t.date}</span>
+                      <span className="flex items-center gap-1.5"><Zap className="w-4 h-4 text-purple-400"/>{t.type}</span>
+                      <span className="flex items-center gap-1.5 text-slate-400">👥 {t.teams} ทีม</span>
+                      <span className="flex items-center gap-1.5 text-slate-400">🌏 {t.region}</span>
+                    </div>
                   </div>
-                  {tournament.status === 'Registration Open' && (
-                    <button className="cyber-border rounded-lg">
-                      <div className="bg-slate-950 px-6 py-3 rounded-lg font-bold hover:bg-slate-900 transition-colors">Register Now</div>
-                    </button>
-                  )}
+                  <div className="flex flex-col items-start lg:items-end gap-3 lg:min-w-[160px]">
+                    <div>
+                      <p className="text-xs text-slate-500 mb-0.5">Prize Pool</p>
+                      <p className="text-2xl font-black text-yellow-400">{t.prize}</p>
+                    </div>
+                    {t.watchUrl && (
+                      <a href={t.watchUrl} target="_blank" rel="noopener noreferrer"
+                        className="w-full lg:w-auto bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-3 rounded-xl transition-all hover:scale-105 text-sm text-center">
+                        📺 ดูสด
+                      </a>
+                    )}
+                    <p className="text-xs text-slate-600 italic">ไม่เปิดรับสมัคร</p>
+                  </div>
                 </div>
               </div>
             </div>
+          ))}
+        </div>
+      )}
+
+      {/* Register Modal */}
+      {registerModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setRegisterModal(null)}>
+          <div className="bg-slate-900 border border-yellow-500/40 rounded-2xl p-8 max-w-md w-full" onClick={e => e.stopPropagation()}>
+            <h3 className="text-xl font-black mb-1">สมัครเข้าร่วม</h3>
+            <p className="text-yellow-400 font-bold mb-4">{registerModal.name}</p>
+            <div className="space-y-2 text-sm text-slate-400 mb-6">
+              <p>📅 {registerModal.date}</p>
+              <p>🌏 {registerModal.region}</p>
+              <p>📋 {registerModal.requirements}</p>
+              <p>🏆 Prize: <span className="text-yellow-400 font-bold">{registerModal.prize}</span></p>
+            </div>
+            <div className="bg-slate-800 rounded-xl p-4 mb-6 text-sm text-slate-300">
+              ระบบลงทะเบียนผ่าน Discord ของ GameHub ทีมงานจะติดต่อกลับภายใน 24 ชั่วโมงหลังสมัคร
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setRegisterModal(null)}
+                className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-400 font-bold hover:bg-slate-700 transition-colors">
+                ยกเลิก
+              </button>
+              <a href="https://discord.gg/gamehub" target="_blank" rel="noopener noreferrer"
+                className="flex-1 py-3 rounded-xl bg-yellow-500 text-black font-black hover:bg-yellow-400 transition-all text-center">
+                ✅ ยืนยันสมัคร
+              </a>
+            </div>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -3472,7 +3639,7 @@ function AboutPage() {
             <h3 className="text-2xl font-bold mb-6 text-purple-400">What We Offer</h3>
             <div className="space-y-5">
               {[
-                { Icon: Gamepad2, color: 'text-blue-400', bg: 'bg-blue-500/20', title: 'Game Database', desc: 'Comprehensive category-based database of the hottest games across all genres — browse by FPS, MOBA, Sports, Party, RPG, and Strategy.' },
+                { Icon: Gamepad2, color: 'text-blue-400', bg: 'bg-blue-500/20', title: 'Game Database', desc: 'Comprehensive category-based database of the hottest games across all genres - browse by FPS, MOBA, Sports, Party, RPG, and Strategy.' },
                 { Icon: Trophy, color: 'text-purple-400', bg: 'bg-purple-500/20', title: 'Tournament Hub', desc: 'Discover competitive gaming events with massive prize pools and live registration.' },
                 { Icon: Newspaper, color: 'text-pink-400', bg: 'bg-pink-500/20', title: 'Latest News', desc: 'Stay updated with breaking news and game announcements directly linked to game pages.' },
               ].map(({ Icon, color, bg, title, desc }) => (
