@@ -4073,7 +4073,7 @@ function PostCard({ post, user, openComments, commentText, setCommentText, onLik
             <p className="text-xs text-slate-600 mb-3">No comments yet — be the first!</p>
           ) : (
             <div className="space-y-3 mb-4">
-              {comments.filter(c => !c.replyToId).map(c => {
+              {comments.filter(c => !c.replyToId || c.replyToId === null || c.replyToId === undefined).map(c => {
                 const replies = comments.filter(r => r.replyToId === c.id);
                 const cLiked = user && (c.likes || []).includes(user.uid);
                 const cLikeCount = (c.likes || []).length;
