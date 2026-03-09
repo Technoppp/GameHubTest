@@ -865,19 +865,19 @@ function AuthNavButton({ navigateTo, currentPage, user, authLoading }) {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // Load avatar when user logs in
+  // Load avatar realtime when user logs in
   useEffect(() => {
-    if (!user) { setAvatarEmoji(null); return; }
-    const loadAvatar = async () => {
-      try {
-        const snap = await getDoc(doc(db, 'avatars', user.uid));
-        if (snap.exists()) {
-          setAvatarEmoji(snap.data().emoji || null);
-          setAvatarColor(snap.data().colorIndex ?? 0);
-        }
-      } catch (_) {}
-    };
-    loadAvatar();
+    if (!user) { setAvatarEmoji(null); setAvatarColor(0); return; }
+    const unsub = onSnapshot(doc(db, 'avatars', user.uid), (snap) => {
+      if (snap.exists()) {
+        setAvatarEmoji(snap.data().emoji || null);
+        setAvatarColor(snap.data().colorIndex ?? 0);
+      } else {
+        setAvatarEmoji(null);
+        setAvatarColor(0);
+      }
+    }, () => {});
+    return () => unsub();
   }, [user]);
 
   if (authLoading) return <div className="w-8 h-8 skeleton rounded-full flex-shrink-0" />;
@@ -911,7 +911,7 @@ function AuthNavButton({ navigateTo, currentPage, user, authLoading }) {
         {/* Avatar */}
         <div
           className="w-9 h-9 rounded-full flex items-center justify-center font-black text-sm"
-          style={{ background: avatarEmoji ? `linear-gradient(135deg, ${color.from}, ${color.to})` : 'linear-gradient(135deg, #3b82f6, #8b5cf6)' }}
+          style={{ background: `linear-gradient(135deg, ${color.from}, ${color.to})` }}
         >
           {avatarEmoji || initials}
         </div>
@@ -3712,10 +3712,17 @@ function CommunityPage({ navigateTo }) {
     setCommentText(p => ({ ...p, [postId]: '' }));
   };
 
+  const [confirmDeletePost, setConfirmDeletePost] = useState(null); // postId
+
   const handleDelete = async (postId, authorId) => {
     if (!user || user.uid !== authorId) return;
-    if (!window.confirm('DeletePostนี้?')) return;
-    await deleteDoc(doc(db, 'community_posts', postId));
+    setConfirmDeletePost(postId);
+  };
+
+  const confirmDeletePostAction = async () => {
+    if (!confirmDeletePost) return;
+    await deleteDoc(doc(db, 'community_posts', confirmDeletePost));
+    setConfirmDeletePost(null);
   };
 
   const toggleComments = (postId) => {
@@ -3740,6 +3747,26 @@ function CommunityPage({ navigateTo }) {
 
   return (
     <div className="container mx-auto px-4 lg:px-6 py-16 max-w-2xl">
+
+      {/* Confirm Delete Post Dialog */}
+      {confirmDeletePost && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={() => setConfirmDeletePost(null)}>
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-72 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <p className="text-sm font-bold text-white mb-1">Delete this post?</p>
+            <p className="text-xs text-slate-400 mb-5">This will permanently delete the post and all its comments.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmDeletePost(null)}
+                className="flex-1 bg-slate-700 hover:bg-slate-600 text-white text-sm font-bold py-2 rounded-xl transition-colors">
+                Cancel
+              </button>
+              <button onClick={confirmDeletePostAction}
+                className="flex-1 bg-red-600 hover:bg-red-500 text-white text-sm font-bold py-2 rounded-xl transition-colors">
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div className="mb-8 fade-in-up">
         <h2 className="text-4xl font-black mb-2" style={{ fontFamily: "'Orbitron', sans-serif" }}>
@@ -3880,9 +3907,12 @@ function PostCard({ post, user, openComments, commentText, setCommentText, onLik
     return () => unsub();
   }, [post.id]);
 
+  const [confirmDelete, setConfirmDelete] = useState(null); // commentId to delete
+
   const handleDeleteComment = async (commentId) => {
     if (!user) return;
     await deleteDoc(doc(db, 'community_posts', post.id, 'comments', commentId));
+    setConfirmDelete(null);
   };
 
   const handleLikeComment = async (c) => {
@@ -3967,8 +3997,16 @@ function PostCard({ post, user, openComments, commentText, setCommentText, onLik
                     <div className="flex gap-2.5">
                       <UserAvatar uid={c.authorId} name={c.authorName} size="sm" db={db} />
                       <div className="flex-1">
-                        <div className="bg-slate-800 rounded-xl px-3 py-2">
-                          <p className="text-xs font-bold text-slate-300 mb-0.5">{c.authorName}</p>
+                        <div className="bg-slate-800 rounded-xl px-3 py-2 relative">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-xs font-bold text-slate-300 mb-0.5">{c.authorName}</p>
+                            {user && user.uid === c.authorId && (
+                              <button onClick={() => setConfirmDelete(c.id)}
+                                className="text-slate-600 hover:text-red-400 text-xs transition-colors flex-shrink-0 leading-none">
+                                🗑️
+                              </button>
+                            )}
+                          </div>
                           <p className="text-xs text-slate-400 whitespace-pre-wrap">{c.text}</p>
                         </div>
                         <div className="flex items-center gap-3 mt-1 ml-1">
@@ -3985,12 +4023,6 @@ function PostCard({ post, user, openComments, commentText, setCommentText, onLik
                             </button>
                           )}
                           <span className="text-xs text-slate-700">{timeAgo(c.createdAt)}</span>
-                          {user && user.uid === c.authorId && (
-                            <button onClick={() => handleDeleteComment(c.id)}
-                              className="text-xs text-slate-700 hover:text-red-400 transition-colors ml-auto">
-                              Delete
-                            </button>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -4006,7 +4038,15 @@ function PostCard({ post, user, openComments, commentText, setCommentText, onLik
                               <UserAvatar uid={r.authorId} name={r.authorName} size="sm" db={db} />
                               <div className="flex-1">
                                 <div className="bg-slate-800/70 rounded-xl px-3 py-2">
-                                  <p className="text-xs font-bold text-slate-300 mb-0.5">{r.authorName}</p>
+                                  <div className="flex items-start justify-between gap-2">
+                                    <p className="text-xs font-bold text-slate-300 mb-0.5">{r.authorName}</p>
+                                    {user && user.uid === r.authorId && (
+                                      <button onClick={() => setConfirmDelete(r.id)}
+                                        className="text-slate-600 hover:text-red-400 text-xs transition-colors flex-shrink-0 leading-none">
+                                        🗑️
+                                      </button>
+                                    )}
+                                  </div>
                                   <p className="text-xs text-slate-400 whitespace-pre-wrap">{r.text}</p>
                                 </div>
                                 <div className="flex items-center gap-3 mt-1 ml-1">
@@ -4023,12 +4063,6 @@ function PostCard({ post, user, openComments, commentText, setCommentText, onLik
                                     </button>
                                   )}
                                   <span className="text-xs text-slate-700">{timeAgo(r.createdAt)}</span>
-                                  {user && user.uid === r.authorId && (
-                                    <button onClick={() => handleDeleteComment(r.id)}
-                                      className="text-xs text-slate-700 hover:text-red-400 transition-colors ml-auto">
-                                      Delete
-                                    </button>
-                                  )}
                                 </div>
                               </div>
                             </div>
@@ -4039,6 +4073,26 @@ function PostCard({ post, user, openComments, commentText, setCommentText, onLik
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* Confirm Delete Dialog */}
+          {confirmDelete && (
+            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={() => setConfirmDelete(null)}>
+              <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-72 shadow-2xl" onClick={e => e.stopPropagation()}>
+                <p className="text-sm font-bold text-white mb-1">Delete comment?</p>
+                <p className="text-xs text-slate-400 mb-5">This action cannot be undone.</p>
+                <div className="flex gap-3">
+                  <button onClick={() => setConfirmDelete(null)}
+                    className="flex-1 bg-slate-700 hover:bg-slate-600 text-white text-sm font-bold py-2 rounded-xl transition-colors">
+                    Cancel
+                  </button>
+                  <button onClick={() => handleDeleteComment(confirmDelete)}
+                    className="flex-1 bg-red-600 hover:bg-red-500 text-white text-sm font-bold py-2 rounded-xl transition-colors">
+                    Delete
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
