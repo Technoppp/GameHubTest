@@ -1337,6 +1337,22 @@ export default function GameHub() {
   };
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileAvatarEmoji, setMobileAvatarEmoji] = useState(null);
+  const [mobileAvatarColor, setMobileAvatarColor] = useState(0);
+
+  useEffect(() => {
+    if (!user) { setMobileAvatarEmoji(null); setMobileAvatarColor(0); return; }
+    const unsub = onSnapshot(doc(db, 'avatars', user.uid), (snap) => {
+      if (snap.exists()) {
+        setMobileAvatarEmoji(snap.data().emoji || null);
+        setMobileAvatarColor(snap.data().colorIndex ?? 0);
+      } else {
+        setMobileAvatarEmoji(null);
+        setMobileAvatarColor(0);
+      }
+    }, () => {});
+    return () => unsub();
+  }, [user]);
 
   const navigateTo = (page, data = null) => {
     // Save current state to history before navigating
@@ -1536,9 +1552,9 @@ export default function GameHub() {
                 <button
                   onClick={() => navigateTo('profile')}
                   className="w-9 h-9 rounded-full flex items-center justify-center font-black text-sm flex-shrink-0"
-                style={{ background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)' }}
+                  style={{ background: `linear-gradient(135deg, ${AVATAR_COLORS[mobileAvatarColor % AVATAR_COLORS.length].from}, ${AVATAR_COLORS[mobileAvatarColor % AVATAR_COLORS.length].to})` }}
                 >
-                  {user.displayName ? user.displayName[0].toUpperCase() : user.email[0].toUpperCase()}
+                  {mobileAvatarEmoji || (user.displayName ? user.displayName[0].toUpperCase() : user.email[0].toUpperCase())}
                 </button>
               )}
               <button
@@ -1605,8 +1621,9 @@ export default function GameHub() {
               ) : (
                 <div className="mt-3 pt-3 border-t border-slate-800 flex items-center justify-between px-2">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center font-black text-xs">
-                      {user.displayName ? user.displayName[0].toUpperCase() : user.email[0].toUpperCase()}
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center font-black text-xs"
+                      style={{ background: `linear-gradient(135deg, ${AVATAR_COLORS[mobileAvatarColor % AVATAR_COLORS.length].from}, ${AVATAR_COLORS[mobileAvatarColor % AVATAR_COLORS.length].to})` }}>
+                      {mobileAvatarEmoji || (user.displayName ? user.displayName[0].toUpperCase() : user.email[0].toUpperCase())}
                     </div>
                     <span className="text-sm font-bold text-white">{user.displayName || user.email.split('@')[0]}</span>
                   </div>
