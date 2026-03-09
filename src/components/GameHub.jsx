@@ -1354,14 +1354,19 @@ export default function GameHub() {
     return () => unsub();
   }, [user]);
 
+  const [communityTagGame, setCommunityTagGame] = useState(null);
+
   const navigateTo = (page, data = null) => {
-    // Save current state to history before navigating
     setNavHistory(prev => [...prev, { page: currentPage, game: selectedGame, category: selectedCategory }]);
     setCurrentPage(page);
     setMenuOpen(false);
     if (page === 'game-detail') setSelectedGame(data);
     else if (page === 'category') setSelectedCategory(data);
     else if (page === 'games') { setSelectedCategory(null); setSelectedGame(null); }
+    else if (page === 'community') {
+      if (data?.tagGame) setCommunityTagGame(data.tagGame);
+      else setCommunityTagGame(null);
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -1647,7 +1652,7 @@ export default function GameHub() {
         {currentPage === 'tournaments' && <TournamentsPage navigateTo={navigateTo} />}
         {currentPage === 'leaderboard' && <LeaderboardPage navigateTo={navigateTo} />}
         {currentPage === 'wishlist' && <WishlistPage navigateTo={navigateTo} />}
-        {currentPage === 'community' && <CommunityPage navigateTo={navigateTo} />}
+        {currentPage === 'community' && <CommunityPage navigateTo={navigateTo} tagGame={communityTagGame} />}
         {currentPage === 'news' && <NewsPage navigateTo={navigateTo} />}
         {currentPage === 'about' && <AboutPage />}
         {currentPage === 'login' && <LoginPage navigateTo={navigateTo} />}
@@ -2770,6 +2775,37 @@ function GameDetailPage({ game, navigateTo, goBack, navHistory }) {
               </div>
             </div>
 
+            {/* Rate this game */}
+            <div className="bg-slate-900 rounded-2xl p-5 border border-slate-800">
+              <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-3">Rate This Game</h4>
+              {avgRating && (
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-yellow-400 font-black text-lg">★ {avgRating}</span>
+                  <span className="text-xs text-slate-500">from {ratingCount} user{ratingCount !== 1 ? 's' : ''}</span>
+                </div>
+              )}
+              <div className="flex gap-1 mb-2">
+                {[1,2,3,4,5].map(star => (
+                  <button key={star}
+                    onClick={() => handleRating(star)}
+                    onMouseEnter={() => setHoverRating(star)}
+                    onMouseLeave={() => setHoverRating(0)}
+                    className="text-2xl transition-transform hover:scale-125">
+                    {star <= (hoverRating || userRating) ? '⭐' : '☆'}
+                  </button>
+                ))}
+              </div>
+              {ratingSubmitted && <p className="text-xs text-green-400">Thanks for rating! ✓</p>}
+            </div>
+
+            {/* Discuss in Community */}
+            <button
+              onClick={() => navigateTo('community', { tagGame: game })}
+              className="w-full py-3.5 rounded-xl font-bold text-sm transition-all duration-200 flex items-center justify-center gap-2 bg-blue-600/20 hover:bg-blue-600/30 border-2 border-blue-500/40 hover:border-blue-500/70 text-blue-400"
+            >
+              💬 Discuss in Community
+            </button>
+
             {/* Genre card */}
             <div className="rounded-2xl p-6 border" style={{ background: `${color}0d`, borderColor: `${color}33` }}>
               <div className="flex items-center gap-3 mb-3">
@@ -3243,33 +3279,23 @@ function LeaderboardPage({ navigateTo }) {
 
   useEffect(() => {
     const buildLeaderboard = async () => {
-      // Aggregate reviews across all games to build ranking
-      const scores = [];
-      for (const game of GAMES_DATA) {
-        try {
-          const raw = localStorage.getItem(`game-community-${game.id}`);
-          if (raw) {
-
-            const data = JSON.parse(raw);
-            const reviews = data.reviews || [];
-            const discussions = data.discussions || [];
-            if (reviews.length > 0 || discussions.length > 0) {
-              const avgRating = reviews.length > 0
-                ? reviews.reduce((s, r) => s + r.stars, 0) / reviews.length
-                : null;
-              scores.push({
-                game,
-                reviews: reviews.length,
-                discussions: discussions.length,
-                avgRating,
-                score: reviews.length * 3 + discussions.length * 1,
-              });
-            }
+      try {
+        const snap = await getDocs(collection(db, 'community_posts'));
+        const counts = {};
+        snap.docs.forEach(d => {
+          const tag = d.data().gameTag;
+          if (tag?.id) {
+            if (!counts[tag.id]) counts[tag.id] = { game: GAMES_DATA.find(g => g.id === tag.id), posts: 0, likes: 0 };
+            counts[tag.id].posts += 1;
+            counts[tag.id].likes += (d.data().likes || []).length;
           }
-        } catch (_) {}
-      }
-      scores.sort((a, b) => b.score - a.score);
-      setLeaderboard(scores);
+        });
+        const scores = Object.values(counts)
+          .filter(e => e.game)
+          .map(e => ({ ...e, score: e.posts * 3 + e.likes }))
+          .sort((a, b) => b.score - a.score);
+        setLeaderboard(scores);
+      } catch (_) {}
       setLoading(false);
     };
     buildLeaderboard();
@@ -3319,15 +3345,15 @@ function LeaderboardPage({ navigateTo }) {
                     <div className="flex-1 min-w-0">
                       <p className="font-bold truncate">{entry.game.title}</p>
                       <div className="flex items-center gap-3 text-xs text-slate-500 mt-0.5">
-                        <span style={{ color: cat?.color }}>●  {cat?.label}</span>
-                        <span>✍️ {entry.reviews} reviews</span>
-                        <span>💬 {entry.discussions} posts</span>
+                        <span style={{ color: cat?.color }}>● {cat?.label}</span>
+                        <span>💬 {entry.posts} posts</span>
+                        <span>❤️ {entry.likes} likes</span>
                       </div>
                     </div>
-                    {entry.avgRating && (
+                    {entry.posts > 0 && (
                       <div className="text-right flex-shrink-0">
-                        <p className="text-yellow-400 font-black">★ {entry.avgRating.toFixed(1)}</p>
-                        <p className="text-xs text-slate-500">user rating</p>
+                        <p className="text-blue-400 font-black">+{entry.score}</p>
+                        <p className="text-xs text-slate-500">score</p>
                       </div>
                     )}
                   </div>
@@ -3634,7 +3660,7 @@ function TournamentsPage({ navigateTo }) {
 // COMMUNITY PAGE
 // ─────────────────────────────────────────────
 
-function CommunityPage({ navigateTo }) {
+function CommunityPage({ navigateTo, tagGame }) {
   const { user } = useAuth();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -3642,6 +3668,9 @@ function CommunityPage({ navigateTo }) {
   const [postImage, setPostImage] = useState('');
   const [imagePreview, setImagePreview] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [selectedTag, setSelectedTag] = useState(tagGame || null);
+  const [showTagPicker, setShowTagPicker] = useState(false);
+  const [tagFilter, setTagFilter] = useState(null); // filter feed by game
   const [submitting, setSubmitting] = useState(false);
   const [openComments, setOpenComments] = useState({});
   const [commentText, setCommentText] = useState({});
@@ -3697,11 +3726,13 @@ function CommunityPage({ navigateTo }) {
         authorName: user.displayName || user.email.split('@')[0],
         authorEmail: user.email,
         likes: [],
+        gameTag: selectedTag ? { id: selectedTag.id, title: selectedTag.title } : null,
         createdAt: serverTimestamp(),
       });
       setPostText('');
       setPostImage('');
       setImagePreview(null);
+      setSelectedTag(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (e) { console.error(e); }
     setSubmitting(false);
@@ -3831,6 +3862,28 @@ function CommunityPage({ navigateTo }) {
                 className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-purple-400 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 px-3 py-2 rounded-lg transition-all border border-slate-700">
                 🖼️ {imagePreview ? 'Change' : 'Add Image'}
               </button>
+
+              {/* Game Tag Picker */}
+              <div className="relative">
+                <button onClick={() => setShowTagPicker(!showTagPicker)}
+                  className={`flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg transition-all border ${selectedTag ? 'text-blue-400 bg-blue-500/10 border-blue-500/40' : 'text-slate-400 bg-slate-800 border-slate-700 hover:text-blue-400'}`}>
+                  🎮 {selectedTag ? selectedTag.title : 'Tag Game'}
+                  {selectedTag && <span onClick={e => { e.stopPropagation(); setSelectedTag(null); }} className="ml-1 hover:text-red-400">✕</span>}
+                </button>
+                {showTagPicker && (
+                  <div className="absolute bottom-10 left-0 w-56 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl z-20 overflow-hidden">
+                    <div className="max-h-48 overflow-y-auto py-1">
+                      {GAMES_DATA.map(g => (
+                        <button key={g.id} onClick={() => { setSelectedTag(g); setShowTagPicker(false); }}
+                          className="w-full text-left px-3 py-2 text-xs text-slate-300 hover:bg-slate-700 hover:text-white transition-colors truncate">
+                          {g.title}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="flex-1"/>
               <button onClick={handlePost}
                 disabled={submitting || uploading || !postText.trim()}
@@ -3850,26 +3903,36 @@ function CommunityPage({ navigateTo }) {
         )}
       </div>
 
+      {/* Filter bar */}
+      {tagFilter && (
+        <div className="flex items-center gap-2 mb-4 px-1">
+          <span className="text-xs text-slate-400">Showing posts tagged:</span>
+          <span className="text-xs font-bold text-blue-400 bg-blue-500/10 border border-blue-500/30 px-2 py-1 rounded-full">🎮 {tagFilter.title}</span>
+          <button onClick={() => setTagFilter(null)} className="text-xs text-slate-600 hover:text-slate-400 ml-auto">✕ Clear filter</button>
+        </div>
+      )}
+
       {/* Posts Feed */}
       {loading ? (
         <div className="space-y-4">
           {[1,2,3].map(i => <div key={i} className="bg-slate-900 rounded-2xl p-5 animate-pulse h-32"/>)}
         </div>
-      ) : posts.length === 0 ? (
+      ) : posts.filter(p => !tagFilter || p.gameTag?.id === tagFilter.id).length === 0 ? (
         <div className="text-center py-20 text-slate-500">
           <p className="text-4xl mb-3">💬</p>
-          <p className="font-bold">No posts yet</p>
+          <p className="font-bold">{tagFilter ? `No posts about ${tagFilter.title} yet` : 'No posts yet'}</p>
           <p className="text-sm">Be the first to post in the community!</p>
         </div>
       ) : (
         <div className="space-y-4">
-          {posts.map(post => {
+          {posts.filter(p => !tagFilter || p.gameTag?.id === tagFilter.id).map(post => {
             return (
               <PostCard key={post.id} post={post} user={user} openComments={openComments}
                 commentText={commentText} setCommentText={setCommentText}
                 onLike={handleLike} onComment={handleComment} onDelete={handleDelete}
                 onToggleComments={toggleComments} onRequireLogin={requireLogin}
-                timeAgo={timeAgo} db={db}
+                timeAgo={timeAgo} db={db} navigateTo={navigateTo}
+                onTagClick={(tag) => setTagFilter(tag)}
               />
             );
           })}
@@ -3906,7 +3969,7 @@ function UserAvatar({ uid, name, size = 'md', db }) {
   );
 }
 
-function PostCard({ post, user, openComments, commentText, setCommentText, onLike, onComment, onDelete, onToggleComments, onRequireLogin, timeAgo, db }) {
+function PostCard({ post, user, openComments, commentText, setCommentText, onLike, onComment, onDelete, onToggleComments, onRequireLogin, timeAgo, db, navigateTo, onTagClick }) {
   const [comments, setComments] = useState([]);
   const [commentCount, setCommentCount] = useState(0);
   const [replyTo, setReplyTo] = useState(null); // { id, name }
@@ -3978,6 +4041,12 @@ function PostCard({ post, user, openComments, commentText, setCommentText, onLik
         </div>
 
         {/* Content */}
+        {post.gameTag && (
+          <button onClick={() => onTagClick ? onTagClick(post.gameTag) : null}
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 px-2.5 py-1 rounded-full mb-3 transition-colors">
+            🎮 {post.gameTag.title}
+          </button>
+        )}
         <p className="text-slate-200 text-sm leading-relaxed mb-3 whitespace-pre-wrap">{post.text}</p>
         {post.imageUrl && (
           <img src={post.imageUrl} alt="" className="w-full rounded-xl object-cover max-h-80 mb-3"
