@@ -4034,8 +4034,8 @@ function PostCard({ post, user, openComments, commentText, setCommentText, onLik
           </div>
           {isOwner && (
             <button onClick={() => onDelete(post.id, post.authorId)}
-              className="text-slate-600 hover:text-red-400 text-xs transition-colors px-2 py-1 rounded">
-              Delete
+              className="text-slate-600 hover:text-red-400 text-sm transition-colors px-1 py-1 rounded">
+              🗑️
             </button>
           )}
         </div>
