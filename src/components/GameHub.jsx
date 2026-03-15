@@ -755,7 +755,7 @@ const GAMES_DATA = [
     title: 'StarCraft II',
     category: 'strategy',
     subcategory: 'RTS',
-    image: 'https://media.rawg.io/media/games/051/051f74b8bbf9e8d0db7a2b3d83c9c0fe.jpg',
+    image: 'https://media.rawg.io/media/games/d58/d588a9c6b82e7e1d84c0f7e77c4e956b.jpg',
     description: 'The definitive real-time strategy game. Master one of three asymmetric races - Terran, Zerg, or Protoss - and compete in one of esports\' most enduring scenes.',
     releaseDate: '2010-07-27',
     rating: 4.8,
@@ -1507,6 +1507,14 @@ export default function GameHub() {
         )}
       </header>
 
+      {/* ── Floating Back Button ── */}
+      {navHistory.length > 0 && (
+        <button onClick={goBack}
+          className="fixed top-24 left-5 z-40 flex items-center gap-1.5 bg-slate-900/90 backdrop-blur border border-slate-700 hover:border-blue-500/50 text-slate-300 hover:text-white text-sm font-bold px-3 py-2 rounded-xl shadow-lg transition-all hover:scale-105">
+          <ChevronLeft className="w-4 h-4" /> Back
+        </button>
+      )}
+
       {/* ── Main Content ── */}
       <main className="pt-20">
         {currentPage === 'home' && <HomePage navigateTo={navigateTo} />}
@@ -2152,9 +2160,7 @@ function CategoryPage({ category, navigateTo, goBack, navHistory }) {
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-sm text-slate-500 mb-8 fade-in-up">
             {navHistory.length > 0 && (
-              <button onClick={goBack} className="breadcrumb-item hover:text-white flex items-center gap-1 mr-1">
-                <ChevronLeft className="w-4 h-4" /> Back
-              </button>
+              <span className="mr-1 text-slate-600">·</span>
             )}
             <button className="breadcrumb-item hover:text-blue-400" onClick={() => navigateTo('games')}>Games</button>
             <ChevronRight className="w-4 h-4" />
@@ -2428,9 +2434,7 @@ function GameDetailPage({ game, navigateTo, goBack, navHistory }) {
             {/* Breadcrumb */}
             <div className="flex items-center gap-2 text-sm text-slate-400 mb-5">
               {navHistory.length > 0 && (
-                <button onClick={goBack} className="breadcrumb-item hover:text-white flex items-center gap-1 mr-1">
-                  <ChevronLeft className="w-4 h-4" /> Back
-                </button>
+                <span className="mr-1 text-slate-600">·</span>
               )}
               <button className="breadcrumb-item hover:text-blue-400" onClick={() => navigateTo('games')}>Games</button>
               <ChevronRight className="w-4 h-4 text-slate-600" />
@@ -4016,14 +4020,25 @@ function UserAvatar({ uid, name, size = 'md', db }) {
   );
 }
 
-function PostCard({ post, user, openComments, commentText, setCommentText, onLike, onComment, onDelete, onToggleComments, onRequireLogin, timeAgo, db, navigateTo, onTagClick }) {
+function PostCard({ post, user, openComments, commentText, setCommentText, onLike, onComment, onDelete, onToggleComments, onRequireLogin, timeAgo, db, navigateTo, onTagClick, onEdit }) {
   const [comments, setComments] = useState([]);
   const [commentCount, setCommentCount] = useState(0);
-  const [replyTo, setReplyTo] = useState(null); // { id, name }
+  const [replyTo, setReplyTo] = useState(null);
+  const [editing, setEditing] = useState(false);
+  const [editText, setEditText] = useState(post.text);
+  const [saving, setSaving] = useState(false);
 
   const liked = user && (post.likes || []).includes(user.uid);
   const likeCount = (post.likes || []).length;
   const isOwner = user && user.uid === post.authorId;
+
+  const handleSaveEdit = async () => {
+    if (!editText.trim()) return;
+    setSaving(true);
+    await updateDoc(doc(db, 'community_posts', post.id), { text: editText.trim() });
+    setSaving(false);
+    setEditing(false);
+  };
 
   useEffect(() => {
     const q = query(collection(db, 'community_posts', post.id, 'comments'), orderBy('createdAt', 'asc'));
@@ -4080,10 +4095,16 @@ function PostCard({ post, user, openComments, commentText, setCommentText, onLik
             </div>
           </div>
           {isOwner && (
-            <button onClick={() => onDelete(post.id, post.authorId)}
-              className="text-slate-600 hover:text-red-400 text-sm transition-colors px-1 py-1 rounded">
-              🗑️
-            </button>
+            <div className="flex items-center gap-1">
+              <button onClick={() => { setEditing(true); setEditText(post.text); }}
+                className="text-slate-600 hover:text-blue-400 text-sm transition-colors px-1 py-1 rounded">
+                ✏️
+              </button>
+              <button onClick={() => onDelete(post.id, post.authorId)}
+                className="text-slate-600 hover:text-red-400 text-sm transition-colors px-1 py-1 rounded">
+                🗑️
+              </button>
+            </div>
           )}
         </div>
 
@@ -4094,7 +4115,24 @@ function PostCard({ post, user, openComments, commentText, setCommentText, onLik
             🎮 {post.gameTag.title}
           </button>
         )}
-        <p className="text-slate-200 text-sm leading-relaxed mb-3 whitespace-pre-wrap">{post.text}</p>
+        {editing ? (
+          <div className="mb-3">
+            <textarea value={editText} onChange={e => setEditText(e.target.value)} rows={3}
+              className="w-full bg-slate-800 border border-blue-500/50 rounded-xl px-4 py-3 text-sm text-slate-100 resize-none focus:outline-none transition-colors"/>
+            <div className="flex gap-2 mt-2">
+              <button onClick={() => setEditing(false)}
+                className="text-xs text-slate-500 hover:text-slate-300 px-3 py-1.5 rounded-lg bg-slate-800 transition-colors">
+                Cancel
+              </button>
+              <button onClick={handleSaveEdit} disabled={saving || !editText.trim()}
+                className="text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-40 px-4 py-1.5 rounded-lg transition-colors">
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <p className="text-slate-200 text-sm leading-relaxed mb-3 whitespace-pre-wrap">{post.text}</p>
+        )}
         {post.imageUrl && (
           <img src={post.imageUrl} alt="" className="w-full rounded-xl object-cover max-h-80 mb-3"
             onError={e => e.target.style.display='none'}/>
