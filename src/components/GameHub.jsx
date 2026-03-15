@@ -3341,6 +3341,7 @@ function TournamentsPage({ navigateTo }) {
   };
 
   const [form, setForm] = useState({ teamName: '', phone: '', email: '', players: [] });
+  const [editRegId, setEditRegId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitDone, setSubmitDone] = useState(false);
 
@@ -3363,6 +3364,19 @@ function TournamentsPage({ navigateTo }) {
       teamName: '', phone: '', email: user.email || '',
       players: Array.from({ length: size }, () => ({ realName: '', ign: '' }))
     });
+    setEditRegId(null);
+    setSubmitDone(false);
+    setRegisterModal(tournament);
+  };
+
+  const handleEdit = (tournament, reg) => {
+    setForm({
+      teamName: reg.teamName,
+      phone: reg.phone,
+      email: reg.contactEmail,
+      players: reg.players || Array.from({ length: teamSize(tournament.game) }, () => ({ realName: '', ign: '' }))
+    });
+    setEditRegId(reg.id);
     setSubmitDone(false);
     setRegisterModal(tournament);
   };
@@ -3372,19 +3386,32 @@ function TournamentsPage({ navigateTo }) {
     if (form.players.some(p => !p.realName.trim() || !p.ign.trim())) return;
     setSubmitting(true);
     try {
-      await addDoc(collection(db, 'tournament_registrations'), {
-        tournamentId: registerModal.id,
-        tournamentName: registerModal.name,
-        userId: user.uid,
-        userEmail: user.email,
-        teamName: form.teamName.trim(),
-        phone: form.phone.trim(),
-        contactEmail: form.email.trim(),
-        players: form.players,
-        status: 'pending',
-        createdAt: serverTimestamp(),
-      });
+      if (editRegId) {
+        // Edit existing registration
+        await updateDoc(doc(db, 'tournament_registrations', editRegId), {
+          teamName: form.teamName.trim(),
+          phone: form.phone.trim(),
+          contactEmail: form.email.trim(),
+          players: form.players,
+          updatedAt: serverTimestamp(),
+        });
+      } else {
+        // New registration
+        await addDoc(collection(db, 'tournament_registrations'), {
+          tournamentId: registerModal.id,
+          tournamentName: registerModal.name,
+          userId: user.uid,
+          userEmail: user.email,
+          teamName: form.teamName.trim(),
+          phone: form.phone.trim(),
+          contactEmail: form.email.trim(),
+          players: form.players,
+          status: 'pending',
+          createdAt: serverTimestamp(),
+        });
+      }
       setSubmitDone(true);
+      setEditRegId(null);
     } catch (e) { console.error(e); }
     setSubmitting(false);
   };
@@ -3476,7 +3503,15 @@ function TournamentsPage({ navigateTo }) {
                         <p className="text-2xl font-black text-yellow-400">{t.prize}</p>
                       </div>
                       {myReg ? (
-                        <div className="text-xs text-slate-500 text-right">Already registered</div>
+                        <div className="flex flex-col gap-2 w-full lg:w-auto">
+                          <div className="text-xs text-slate-500 text-right">Already registered</div>
+                          {myReg.status === 'pending' && (
+                            <button onClick={() => handleEdit(t, myReg)}
+                              className="w-full lg:w-auto bg-slate-700 hover:bg-slate-600 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-all">
+                              ✏️ Edit Registration
+                            </button>
+                          )}
+                        </div>
                       ) : t.status === 'Registration Open' && !full ? (
                         <button onClick={() => handleRegister(t)}
                           className="w-full lg:w-auto bg-yellow-500 hover:bg-yellow-400 text-black font-black px-6 py-3 rounded-xl transition-all hover:scale-105 text-sm">
@@ -3550,8 +3585,8 @@ function TournamentsPage({ navigateTo }) {
               /* Success state */
               <div className="p-8 text-center">
                 <div className="text-5xl mb-4">🎉</div>
-                <h3 className="text-xl font-black mb-2 text-green-400">Registration Submitted!</h3>
-                <p className="text-slate-400 text-sm mb-2">Your team <span className="text-white font-bold">"{form.teamName}"</span> has been registered for</p>
+                <h3 className="text-xl font-black mb-2 text-green-400">{editRegId ? 'Registration Updated!' : 'Registration Submitted!'}</h3>
+                <p className="text-slate-400 text-sm mb-2">Your team <span className="text-white font-bold">"{form.teamName}"</span> has been {editRegId ? 'updated for' : 'registered for'}</p>
                 <p className="text-yellow-400 font-bold mb-6">{registerModal.name}</p>
                 <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 mb-6 text-sm text-slate-300">
                   ⏳ Your registration is <span className="text-yellow-400 font-bold">pending approval</span>. The admin will review and confirm within 24 hours. You can check the status on this page.
@@ -3565,7 +3600,7 @@ function TournamentsPage({ navigateTo }) {
               /* Form */
               <div className="p-6">
                 <div className="flex items-center justify-between mb-1">
-                  <h3 className="text-lg font-black">Team Registration</h3>
+                  <h3 className="text-lg font-black">{editRegId ? 'Edit Registration' : 'Team Registration'}</h3>
                   <button onClick={() => setRegisterModal(null)} className="text-slate-500 hover:text-white text-xl leading-none">✕</button>
                 </div>
                 <p className="text-yellow-400 font-bold text-sm mb-5">{registerModal.name}</p>
