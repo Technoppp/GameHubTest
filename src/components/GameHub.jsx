@@ -1394,7 +1394,13 @@ export default function GameHub() {
             </nav>
 
             {/* Desktop Auth */}
-            <div className="hidden lg:flex items-center">
+            <div className="hidden lg:flex items-center gap-3">
+              {isAdmin && (
+                <button onClick={() => navigateTo('admin')}
+                  className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${currentPage === 'admin' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/40' : 'text-slate-400 hover:text-yellow-400 border border-slate-700 hover:border-yellow-500/40'}`}>
+                  ⚙️ Admin
+                </button>
+              )}
               <AuthNavButton navigateTo={navigateTo} currentPage={currentPage} user={user} authLoading={authLoading} />
             </div>
 
@@ -1458,6 +1464,16 @@ export default function GameHub() {
                 <span className="text-base">♥</span>
                 Wishlist
               </button>
+              {/* Admin Panel in mobile menu */}
+              {isAdmin && (
+                <button onClick={() => navigateTo('admin')}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all text-left ${
+                    currentPage === 'admin' ? 'bg-yellow-500/15 text-yellow-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                  }`}>
+                  <span className="text-base">⚙️</span>
+                  Admin Panel
+                </button>
+              )}
               {/* Auth actions in mobile menu */}
               {!user ? (
                 <div className="flex gap-3 mt-3 pt-3 border-t border-slate-800">
@@ -3107,14 +3123,6 @@ function ProfilePage({ navigateTo }) {
         </div>
       </div>
 
-      {/* Admin Panel link */}
-      {isAdmin && (
-        <button onClick={() => navigateTo('admin')}
-          className="w-full py-3.5 rounded-xl font-bold text-yellow-400 border border-yellow-500/30 hover:bg-yellow-500/10 transition-all mb-3">
-          ⚙️ Admin Panel
-        </button>
-      )}
-
       {/* Sign out */}
       <button
         onClick={async () => { await signOut(auth); navigateTo('home'); }}
@@ -3345,13 +3353,24 @@ function TournamentsPage({ navigateTo }) {
   const [submitting, setSubmitting] = useState(false);
   const [submitDone, setSubmitDone] = useState(false);
 
-  // Load user's existing registrations
+  // Load user's existing registrations (all including rejected for count)
   useEffect(() => {
     if (!user) return;
     const q = query(collection(db, 'tournament_registrations'), where('userId', '==', user.uid));
     const unsub = onSnapshot(q, (snap) => {
       const map = {};
-      snap.docs.forEach(d => { map[d.data().tournamentId] = { id: d.id, ...d.data() }; });
+      const rejectCounts = {};
+      snap.docs.forEach(d => {
+        const data = { id: d.id, ...d.data() };
+        const tid = data.tournamentId;
+        // Count rejects per tournament
+        if (!rejectCounts[tid]) rejectCounts[tid] = 0;
+        if (data.status === 'rejected') rejectCounts[tid]++;
+        // Keep latest non-rejected, or latest rejected if no active
+        if (!map[tid] || data.status !== 'rejected') map[tid] = data;
+      });
+      // Attach rejectCount to each registration
+      Object.keys(map).forEach(tid => { map[tid].rejectCount = rejectCounts[tid] || 0; });
       setMyRegistrations(map);
     });
     return () => unsub();
@@ -3386,8 +3405,8 @@ function TournamentsPage({ navigateTo }) {
     if (form.players.some(p => !p.realName.trim() || !p.ign.trim())) return;
     setSubmitting(true);
     try {
-      if (editRegId) {
-        // Edit existing registration
+      if (editRegId && !form._isResubmit) {
+        // Edit existing pending registration
         await updateDoc(doc(db, 'tournament_registrations', editRegId), {
           teamName: form.teamName.trim(),
           phone: form.phone.trim(),
@@ -3396,7 +3415,7 @@ function TournamentsPage({ navigateTo }) {
           updatedAt: serverTimestamp(),
         });
       } else {
-        // New registration
+        // New registration or resubmit after rejection
         await addDoc(collection(db, 'tournament_registrations'), {
           tournamentId: registerModal.id,
           tournamentName: registerModal.name,
@@ -3482,8 +3501,8 @@ function TournamentsPage({ navigateTo }) {
                           myReg.status === 'rejected' ? 'bg-red-500/15 text-red-400 border border-red-500/30' :
                           'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30'
                         }`}>
-                          {myReg.status === 'approved' ? '✅ Registered' : myReg.status === 'rejected' ? '❌ Rejected' : '⏳ Pending approval'}
-                          {myReg.status !== 'rejected' && <span className="font-normal">— Team: {myReg.teamName}</span>}
+                          {myReg.status === 'approved' ? '✅ Registered' : myReg.status === 'rejected' ? `❌ Rejected (${myReg.rejectCount}/3)` : '⏳ Pending approval'}
+                          {myReg.status === 'pending' && <span className="font-normal">— Team: {myReg.teamName}</span>}
                         </div>
                       )}
                       {/* Slots bar */}
@@ -3504,12 +3523,38 @@ function TournamentsPage({ navigateTo }) {
                       </div>
                       {myReg ? (
                         <div className="flex flex-col gap-2 w-full lg:w-auto">
-                          <div className="text-xs text-slate-500 text-right">Already registered</div>
                           {myReg.status === 'pending' && (
                             <button onClick={() => handleEdit(t, myReg)}
                               className="w-full lg:w-auto bg-slate-700 hover:bg-slate-600 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-all">
                               ✏️ Edit Registration
                             </button>
+                          )}
+                          {myReg.status === 'rejected' && (
+                            myReg.rejectCount >= 3 ? (
+                              <div className="text-xs text-red-400 font-bold text-center px-3 py-2 bg-red-500/10 rounded-xl border border-red-500/20">
+                                ⛔ Max attempts reached
+                              </div>
+                            ) : (
+                              <button onClick={() => {
+                                const size = teamSize(t.game);
+                                setForm({
+                                  teamName: myReg.teamName || '',
+                                  phone: myReg.phone || '',
+                                  email: myReg.contactEmail || user.email || '',
+                                  players: myReg.players || Array.from({ length: size }, () => ({ realName: '', ign: '' })),
+                                  _isResubmit: true,
+                                });
+                                setEditRegId(null);
+                                setSubmitDone(false);
+                                setRegisterModal(t);
+                              }}
+                                className="w-full lg:w-auto bg-yellow-500 hover:bg-yellow-400 text-black font-black px-5 py-2.5 rounded-xl text-sm transition-all">
+                                🔄 Resubmit ({3 - myReg.rejectCount} left)
+                              </button>
+                            )
+                          )}
+                          {myReg.status === 'approved' && (
+                            <div className="text-xs text-slate-500 text-right">Already registered</div>
                           )}
                         </div>
                       ) : t.status === 'Registration Open' && !full ? (
