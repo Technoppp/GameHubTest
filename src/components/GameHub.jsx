@@ -3739,23 +3739,61 @@ function CommunityPage({ navigateTo, tagGame }) {
 
   const requireLogin = () => { navigateTo('login'); };
 
-  const handleFileSelect = async (e) => {
+  const [cropSrc, setCropSrc] = useState(null);
+  const [cropFile, setCropFile] = useState(null);
+  const cropImgRef = useRef(null);
+  const [cropDrag, setCropDrag] = useState(null);
+  const [cropBox, setCropBox] = useState({ x: 0, y: 0, w: 100, h: 100 });
+  const [aspectRatio] = useState(16/9);
+
+  const handleFileSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) { alert('Image must be under 10MB'); return; }
-    setImagePreview(URL.createObjectURL(file));
-    setUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('upload_preset', 'GameHub');
-      const res = await fetch('https://api.cloudinary.com/v1_1/dz7hage1z/image/upload', {
-        method: 'POST', body: formData
-      });
-      const data = await res.json();
-      setPostImage(data.secure_url);
-    } catch (e) { alert('Upload failed, please try again'); setImagePreview(null); }
-    setUploading(false);
+    setCropFile(file);
+    const url = URL.createObjectURL(file);
+    setCropSrc(url);
+  };
+
+  const initCrop = (img) => {
+    const iw = img.naturalWidth, ih = img.naturalHeight;
+    const targetH = iw / aspectRatio;
+    if (targetH <= ih) {
+      setCropBox({ x: 0, y: Math.round((ih - targetH) / 2), w: iw, h: Math.round(targetH) });
+    } else {
+      const targetW = ih * aspectRatio;
+      setCropBox({ x: Math.round((iw - targetW) / 2), y: 0, w: Math.round(targetW), h: ih });
+    }
+  };
+
+  const uploadCropped = async () => {
+    const img = cropImgRef.current;
+    if (!img) return;
+    const canvas = document.createElement('canvas');
+    const scaleX = img.naturalWidth / img.width;
+    const scaleY = img.naturalHeight / img.height;
+    canvas.width = 1200;
+    canvas.height = Math.round(1200 / aspectRatio);
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img,
+      cropBox.x * scaleX, cropBox.y * scaleY,
+      cropBox.w * scaleX, cropBox.h * scaleY,
+      0, 0, canvas.width, canvas.height
+    );
+    canvas.toBlob(async (blob) => {
+      setUploading(true);
+      setCropSrc(null);
+      setImagePreview(URL.createObjectURL(blob));
+      try {
+        const formData = new FormData();
+        formData.append('file', blob, 'crop.jpg');
+        formData.append('upload_preset', 'GameHub');
+        const res = await fetch('https://api.cloudinary.com/v1_1/dz7hage1z/image/upload', { method: 'POST', body: formData });
+        const data = await res.json();
+        setPostImage(data.secure_url);
+      } catch { alert('Upload failed'); setImagePreview(null); }
+      setUploading(false);
+    }, 'image/jpeg', 0.9);
   };
 
   const removeImage = () => {
@@ -3846,6 +3884,70 @@ function CommunityPage({ navigateTo, tagGame }) {
 
   return (
     <div className="container mx-auto px-4 lg:px-6 py-16 max-w-2xl">
+
+      {/* Crop Modal */}
+      {cropSrc && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex flex-col items-center justify-center p-4">
+          <div className="bg-slate-900 rounded-2xl border border-slate-700 w-full max-w-lg overflow-hidden">
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+              <p className="font-bold text-sm">Crop Image (16:9)</p>
+              <button onClick={() => { setCropSrc(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                className="text-slate-500 hover:text-white">✕</button>
+            </div>
+            <div className="relative overflow-hidden bg-black select-none"
+              onMouseMove={e => {
+                if (!cropDrag) return;
+                const rect = e.currentTarget.getBoundingClientRect();
+                const img = cropImgRef.current;
+                if (!img) return;
+                const scaleX = img.naturalWidth / img.width;
+                const scaleY = img.naturalHeight / img.height;
+                const dx = (e.clientX - cropDrag.startX) * scaleX;
+                const dy = (e.clientY - cropDrag.startY) * scaleY;
+                setCropBox(prev => ({
+                  ...prev,
+                  x: Math.max(0, Math.min(img.naturalWidth - prev.w, cropDrag.origX + dx)),
+                  y: Math.max(0, Math.min(img.naturalHeight - prev.h, cropDrag.origY + dy)),
+                }));
+              }}
+              onMouseUp={() => setCropDrag(null)}
+              onMouseLeave={() => setCropDrag(null)}>
+              <img ref={cropImgRef} src={cropSrc} alt="crop" className="w-full"
+                onLoad={e => initCrop(e.target)} draggable={false}/>
+              {cropImgRef.current && (() => {
+                const img = cropImgRef.current;
+                const scaleX = img.width / img.naturalWidth;
+                const scaleY = img.height / img.naturalHeight;
+                return (
+                  <div className="absolute inset-0 pointer-events-none"
+                    style={{ boxShadow: `${cropBox.x*scaleX}px ${cropBox.y*scaleY}px 0 0 rgba(0,0,0,0.6), inset ${-(img.width-(cropBox.x+cropBox.w)*scaleX)}px ${-(img.height-(cropBox.y+cropBox.h)*scaleY)}px 0 0 rgba(0,0,0,0.6)` }}>
+                    <div className="absolute border-2 border-white pointer-events-auto cursor-move"
+                      style={{ left: cropBox.x*scaleX, top: cropBox.y*scaleY, width: cropBox.w*scaleX, height: cropBox.h*scaleY }}
+                      onMouseDown={e => {
+                        e.preventDefault();
+                        setCropDrag({ startX: e.clientX, startY: e.clientY, origX: cropBox.x, origY: cropBox.y });
+                      }}>
+                      <div className="absolute inset-0 grid grid-cols-3 grid-rows-3">
+                        {Array(9).fill(0).map((_,i) => <div key={i} className="border border-white/20"/>)}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+            <div className="p-4 flex gap-3">
+              <button onClick={() => { setCropSrc(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                className="flex-1 py-2.5 rounded-xl bg-slate-800 text-slate-400 font-bold text-sm hover:bg-slate-700 transition-colors">
+                Cancel
+              </button>
+              <button onClick={uploadCropped}
+                className="flex-1 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm transition-colors">
+                ✂️ Crop & Upload
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Confirm Delete Post Dialog */}
       {confirmDeletePost && (
@@ -4026,16 +4128,39 @@ function PostCard({ post, user, openComments, commentText, setCommentText, onLik
   const [replyTo, setReplyTo] = useState(null);
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(post.text);
+  const [editImageUrl, setEditImageUrl] = useState(post.imageUrl || '');
+  const [editImagePreview, setEditImagePreview] = useState(post.imageUrl || null);
+  const [editUploading, setEditUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const editFileRef = useRef(null);
 
   const liked = user && (post.likes || []).includes(user.uid);
   const likeCount = (post.likes || []).length;
   const isOwner = user && user.uid === post.authorId;
 
+  const handleEditFileSelect = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setEditImagePreview(URL.createObjectURL(file));
+    setEditUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', 'GameHub');
+      const res = await fetch('https://api.cloudinary.com/v1_1/dz7hage1z/image/upload', { method: 'POST', body: formData });
+      const data = await res.json();
+      setEditImageUrl(data.secure_url);
+    } catch { alert('Upload failed'); }
+    setEditUploading(false);
+  };
+
   const handleSaveEdit = async () => {
     if (!editText.trim()) return;
     setSaving(true);
-    await updateDoc(doc(db, 'community_posts', post.id), { text: editText.trim() });
+    await updateDoc(doc(db, 'community_posts', post.id), {
+      text: editText.trim(),
+      imageUrl: editImageUrl || null,
+    });
     setSaving(false);
     setEditing(false);
   };
@@ -4118,13 +4243,28 @@ function PostCard({ post, user, openComments, commentText, setCommentText, onLik
         {editing ? (
           <div className="mb-3">
             <textarea value={editText} onChange={e => setEditText(e.target.value)} rows={3}
-              className="w-full bg-slate-800 border border-blue-500/50 rounded-xl px-4 py-3 text-sm text-slate-100 resize-none focus:outline-none transition-colors"/>
-            <div className="flex gap-2 mt-2">
-              <button onClick={() => setEditing(false)}
+              className="w-full bg-slate-800 border border-blue-500/50 rounded-xl px-4 py-3 text-sm text-slate-100 resize-none focus:outline-none transition-colors mb-2"/>
+            {/* Edit image section */}
+            <input ref={editFileRef} type="file" accept="image/*" onChange={handleEditFileSelect} className="hidden"/>
+            {editImagePreview ? (
+              <div className="relative rounded-xl overflow-hidden border border-slate-700 mb-2">
+                <img src={editImagePreview} alt="preview" className="w-full max-h-48 object-cover"/>
+                {editUploading && <div className="absolute inset-0 bg-black/50 flex items-center justify-center"><span className="text-white text-xs animate-pulse">Uploading...</span></div>}
+                <button onClick={() => { setEditImagePreview(null); setEditImageUrl(''); }}
+                  className="absolute top-2 right-2 w-6 h-6 bg-black/60 rounded-full text-white text-xs flex items-center justify-center">✕</button>
+              </div>
+            ) : (
+              <button onClick={() => editFileRef.current?.click()}
+                className="text-xs text-slate-500 hover:text-purple-400 flex items-center gap-1 mb-2 transition-colors">
+                🖼️ Add / Change image
+              </button>
+            )}
+            <div className="flex gap-2">
+              <button onClick={() => { setEditing(false); setEditText(post.text); setEditImageUrl(post.imageUrl||''); setEditImagePreview(post.imageUrl||null); }}
                 className="text-xs text-slate-500 hover:text-slate-300 px-3 py-1.5 rounded-lg bg-slate-800 transition-colors">
                 Cancel
               </button>
-              <button onClick={handleSaveEdit} disabled={saving || !editText.trim()}
+              <button onClick={handleSaveEdit} disabled={saving || editUploading || !editText.trim()}
                 className="text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-40 px-4 py-1.5 rounded-lg transition-colors">
                 {saving ? 'Saving...' : 'Save'}
               </button>
@@ -4133,7 +4273,7 @@ function PostCard({ post, user, openComments, commentText, setCommentText, onLik
         ) : (
           <p className="text-slate-200 text-sm leading-relaxed mb-3 whitespace-pre-wrap">{post.text}</p>
         )}
-        {post.imageUrl && (
+        {!editing && post.imageUrl && (
           <img src={post.imageUrl} alt="" className="w-full rounded-xl object-cover max-h-80 mb-3"
             onError={e => e.target.style.display='none'}/>
         )}
