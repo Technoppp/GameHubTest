@@ -972,8 +972,6 @@ function IntroScreen({ onComplete }) {
   const [typedText, setTypedText] = useState('');
   const [typingDone, setTypingDone] = useState(false);
   const [showCursor, setShowCursor] = useState(true);
-  const [whiteFlash, setWhiteFlash] = useState(false);
-  const [shaking, setShaking] = useState(false);
   const fullText = 'GAMEHUB';
 
   const stars = useRef(Array.from({ length: 60 }, (_, i) => ({
@@ -983,41 +981,11 @@ function IntroScreen({ onComplete }) {
     color: ['#c4b5fd','#93c5fd','#f0abfc','#e2e8f0'][i%4],
   }))).current;
 
-  const gameObjects = useRef([
-    { emoji: '⚔️', tx:   0, ty: -260 },
-    { emoji: '🔫', tx: 247, ty:  -80 },
-    { emoji: '🎮', tx: 153, ty:  211 },
-    { emoji: '🛡️', tx:-153, ty:  211 },
-    { emoji: '🧱', tx:-247, ty:  -80 },
-  ]).current;
-
-  const explosionParts = useRef(Array.from({ length: 40 }, (_, i) => {
-    const angle = (i/40)*Math.PI*2;
-    const dist = 90+Math.random()*130;
-    return {
-      id: i,
-      ex: Math.cos(angle)*dist,
-      ey: Math.sin(angle)*dist,
-      size: Math.random()*5+2,
-      color: ['#fff','#a855f7','#3b82f6','#ec4899','#facc15','#f97316'][i%6],
-      dur: 0.5+Math.random()*0.4,
-    };
-  })).current;
-
   useEffect(() => {
     const timers = [
-      setTimeout(() => setPhase(1), 400),
-      setTimeout(() => { setPhase(3); setShaking(true); }, 2200),
-      setTimeout(() => { setPhase(4); setShaking(false); }, 2800),
-      setTimeout(() => {
-        setPhase(5);
-        setWhiteFlash(true);
-        setShaking(true);
-        setTimeout(() => { setWhiteFlash(false); setShaking(false); }, 350);
-      }, 3150),
-      setTimeout(() => setPhase(6), 3600),
-      setTimeout(() => setPhase(7), 4600),
-      setTimeout(() => setPhase(8), 5500),
+      setTimeout(() => setPhase(1), 300),
+      setTimeout(() => setPhase(2), 1400),
+      setTimeout(() => setPhase(3), 2300),
     ];
     let typeTimer = null;
     const startType = setTimeout(() => {
@@ -1027,7 +995,7 @@ function IntroScreen({ onComplete }) {
         setTypedText(fullText.slice(0, i));
         if (i >= fullText.length) { clearInterval(typeTimer); setTypingDone(true); }
       }, 110);
-    }, 3700);
+    }, 400);
     const cursorTimer = setInterval(() => setShowCursor(p => !p), 500);
     return () => {
       timers.forEach(clearTimeout);
@@ -1038,20 +1006,16 @@ function IntroScreen({ onComplete }) {
   }, []);
 
   const handleStart = () => {
-    if (exiting || phase < 8) return;
+    if (exiting || phase < 3) return;
     setExiting(true);
     setTimeout(onComplete, 900);
   };
 
   useEffect(() => {
-    const onKey = (e) => { if ((e.key === 'Enter' || e.key === ' ') && phase >= 8) handleStart(); };
+    const onKey = (e) => { if ((e.key === 'Enter' || e.key === ' ') && phase >= 3) handleStart(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [phase, exiting]);
-
-  const W = 300;
-  const CX = W/2;
-  const CY = W/2;
 
   return (
     <div
@@ -1060,43 +1024,22 @@ function IntroScreen({ onComplete }) {
         position: 'fixed', inset: 0, zIndex: 9999,
         background: '#000010',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        cursor: phase >= 8 ? 'pointer' : 'default',
+        cursor: phase >= 3 ? 'pointer' : 'default',
         opacity: exiting ? 0 : 1,
         transition: exiting ? 'opacity 0.9s ease' : 'none',
         overflow: 'hidden',
       }}
     >
       <style>{`
-        @keyframes IS_twinkle   { 0%,100%{opacity:.08} 50%{opacity:1} }
-        @keyframes IS_scanline  { 0%{top:-2px} 100%{top:100%} }
-        @keyframes IS_nebula    { 0%,100%{transform:translate(-50%,-50%) scale(1)} 50%{transform:translate(-50%,-50%) scale(1.12)} }
-        @keyframes IS_drawOuter { from{stroke-dashoffset:692} to{stroke-dashoffset:0} }
-        @keyframes IS_drawMid   { from{stroke-dashoffset:503} to{stroke-dashoffset:0} }
-        @keyframes IS_drawInner { from{stroke-dashoffset:314} to{stroke-dashoffset:0} }
-        @keyframes IS_dotPulse  { 0%,100%{opacity:.4;r:5px} 50%{opacity:1;r:9px} }
-        @keyframes IS_portalSpin  { to{transform:rotate(360deg)} }
-        @keyframes IS_portalSpinR { to{transform:rotate(-360deg)} }
-        @keyframes IS_gather {
-          0%   { transform:translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) rotate(0deg) scale(0.4); opacity:0; }
-          12%  { opacity:1; }
-          82%  { transform:translate(calc(-50% + calc(var(--tx) * 0.05)), calc(-50% + calc(var(--ty) * 0.05))) rotate(580deg) scale(0.45); opacity:1; }
-          100% { transform:translate(-50%,-50%) rotate(720deg) scale(0); opacity:0; }
-        }
-        @keyframes IS_shake     { 0%,100%{transform:translate(0,0)} 25%{transform:translate(-5px,4px)} 75%{transform:translate(5px,-4px)} }
-        @keyframes IS_shockwave { 0%{transform:translate(-50%,-50%) scale(0);opacity:.9} 100%{transform:translate(-50%,-50%) scale(8);opacity:0} }
-        @keyframes IS_explode   { 0%{opacity:1;transform:translate(-50%,-50%) translate(0,0)} 100%{opacity:0;transform:translate(-50%,-50%) translate(var(--ex),var(--ey))} }
-        @keyframes IS_logoIn    { from{filter:blur(24px);opacity:0;transform:scale(.65)} to{filter:blur(0);opacity:1;transform:scale(1)} }
-        @keyframes IS_float     { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
-        @keyframes IS_aura      { 0%,100%{opacity:.15;transform:translate(-50%,-50%) scale(1)} 50%{opacity:.5;transform:translate(-50%,-50%) scale(1.18)} }
-        @keyframes IS_ray       { 0%,100%{opacity:0} 50%{opacity:.18} }
-        @keyframes IS_fadeUp    { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes IS_press     { 0%,100%{opacity:1;box-shadow:0 0 24px rgba(168,85,247,.6)} 50%{opacity:.35;box-shadow:0 0 6px rgba(168,85,247,.1)} }
+        @keyframes IS_twinkle { 0%,100%{opacity:.08} 50%{opacity:1} }
+        @keyframes IS_scanline { 0%{top:-2px} 100%{top:100%} }
+        @keyframes IS_logoIn  { from{filter:blur(24px);opacity:0;transform:scale(.65)} to{filter:blur(0);opacity:1;transform:scale(1)} }
+        @keyframes IS_float   { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+        @keyframes IS_aura    { 0%,100%{opacity:.15;transform:translate(-50%,-50%) scale(1)} 50%{opacity:.5;transform:translate(-50%,-50%) scale(1.18)} }
+        @keyframes IS_ray     { 0%,100%{opacity:0} 50%{opacity:.18} }
+        @keyframes IS_fadeUp  { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes IS_press   { 0%,100%{opacity:1;box-shadow:0 0 24px rgba(168,85,247,.6)} 50%{opacity:.35;box-shadow:0 0 6px rgba(168,85,247,.1)} }
       `}</style>
-
-      {/* White flash */}
-      {whiteFlash && (
-        <div style={{ position:'absolute', inset:0, background:'white', zIndex:100, pointerEvents:'none' }}/>
-      )}
 
       {/* Scanline */}
       <div style={{ position:'absolute', inset:0, overflow:'hidden', pointerEvents:'none', zIndex:20 }}>
@@ -1108,7 +1051,6 @@ function IntroScreen({ onComplete }) {
         position:'absolute', inset:0, zIndex:0,
         backgroundImage:'linear-gradient(rgba(59,130,246,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,.05) 1px,transparent 1px)',
         backgroundSize:'48px 48px',
-        animation: shaking ? 'IS_shake 0.08s linear infinite' : 'none',
       }}/>
 
       {/* Stars */}
@@ -1122,184 +1064,81 @@ function IntroScreen({ onComplete }) {
         ))}
       </div>
 
-      {/* Nebula */}
+      {/* Logo */}
       {phase >= 1 && (
-        <div style={{ position:'absolute', inset:0, zIndex:1, pointerEvents:'none' }}>
-          {[
-            { x:'25%', y:'35%', w:380, h:280, c:'rgba(139,92,246,.09)',  spd:9  },
-            { x:'72%', y:'62%', w:320, h:240, c:'rgba(59,130,246,.07)',  spd:12 },
-            { x:'50%', y:'18%', w:280, h:200, c:'rgba(236,72,153,.06)', spd:15 },
-          ].map((n,i) => (
-            <div key={i} style={{
-              position:'absolute', left:n.x, top:n.y,
-              width:n.w, height:n.h, borderRadius:'50%',
-              background:n.c, filter:'blur(55px)',
-              transform:'translate(-50%,-50%)',
-              animation:`IS_nebula ${n.spd}s ease-in-out infinite ${i}s`,
-            }}/>
-          ))}
+        <div style={{ textAlign:'center', animation:'IS_logoIn 0.9s cubic-bezier(0.34,1.3,0.64,1) forwards' }}>
+
+          {/* Aura + rays */}
+          {phase >= 2 && (
+            <div style={{ position:'absolute', top:'50%', left:'50%', width:0, height:0, pointerEvents:'none' }}>
+              <div style={{ position:'absolute', width:360, height:200, borderRadius:'50%', background:'radial-gradient(ellipse,rgba(139,92,246,.3) 0%,transparent 70%)', filter:'blur(24px)', animation:'IS_aura 2.8s ease-in-out infinite', transform:'translate(-50%,-50%)' }}/>
+              <div style={{ position:'absolute', width:540, height:280, borderRadius:'50%', background:'radial-gradient(ellipse,rgba(59,130,246,.15) 0%,transparent 70%)', filter:'blur(36px)', animation:'IS_aura 3.5s ease-in-out infinite 0.5s', transform:'translate(-50%,-50%)' }}/>
+              {[0,30,60,90,120,150,180,210,240,270,300,330].map((deg,i) => (
+                <div key={i} style={{
+                  position:'absolute', top:0, left:0, width:2, height:200,
+                  background:'linear-gradient(to bottom,rgba(168,85,247,.35),transparent)',
+                  transformOrigin:'top center',
+                  transform:`rotate(${deg}deg)`,
+                  animation:`IS_ray ${3+i*0.2}s ease-in-out infinite ${i*0.12}s`,
+                }}/>
+              ))}
+            </div>
+          )}
+
+          {/* Logo text */}
+          <div style={{ position:'relative', zIndex:10, animation: phase >= 2 ? 'IS_float 4s ease-in-out infinite' : 'none' }}>
+            <h1 style={{
+              fontFamily:"'Orbitron',sans-serif",
+              fontSize:'clamp(3rem,9vw,5.5rem)',
+              fontWeight:900, letterSpacing:'0.08em', lineHeight:1,
+              margin:0, marginBottom:12,
+              filter:'drop-shadow(0 0 40px rgba(168,85,247,.9)) drop-shadow(0 0 80px rgba(59,130,246,.5))',
+              whiteSpace:'nowrap',
+            }}>
+              <span style={{ background:'linear-gradient(135deg,#a855f7,#3b82f6)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>
+                {typedText.slice(0,4)}
+              </span>
+              <span style={{ color:'white' }}>
+                {typedText.slice(4)}
+              </span>
+              {!typingDone && showCursor && (
+                <span style={{ color:'#a855f7', WebkitTextFillColor:'#a855f7' }}>|</span>
+              )}
+            </h1>
+
+            {phase >= 2 && (
+              <p style={{
+                color:'#475569', fontSize:'0.68rem', letterSpacing:'0.3em',
+                fontFamily:"'Space Mono',monospace", margin:0,
+                marginBottom: phase >= 3 ? 40 : 0,
+                animation:'IS_fadeUp 1s ease-out forwards',
+              }}>
+                YOUR ULTIMATE GAMING UNIVERSE
+              </p>
+            )}
+          </div>
+
+          {/* PRESS START */}
+          {phase >= 3 && (
+            <div style={{ animation:'IS_fadeUp 0.8s ease-out forwards', marginTop:8 }}>
+              <button
+                onClick={handleStart}
+                style={{
+                  background:'none', border:'2px solid #a855f7', borderRadius:8,
+                  color:'#a855f7', fontSize:'0.85rem', letterSpacing:'0.25em',
+                  fontWeight:700, padding:'14px 44px', cursor:'pointer',
+                  fontFamily:"'Space Mono',monospace",
+                  animation:'IS_press 1.1s ease-in-out infinite',
+                }}
+                onMouseEnter={e=>{ e.currentTarget.style.background='rgba(168,85,247,.15)'; e.currentTarget.style.boxShadow='0 0 50px rgba(168,85,247,.6)'; }}
+                onMouseLeave={e=>{ e.currentTarget.style.background='none'; e.currentTarget.style.boxShadow='none'; }}
+              >
+                ▶ &nbsp;PRESS START
+              </button>
+            </div>
+          )}
         </div>
       )}
-
-      {/* ── CENTER STAGE - everything centered perfectly ── */}
-      <div style={{ position:'relative', zIndex:5, display:'flex', alignItems:'center', justifyContent:'center', animation: shaking ? 'IS_shake 0.08s linear infinite' : 'none' }}>
-
-        {/* PHASE 0-4 - all in one container, SVG crossfades to spinning divs */}
-        {phase >= 0 && phase <= 4 && (
-          <div style={{ position:'relative', width:W, height:W, display:'flex', alignItems:'center', justifyContent:'center' }}>
-
-            {/* SVG: always mounted, fades out when phase >= 1 */}
-            <svg width={W} height={W} viewBox={`0 0 ${W} ${W}`}
-              style={{ position:'absolute', top:0, left:0, opacity: phase >= 1 ? 0 : 1, transition:'opacity 0.25s ease', pointerEvents:'none' }}>
-              <defs>
-                <filter id="IS_glow">
-                  <feGaussianBlur stdDeviation="5" result="b"/>
-                  <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-                </filter>
-              </defs>
-              <circle cx="150" cy="150" r="110" stroke="#a855f7" strokeWidth="2" fill="none"
-                strokeDasharray="692" strokeDashoffset="692" filter="url(#IS_glow)"
-                style={{ animation:'IS_drawOuter 0.45s ease-out 0s forwards' }}/>
-              <circle cx="150" cy="150" r="80" stroke="#a855f7" strokeWidth="1.5" fill="none"
-                strokeDasharray="503" strokeDashoffset="503" opacity="0.6"
-                style={{ animation:'IS_drawMid 0.45s ease-out 0.06s forwards' }}/>
-              <circle cx="150" cy="150" r="50" stroke="#3b82f6" strokeWidth="1" fill="none"
-                strokeDasharray="314" strokeDashoffset="314" opacity="0.45"
-                style={{ animation:'IS_drawInner 0.45s ease-out 0.12s forwards' }}/>
-              <circle cx="150" cy="150" r="6" fill="white" filter="url(#IS_glow)"
-                style={{ animation:'IS_dotPulse 0.7s ease-in-out infinite' }}/>
-            </svg>
-
-            {/* Div rings: always mounted, fades in when phase >= 1 */}
-            <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center',
-              opacity: phase >= 1 ? 1 : 0, transition:'opacity 0.25s ease' }}>
-              <div style={{ position:'absolute', width:220, height:220, borderRadius:'50%',
-                border:`2px solid ${phase >= 4 ? 'white' : '#a855f7'}`,
-                boxShadow: phase >= 4 ? '0 0 60px white,0 0 120px rgba(168,85,247,.8)' : phase >= 3 ? '0 0 40px rgba(168,85,247,.9)' : '0 0 20px rgba(168,85,247,.5)',
-                transition:'border-color 0.3s,box-shadow 0.3s', animation:'IS_portalSpin 3s linear infinite' }}/>
-              <div style={{ position:'absolute', width:170, height:170, borderRadius:'50%',
-                border:'1.5px dashed rgba(168,85,247,.5)', animation:'IS_portalSpinR 5s linear infinite' }}/>
-              <div style={{ position:'absolute', width:120, height:120, borderRadius:'50%',
-                border:'1px solid rgba(59,130,246,.4)', animation:'IS_portalSpin 2s linear infinite' }}/>
-              <div style={{ position:'absolute', width:90, height:90, borderRadius:'50%',
-                background: phase >= 4 ? 'radial-gradient(circle,rgba(255,255,255,.5) 0%,transparent 100%)' : phase >= 3 ? 'radial-gradient(circle,rgba(168,85,247,.5) 0%,transparent 100%)' : 'radial-gradient(circle,rgba(139,92,246,.3) 0%,transparent 100%)',
-                filter:'blur(8px)', transition:'background 0.3s' }}/>
-            </div>
-
-            {/* Game objects - mount at phase 1, delay 0.3s so portal is visible first */}
-            {phase >= 1 && phase <= 4 && gameObjects.map((obj, i) => (
-              <div key={i} style={{
-                position:'absolute', top:'50%', left:'50%',
-                fontSize:'3.2rem', lineHeight:1,
-                '--tx': `${obj.tx}px`, '--ty': `${obj.ty}px`,
-                animation:`IS_gather 1.5s ease-in-out ${0.3 + i*0.12}s both`,
-                filter:'drop-shadow(0 0 16px rgba(168,85,247,1))',
-                zIndex:10,
-              }}>{obj.emoji}</div>
-            ))}
-          </div>
-        )}
-
-        {/* PHASE 5 - Explosion */}
-        {phase === 5 && (
-          <div style={{ position:'relative', width:W, height:W, display:'flex', alignItems:'center', justifyContent:'center' }}>
-            {[0,0.1,0.2].map((d,i) => (
-              <div key={i} style={{
-                position:'absolute', top:'50%', left:'50%',
-                width:50+i*20, height:50+i*20, borderRadius:'50%',
-                border:`${2-i*0.5}px solid rgba(255,255,255,${0.8-i*0.2})`,
-                animation:`IS_shockwave 0.7s ease-out ${d}s both`,
-              }}/>
-            ))}
-            {explosionParts.map(p => (
-              <div key={p.id} style={{
-                position:'absolute', top:'50%', left:'50%',
-                width:p.size, height:p.size, borderRadius:'50%',
-                background:p.color, boxShadow:`0 0 8px ${p.color}`,
-                '--ex':`${p.ex}px`, '--ey':`${p.ey}px`,
-                animation:`IS_explode ${p.dur}s ease-out forwards`,
-              }}/>
-            ))}
-          </div>
-        )}
-
-        {/* PHASE 6-8 - Logo */}
-        {phase >= 6 && (
-          <div style={{ textAlign:'center', animation:'IS_logoIn 0.9s cubic-bezier(0.34,1.3,0.64,1) forwards' }}>
-
-            {/* Aura + rays */}
-            {phase >= 7 && (
-              <div style={{ position:'absolute', top:'50%', left:'50%', width:0, height:0, pointerEvents:'none' }}>
-                <div style={{ position:'absolute', width:360, height:200, borderRadius:'50%', background:'radial-gradient(ellipse,rgba(139,92,246,.3) 0%,transparent 70%)', filter:'blur(24px)', animation:'IS_aura 2.8s ease-in-out infinite', transform:'translate(-50%,-50%)' }}/>
-                <div style={{ position:'absolute', width:540, height:280, borderRadius:'50%', background:'radial-gradient(ellipse,rgba(59,130,246,.15) 0%,transparent 70%)', filter:'blur(36px)', animation:'IS_aura 3.5s ease-in-out infinite 0.5s', transform:'translate(-50%,-50%)' }}/>
-                {[0,30,60,90,120,150,180,210,240,270,300,330].map((deg,i) => (
-                  <div key={i} style={{
-                    position:'absolute', top:0, left:0, width:2, height:200,
-                    background:'linear-gradient(to bottom,rgba(168,85,247,.35),transparent)',
-                    transformOrigin:'top center',
-                    transform:`rotate(${deg}deg)`,
-                    animation:`IS_ray ${3+i*0.2}s ease-in-out infinite ${i*0.12}s`,
-                  }}/>
-                ))}
-              </div>
-            )}
-
-            {/* Logo text */}
-            <div style={{ position:'relative', zIndex:10, animation: phase >= 7 ? 'IS_float 4s ease-in-out infinite' : 'none' }}>
-              <h1 style={{
-                fontFamily:"'Orbitron',sans-serif",
-                fontSize:'clamp(3rem,9vw,5.5rem)',
-                fontWeight:900, letterSpacing:'0.08em', lineHeight:1,
-                margin:0, marginBottom:12,
-                filter:'drop-shadow(0 0 40px rgba(168,85,247,.9)) drop-shadow(0 0 80px rgba(59,130,246,.5))',
-                whiteSpace:'nowrap',
-              }}>
-                <span style={{ background:'linear-gradient(135deg,#a855f7,#3b82f6)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>
-                  {typedText.slice(0,4)}
-                </span>
-                <span style={{ color:'white' }}>
-                  {typedText.slice(4)}
-                </span>
-                {!typingDone && showCursor && (
-                  <span style={{ color:'#a855f7', WebkitTextFillColor:'#a855f7' }}>|</span>
-                )}
-              </h1>
-
-              {phase >= 7 && (
-                <p style={{
-                  color:'#475569', fontSize:'0.68rem', letterSpacing:'0.3em',
-                  fontFamily:"'Space Mono',monospace", margin:0,
-                  marginBottom: phase >= 8 ? 40 : 0,
-                  animation:'IS_fadeUp 1s ease-out forwards',
-                }}>
-                  YOUR ULTIMATE GAMING UNIVERSE
-                </p>
-              )}
-            </div>
-
-            {/* PRESS START */}
-            {phase >= 8 && (
-              <div style={{ animation:'IS_fadeUp 0.8s ease-out forwards', marginTop:8 }}>
-                <button
-                  onClick={handleStart}
-                  style={{
-                    background:'none', border:'2px solid #a855f7', borderRadius:8,
-                    color:'#a855f7', fontSize:'0.85rem', letterSpacing:'0.25em',
-                    fontWeight:700, padding:'14px 44px', cursor:'pointer',
-                    fontFamily:"'Space Mono',monospace",
-                    animation:'IS_press 1.1s ease-in-out infinite',
-                  }}
-                  onMouseEnter={e=>{ e.currentTarget.style.background='rgba(168,85,247,.15)'; e.currentTarget.style.boxShadow='0 0 50px rgba(168,85,247,.6)'; }}
-                  onMouseLeave={e=>{ e.currentTarget.style.background='none'; e.currentTarget.style.boxShadow='none'; }}
-                >
-                  ▶ &nbsp;PRESS START
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-
-      </div>
     </div>
   );
 }
