@@ -1508,7 +1508,7 @@ export default function GameHub() {
       </header>
 
       {/* ── Floating Back Button ── */}
-      {navHistory.length > 0 && (
+      {navHistory.length > 0 && (currentPage === 'game-detail' || currentPage === 'category') && (
         <button onClick={goBack}
           className="fixed top-24 left-5 z-40 flex items-center gap-1.5 bg-slate-900/90 backdrop-blur border border-slate-700 hover:border-blue-500/50 text-slate-300 hover:text-white text-sm font-bold px-3 py-2 rounded-xl shadow-lg transition-all hover:scale-105">
           <ChevronLeft className="w-4 h-4" /> Back
@@ -3741,8 +3741,6 @@ function CommunityPage({ navigateTo, tagGame }) {
 
   const [cropSrc, setCropSrc] = useState(null);
   const [cropFile, setCropFile] = useState(null);
-  const [cropPreview, setCropPreview] = useState(null); // blob URL after crop, before upload
-  const [cropBlob, setCropBlob] = useState(null);
   const cropImgRef = useRef(null);
   const [cropDrag, setCropDrag] = useState(null);
   const [cropBox, setCropBox] = useState({ x: 0, y: 0, w: 100, h: 100 });
@@ -3753,10 +3751,7 @@ function CommunityPage({ navigateTo, tagGame }) {
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) { alert('Image must be under 10MB'); return; }
     setCropFile(file);
-    setCropPreview(null);
-    setCropBlob(null);
-    const url = URL.createObjectURL(file);
-    setCropSrc(url);
+    setCropSrc(URL.createObjectURL(file));
   };
 
   const initCrop = (img) => {
@@ -3770,8 +3765,7 @@ function CommunityPage({ navigateTo, tagGame }) {
     }
   };
 
-  // Step 1: generate preview blob
-  const handleCropPreview = () => {
+  const uploadCropped = () => {
     const img = cropImgRef.current;
     if (!img) return;
     const canvas = document.createElement('canvas');
@@ -3785,29 +3779,20 @@ function CommunityPage({ navigateTo, tagGame }) {
       cropBox.w * scaleX, cropBox.h * scaleY,
       0, 0, canvas.width, canvas.height
     );
-    canvas.toBlob(blob => {
-      setCropBlob(blob);
-      setCropPreview(URL.createObjectURL(blob));
+    canvas.toBlob(async (blob) => {
+      setCropSrc(null);
+      setImagePreview(URL.createObjectURL(blob));
+      setUploading(true);
+      try {
+        const formData = new FormData();
+        formData.append('file', blob, 'crop.jpg');
+        formData.append('upload_preset', 'GameHub');
+        const res = await fetch('https://api.cloudinary.com/v1_1/dz7hage1z/image/upload', { method: 'POST', body: formData });
+        const data = await res.json();
+        setPostImage(data.secure_url);
+      } catch { alert('Upload failed'); setImagePreview(null); }
+      setUploading(false);
     }, 'image/jpeg', 0.9);
-  };
-
-  // Step 2: upload confirmed blob
-  const uploadCropped = async () => {
-    if (!cropBlob) return;
-    setUploading(true);
-    setCropSrc(null);
-    setCropPreview(null);
-    setImagePreview(URL.createObjectURL(cropBlob));
-    try {
-      const formData = new FormData();
-      formData.append('file', cropBlob, 'crop.jpg');
-      formData.append('upload_preset', 'GameHub');
-      const res = await fetch('https://api.cloudinary.com/v1_1/dz7hage1z/image/upload', { method: 'POST', body: formData });
-      const data = await res.json();
-      setPostImage(data.secure_url);
-    } catch { alert('Upload failed'); setImagePreview(null); }
-    setUploading(false);
-    setCropBlob(null);
   };
 
   const removeImage = () => {
@@ -3900,88 +3885,72 @@ function CommunityPage({ navigateTo, tagGame }) {
     <div className="container mx-auto px-4 lg:px-6 py-16 max-w-2xl">
 
       {/* Crop Modal */}
-      {(cropSrc || cropPreview) && (
+      {cropSrc && (
         <div className="fixed inset-0 bg-black/80 z-50 flex flex-col items-center justify-center p-4">
-          <div className="bg-slate-900 rounded-2xl border border-slate-700 w-full max-w-lg overflow-hidden">
-            <div className="p-4 border-b border-slate-800 flex items-center justify-between">
-              <p className="font-bold text-sm">{cropPreview ? 'Preview — looks good?' : 'Crop Image (16:9)'}</p>
-              <button onClick={() => { setCropSrc(null); setCropPreview(null); setCropBlob(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                className="text-slate-500 hover:text-white">✕</button>
+          <div className="bg-slate-900 rounded-2xl border border-slate-700 w-full max-w-lg flex flex-col" style={{ maxHeight: '90vh' }}>
+            {/* Header — fixed */}
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
+              <p className="font-bold text-sm">Crop Image (16:9)</p>
+              <button onClick={() => { setCropSrc(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                className="text-slate-500 hover:text-white text-lg leading-none">✕</button>
             </div>
 
-            {cropPreview ? (
-              /* Step 2: Preview */
-              <>
-                <div className="bg-black">
-                  <img src={cropPreview} alt="preview" className="w-full object-cover"/>
-                </div>
-                <div className="p-4 flex gap-3">
-                  <button onClick={() => { setCropPreview(null); setCropBlob(null); }}
-                    className="flex-1 py-2.5 rounded-xl bg-slate-800 text-slate-400 font-bold text-sm hover:bg-slate-700 transition-colors">
-                    ← Recrop
-                  </button>
-                  <button onClick={uploadCropped}
-                    className="flex-1 py-2.5 rounded-xl bg-green-600 hover:bg-green-500 text-white font-bold text-sm transition-colors">
-                    ✅ Use this photo
-                  </button>
-                </div>
-              </>
-            ) : (
-              /* Step 1: Crop */
-              <>
-                <div className="relative overflow-hidden bg-black select-none"
-                  onMouseMove={e => {
-                    if (!cropDrag) return;
-                    const img = cropImgRef.current;
-                    if (!img) return;
-                    const scaleX = img.naturalWidth / img.width;
-                    const scaleY = img.naturalHeight / img.height;
-                    const dx = (e.clientX - cropDrag.startX) * scaleX;
-                    const dy = (e.clientY - cropDrag.startY) * scaleY;
-                    setCropBox(prev => ({
-                      ...prev,
-                      x: Math.max(0, Math.min(img.naturalWidth - prev.w, cropDrag.origX + dx)),
-                      y: Math.max(0, Math.min(img.naturalHeight - prev.h, cropDrag.origY + dy)),
-                    }));
-                  }}
-                  onMouseUp={() => setCropDrag(null)}
-                  onMouseLeave={() => setCropDrag(null)}>
-                  <img ref={cropImgRef} src={cropSrc} alt="crop" className="w-full"
-                    onLoad={e => initCrop(e.target)} draggable={false}/>
-                  {cropImgRef.current && (() => {
-                    const img = cropImgRef.current;
-                    const scaleX = img.width / img.naturalWidth;
-                    const scaleY = img.height / img.naturalHeight;
-                    return (
-                      <div className="absolute inset-0 pointer-events-none"
-                        style={{ boxShadow: `${cropBox.x*scaleX}px ${cropBox.y*scaleY}px 0 0 rgba(0,0,0,0.6), inset ${-(img.width-(cropBox.x+cropBox.w)*scaleX)}px ${-(img.height-(cropBox.y+cropBox.h)*scaleY)}px 0 0 rgba(0,0,0,0.6)` }}>
-                        <div className="absolute border-2 border-white pointer-events-auto cursor-move"
-                          style={{ left: cropBox.x*scaleX, top: cropBox.y*scaleY, width: cropBox.w*scaleX, height: cropBox.h*scaleY }}
-                          onMouseDown={e => {
-                            e.preventDefault();
-                            setCropDrag({ startX: e.clientX, startY: e.clientY, origX: cropBox.x, origY: cropBox.y });
-                          }}>
-                          <div className="absolute inset-0 grid grid-cols-3 grid-rows-3">
-                            {Array(9).fill(0).map((_,i) => <div key={i} className="border border-white/20"/>)}
-                          </div>
+            {/* Image area — scrollable */}
+            <div className="overflow-y-auto flex-1 relative bg-black select-none"
+              onMouseMove={e => {
+                if (!cropDrag) return;
+                const img = cropImgRef.current;
+                if (!img) return;
+                const scaleX = img.naturalWidth / img.width;
+                const scaleY = img.naturalHeight / img.height;
+                const dx = (e.clientX - cropDrag.startX) * scaleX;
+                const dy = (e.clientY - cropDrag.startY) * scaleY;
+                setCropBox(prev => ({
+                  ...prev,
+                  x: Math.max(0, Math.min(img.naturalWidth - prev.w, cropDrag.origX + dx)),
+                  y: Math.max(0, Math.min(img.naturalHeight - prev.h, cropDrag.origY + dy)),
+                }));
+              }}
+              onMouseUp={() => setCropDrag(null)}
+              onMouseLeave={() => setCropDrag(null)}>
+              <div className="relative">
+                <img ref={cropImgRef} src={cropSrc} alt="crop" className="w-full block"
+                  onLoad={e => initCrop(e.target)} draggable={false}/>
+                {cropImgRef.current && (() => {
+                  const img = cropImgRef.current;
+                  const scaleX = img.width / img.naturalWidth;
+                  const scaleY = img.height / img.naturalHeight;
+                  return (
+                    <div className="absolute inset-0 pointer-events-none"
+                      style={{ boxShadow: `${cropBox.x*scaleX}px ${cropBox.y*scaleY}px 0 0 rgba(0,0,0,0.6), inset ${-(img.width-(cropBox.x+cropBox.w)*scaleX)}px ${-(img.height-(cropBox.y+cropBox.h)*scaleY)}px 0 0 rgba(0,0,0,0.6)` }}>
+                      <div className="absolute border-2 border-white pointer-events-auto cursor-move"
+                        style={{ left: cropBox.x*scaleX, top: cropBox.y*scaleY, width: cropBox.w*scaleX, height: cropBox.h*scaleY }}
+                        onMouseDown={e => {
+                          e.preventDefault();
+                          setCropDrag({ startX: e.clientX, startY: e.clientY, origX: cropBox.x, origY: cropBox.y });
+                        }}>
+                        <div className="absolute inset-0 grid grid-cols-3 grid-rows-3">
+                          {Array(9).fill(0).map((_,i) => <div key={i} className="border border-white/20"/>)}
                         </div>
                       </div>
-                    );
-                  })()}
-                </div>
-                <p className="text-xs text-slate-500 text-center py-2">Drag the box to adjust crop area</p>
-                <div className="px-4 pb-4 flex gap-3">
-                  <button onClick={() => { setCropSrc(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                    className="flex-1 py-2.5 rounded-xl bg-slate-800 text-slate-400 font-bold text-sm hover:bg-slate-700 transition-colors">
-                    Cancel
-                  </button>
-                  <button onClick={handleCropPreview}
-                    className="flex-1 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm transition-colors">
-                    ✂️ Crop → Preview
-                  </button>
-                </div>
-              </>
-            )}
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* Buttons — fixed at bottom */}
+            <div className="p-4 border-t border-slate-800 flex gap-3 flex-shrink-0 bg-slate-900">
+              <p className="text-xs text-slate-500 flex items-center flex-1">Drag box to reposition</p>
+              <button onClick={() => { setCropSrc(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                className="py-2.5 px-4 rounded-xl bg-slate-800 text-slate-400 font-bold text-sm hover:bg-slate-700 transition-colors">
+                Cancel
+              </button>
+              <button onClick={uploadCropped}
+                className="py-2.5 px-5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm transition-colors">
+                ✂️ Crop
+              </button>
+            </div>
           </div>
         </div>
       )}
