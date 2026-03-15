@@ -1359,14 +1359,22 @@ export default function GameHub() {
           <div className="flex items-center justify-between">
             {/* Logo */}
             <div className="flex items-center gap-2 flex-shrink-0">
-              <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigateTo('home')}>
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center glow-effect">
-                  <Gamepad2 className="w-6 h-6" />
+              <div className="flex flex-col">
+                <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigateTo('home')}>
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center glow-effect">
+                    <Gamepad2 className="w-6 h-6" />
+                  </div>
+                  <h1 className="text-2xl font-bold" style={{ fontFamily: "'Orbitron', sans-serif" }}>
+                    <span className="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">GAME</span>
+                    <span className="text-white">HUB</span>
+                  </h1>
                 </div>
-                <h1 className="text-2xl font-bold" style={{ fontFamily: "'Orbitron', sans-serif" }}>
-                  <span className="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">GAME</span>
-                  <span className="text-white">HUB</span>
-                </h1>
+                {navHistory.length > 0 && (currentPage === 'game-detail' || currentPage === 'category') && (
+                  <button onClick={goBack}
+                    className="flex items-center gap-1 text-xs text-slate-400 hover:text-white transition-colors mt-1 ml-13 pl-1">
+                    <ChevronLeft className="w-3 h-3" /> Back
+                  </button>
+                )}
               </div>
             </div>
 
@@ -1506,14 +1514,6 @@ export default function GameHub() {
           </div>
         )}
       </header>
-
-      {/* ── Floating Back Button ── */}
-      {navHistory.length > 0 && (currentPage === 'game-detail' || currentPage === 'category') && (
-        <button onClick={goBack}
-          className="fixed top-24 left-5 z-40 flex items-center gap-1.5 bg-slate-900/90 backdrop-blur border border-slate-700 hover:border-blue-500/50 text-slate-300 hover:text-white text-sm font-bold px-3 py-2 rounded-xl shadow-lg transition-all hover:scale-105">
-          <ChevronLeft className="w-4 h-4" /> Back
-        </button>
-      )}
 
       {/* ── Main Content ── */}
       <main className="pt-20">
