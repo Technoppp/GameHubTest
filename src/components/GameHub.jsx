@@ -3712,7 +3712,7 @@ function TournamentsPage({ navigateTo }) {
 // ─────────────────────────────────────────────
 
 function CommunityPage({ navigateTo, tagGame }) {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [postText, setPostText] = useState('');
@@ -3852,7 +3852,8 @@ function CommunityPage({ navigateTo, tagGame }) {
   const [confirmDeletePost, setConfirmDeletePost] = useState(null); // postId
 
   const handleDelete = async (postId, authorId) => {
-    if (!user || user.uid !== authorId) return;
+    if (!user) return;
+    if (user.uid !== authorId && !isAdmin) return;
     setConfirmDeletePost(postId);
   };
 
@@ -4080,7 +4081,7 @@ function CommunityPage({ navigateTo, tagGame }) {
         <div className="space-y-4">
           {posts.filter(p => !tagFilter || p.gameTag?.id === tagFilter.id).map(post => {
             return (
-              <PostCard key={post.id} post={post} user={user} openComments={openComments}
+              <PostCard key={post.id} post={post} user={user} isAdmin={isAdmin} openComments={openComments}
                 commentText={commentText} setCommentText={setCommentText}
                 onLike={handleLike} onComment={handleComment} onDelete={handleDelete}
                 onToggleComments={toggleComments} onRequireLogin={requireLogin}
@@ -4122,7 +4123,7 @@ function UserAvatar({ uid, name, size = 'md', db }) {
   );
 }
 
-function PostCard({ post, user, openComments, commentText, setCommentText, onLike, onComment, onDelete, onToggleComments, onRequireLogin, timeAgo, db, navigateTo, onTagClick, onEdit }) {
+function PostCard({ post, user, isAdmin, openComments, commentText, setCommentText, onLike, onComment, onDelete, onToggleComments, onRequireLogin, timeAgo, db, navigateTo, onTagClick, onEdit }) {
   const [comments, setComments] = useState([]);
   const [commentCount, setCommentCount] = useState(0);
   const [replyTo, setReplyTo] = useState(null);
@@ -4137,6 +4138,8 @@ function PostCard({ post, user, openComments, commentText, setCommentText, onLik
   const liked = user && (post.likes || []).includes(user.uid);
   const likeCount = (post.likes || []).length;
   const isOwner = user && user.uid === post.authorId;
+  const canDelete = isOwner || isAdmin;
+  const canEdit = isOwner;
 
   const handleEditFileSelect = async (e) => {
     const file = e.target.files[0];
@@ -4219,16 +4222,20 @@ function PostCard({ post, user, openComments, commentText, setCommentText, onLik
               <p className="text-xs text-slate-500">{timeAgo(post.createdAt)}</p>
             </div>
           </div>
-          {isOwner && (
+          {(canEdit || canDelete) && (
             <div className="flex items-center gap-1">
-              <button onClick={() => { setEditing(true); setEditText(post.text); }}
-                className="text-slate-600 hover:text-blue-400 text-sm transition-colors px-1 py-1 rounded">
-                ✏️
-              </button>
-              <button onClick={() => onDelete(post.id, post.authorId)}
-                className="text-slate-600 hover:text-red-400 text-sm transition-colors px-1 py-1 rounded">
-                🗑️
-              </button>
+              {canEdit && (
+                <button onClick={() => { setEditing(true); setEditText(post.text); }}
+                  className="text-slate-600 hover:text-blue-400 text-sm transition-colors px-1 py-1 rounded">
+                  ✏️
+                </button>
+              )}
+              {canDelete && (
+                <button onClick={() => onDelete(post.id, post.authorId)}
+                  className="text-slate-600 hover:text-red-400 text-sm transition-colors px-1 py-1 rounded">
+                  🗑️
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -4311,7 +4318,7 @@ function PostCard({ post, user, openComments, commentText, setCommentText, onLik
                         <div className="bg-slate-800 rounded-xl px-3 py-2 relative">
                           <div className="flex items-start justify-between gap-2">
                             <p className="text-xs font-bold text-slate-300 mb-0.5">{c.authorName}</p>
-                            {user && user.uid === c.authorId && (
+                            {user && (user.uid === c.authorId || isAdmin) && (
                               <button onClick={() => setConfirmDelete(c.id)}
                                 className="text-slate-600 hover:text-red-400 text-xs transition-colors flex-shrink-0 leading-none">
                                 🗑️
@@ -4351,7 +4358,7 @@ function PostCard({ post, user, openComments, commentText, setCommentText, onLik
                                 <div className="bg-slate-800/70 rounded-xl px-3 py-2">
                                   <div className="flex items-start justify-between gap-2">
                                     <p className="text-xs font-bold text-slate-300 mb-0.5">{r.authorName}</p>
-                                    {user && user.uid === r.authorId && (
+                                    {user && (user.uid === r.authorId || isAdmin) && (
                                       <button onClick={() => setConfirmDelete(r.id)}
                                         className="text-slate-600 hover:text-red-400 text-xs transition-colors flex-shrink-0 leading-none">
                                         🗑️
