@@ -3755,30 +3755,33 @@ function CommunityPage({ navigateTo, tagGame }) {
   };
 
   const initCrop = (img) => {
-    const iw = img.naturalWidth, ih = img.naturalHeight;
-    const targetH = iw / aspectRatio;
+    // Use naturalWidth/Height for crop coordinates (always in natural pixel space)
+    const iw = img.naturalWidth;
+    const ih = img.naturalHeight;
+    const targetH = Math.round(iw / aspectRatio);
     if (targetH <= ih) {
-      setCropBox({ x: 0, y: Math.round((ih - targetH) / 2), w: iw, h: Math.round(targetH) });
+      setCropBox({ x: 0, y: Math.round((ih - targetH) / 2), w: iw, h: targetH });
     } else {
-      const targetW = ih * aspectRatio;
-      setCropBox({ x: Math.round((iw - targetW) / 2), y: 0, w: Math.round(targetW), h: ih });
+      const targetW = Math.round(ih * aspectRatio);
+      setCropBox({ x: Math.round((iw - targetW) / 2), y: 0, w: targetW, h: ih });
     }
   };
 
   const uploadCropped = () => {
     const img = cropImgRef.current;
     if (!img) return;
+    const rect = img.getBoundingClientRect();
+    const scaleX = img.naturalWidth / rect.width;
+    const scaleY = img.naturalHeight / rect.height;
     const canvas = document.createElement('canvas');
-    const scaleX = img.naturalWidth / img.width;
-    const scaleY = img.naturalHeight / img.height;
-    canvas.width = 1200;
-    canvas.height = Math.round(1200 / aspectRatio);
+    const cropW = Math.round(cropBox.w * scaleX);
+    const cropH = Math.round(cropBox.h * scaleY);
+    const cropX = Math.round(cropBox.x * scaleX);
+    const cropY = Math.round(cropBox.y * scaleY);
+    canvas.width = cropW;
+    canvas.height = cropH;
     const ctx = canvas.getContext('2d');
-    ctx.drawImage(img,
-      cropBox.x * scaleX, cropBox.y * scaleY,
-      cropBox.w * scaleX, cropBox.h * scaleY,
-      0, 0, canvas.width, canvas.height
-    );
+    ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
     canvas.toBlob(async (blob) => {
       setCropSrc(null);
       setImagePreview(URL.createObjectURL(blob));
@@ -3792,7 +3795,7 @@ function CommunityPage({ navigateTo, tagGame }) {
         setPostImage(data.secure_url);
       } catch { alert('Upload failed'); setImagePreview(null); }
       setUploading(false);
-    }, 'image/jpeg', 0.9);
+    }, 'image/jpeg', 0.92);
   };
 
   const removeImage = () => {
@@ -3901,14 +3904,15 @@ function CommunityPage({ navigateTo, tagGame }) {
                 if (!cropDrag) return;
                 const img = cropImgRef.current;
                 if (!img) return;
-                const scaleX = img.naturalWidth / img.width;
-                const scaleY = img.naturalHeight / img.height;
+                const rect = img.getBoundingClientRect();
+                const scaleX = img.naturalWidth / rect.width;
+                const scaleY = img.naturalHeight / rect.height;
                 const dx = (e.clientX - cropDrag.startX) * scaleX;
                 const dy = (e.clientY - cropDrag.startY) * scaleY;
                 setCropBox(prev => ({
                   ...prev,
-                  x: Math.max(0, Math.min(img.naturalWidth - prev.w, cropDrag.origX + dx)),
-                  y: Math.max(0, Math.min(img.naturalHeight - prev.h, cropDrag.origY + dy)),
+                  x: Math.max(0, Math.min(img.naturalWidth - prev.w, Math.round(cropDrag.origX + dx))),
+                  y: Math.max(0, Math.min(img.naturalHeight - prev.h, Math.round(cropDrag.origY + dy))),
                 }));
               }}
               onMouseUp={() => setCropDrag(null)}
@@ -3918,11 +3922,14 @@ function CommunityPage({ navigateTo, tagGame }) {
                   onLoad={e => initCrop(e.target)} draggable={false}/>
                 {cropImgRef.current && (() => {
                   const img = cropImgRef.current;
-                  const scaleX = img.width / img.naturalWidth;
-                  const scaleY = img.height / img.naturalHeight;
+                  const rect = img.getBoundingClientRect();
+                  const dispW = rect.width || img.offsetWidth;
+                  const dispH = rect.height || img.offsetHeight;
+                  const scaleX = dispW / img.naturalWidth;
+                  const scaleY = dispH / img.naturalHeight;
                   return (
                     <div className="absolute inset-0 pointer-events-none"
-                      style={{ boxShadow: `${cropBox.x*scaleX}px ${cropBox.y*scaleY}px 0 0 rgba(0,0,0,0.6), inset ${-(img.width-(cropBox.x+cropBox.w)*scaleX)}px ${-(img.height-(cropBox.y+cropBox.h)*scaleY)}px 0 0 rgba(0,0,0,0.6)` }}>
+                      style={{ boxShadow: `${cropBox.x*scaleX}px ${cropBox.y*scaleY}px 0 0 rgba(0,0,0,0.65), inset ${-(dispW-(cropBox.x+cropBox.w)*scaleX)}px ${-(dispH-(cropBox.y+cropBox.h)*scaleY)}px 0 0 rgba(0,0,0,0.65)` }}>
                       <div className="absolute border-2 border-white pointer-events-auto cursor-move"
                         style={{ left: cropBox.x*scaleX, top: cropBox.y*scaleY, width: cropBox.w*scaleX, height: cropBox.h*scaleY }}
                         onMouseDown={e => {
