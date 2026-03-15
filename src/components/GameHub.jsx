@@ -103,6 +103,8 @@ function useRawgImages() {
 // DATA
 // ─────────────────────────────────────────────
 
+const ADMIN_EMAILS = ['technoppp@gmail.com']; // เพิ่ม email admin ได้ที่นี่
+
 const CATEGORIES = [
   {
     id: 'fps',
@@ -1497,6 +1499,7 @@ export default function GameHub() {
         {currentPage === 'login' && <LoginPage navigateTo={navigateTo} />}
         {currentPage === 'register' && <RegisterPage navigateTo={navigateTo} />}
         {currentPage === 'profile' && <ProfilePage navigateTo={navigateTo} />}
+        {currentPage === 'admin' && <AdminPage navigateTo={navigateTo} />}
       </main>
 
       {/* ── Footer ── */}
@@ -3097,6 +3100,14 @@ function ProfilePage({ navigateTo }) {
         </div>
       </div>
 
+      {/* Admin Panel link */}
+      {user && ADMIN_EMAILS.includes(user.email) && (
+        <button onClick={() => navigateTo('admin')}
+          className="w-full py-3.5 rounded-xl font-bold text-yellow-400 border border-yellow-500/30 hover:bg-yellow-500/10 transition-all mb-3">
+          ⚙️ Admin Panel
+        </button>
+      )}
+
       {/* Sign out */}
       <button
         onClick={async () => { await signOut(auth); navigateTo('home'); }}
@@ -3313,15 +3324,66 @@ function WishlistPage({ navigateTo }) {
 function TournamentsPage({ navigateTo }) {
   const [tab, setTab] = useState('join');
   const [registerModal, setRegisterModal] = useState(null);
+  const [myRegistrations, setMyRegistrations] = useState({});
   const { user } = useAuth();
 
-  const watchable = TOURNAMENTS_DATA.filter(t => !t.joinable);
-  const joinable  = TOURNAMENTS_DATA.filter(t => t.joinable);
+  // Number of players per game
+  const teamSize = (game) => {
+    if (['ROV (Arena of Valor)', 'Mobile Legends: Bang Bang', 'Valorant', 'Counter-Strike 2'].includes(game)) return 5;
+    return 5;
+  };
+
+  const [form, setForm] = useState({ teamName: '', phone: '', email: '', players: [] });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitDone, setSubmitDone] = useState(false);
+
+  // Load user's existing registrations
+  useEffect(() => {
+    if (!user) return;
+    const q = query(collection(db, 'tournament_registrations'), where('userId', '==', user.uid));
+    const unsub = onSnapshot(q, (snap) => {
+      const map = {};
+      snap.docs.forEach(d => { map[d.data().tournamentId] = { id: d.id, ...d.data() }; });
+      setMyRegistrations(map);
+    });
+    return () => unsub();
+  }, [user]);
 
   const handleRegister = (tournament) => {
     if (!user) { navigateTo('login'); return; }
+    const size = teamSize(tournament.game);
+    setForm({
+      teamName: '', phone: '', email: user.email || '',
+      players: Array.from({ length: size }, () => ({ realName: '', ign: '' }))
+    });
+    setSubmitDone(false);
     setRegisterModal(tournament);
   };
+
+  const handleSubmit = async () => {
+    if (!form.teamName.trim() || !form.phone.trim() || !form.email.trim()) return;
+    if (form.players.some(p => !p.realName.trim() || !p.ign.trim())) return;
+    setSubmitting(true);
+    try {
+      await addDoc(collection(db, 'tournament_registrations'), {
+        tournamentId: registerModal.id,
+        tournamentName: registerModal.name,
+        userId: user.uid,
+        userEmail: user.email,
+        teamName: form.teamName.trim(),
+        phone: form.phone.trim(),
+        contactEmail: form.email.trim(),
+        players: form.players,
+        status: 'pending',
+        createdAt: serverTimestamp(),
+      });
+      setSubmitDone(true);
+    } catch (e) { console.error(e); }
+    setSubmitting(false);
+  };
+
+  const watchable = TOURNAMENTS_DATA.filter(t => !t.joinable);
+  const joinable  = TOURNAMENTS_DATA.filter(t => t.joinable);
 
   const statusColor = (s) => {
     if (s === 'Registration Open') return 'bg-green-500/20 text-green-400';
@@ -3358,6 +3420,7 @@ function TournamentsPage({ navigateTo }) {
           {joinable.map((t, i) => {
             const pct = Math.round((t.registered / t.maxTeams) * 100);
             const full = t.registered >= t.maxTeams;
+            const myReg = myRegistrations[t.id];
             return (
               <div key={t.id} className="bg-slate-900 border-2 border-slate-800 rounded-2xl overflow-hidden hover:border-yellow-500/40 transition-all fade-in-up" style={{ animationDelay: `${i*0.08}s` }}>
                 <div className="p-6 lg:p-8">
@@ -3375,10 +3438,20 @@ function TournamentsPage({ navigateTo }) {
                         <span className="flex items-center gap-1.5"><Zap className="w-4 h-4 text-purple-400"/>{t.type}</span>
                         <span className="flex items-center gap-1.5 text-slate-400">🌏 {t.region}</span>
                       </div>
-                      {/* Requirements */}
                       <div className="bg-slate-800/60 rounded-lg px-4 py-2.5 text-xs text-slate-300 mb-4 inline-block">
                         📋 {t.requirements}
                       </div>
+                      {/* My registration status */}
+                      {myReg && (
+                        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold mb-3 ${
+                          myReg.status === 'approved' ? 'bg-green-500/15 text-green-400 border border-green-500/30' :
+                          myReg.status === 'rejected' ? 'bg-red-500/15 text-red-400 border border-red-500/30' :
+                          'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30'
+                        }`}>
+                          {myReg.status === 'approved' ? '✅ Registered' : myReg.status === 'rejected' ? '❌ Rejected' : '⏳ Pending approval'}
+                          {myReg.status !== 'rejected' && <span className="font-normal">— Team: {myReg.teamName}</span>}
+                        </div>
+                      )}
                       {/* Slots bar */}
                       <div>
                         <div className="flex justify-between text-xs text-slate-400 mb-1.5">
@@ -3395,19 +3468,17 @@ function TournamentsPage({ navigateTo }) {
                         <p className="text-xs text-slate-500 mb-0.5">Prize Pool</p>
                         <p className="text-2xl font-black text-yellow-400">{t.prize}</p>
                       </div>
-                      {t.status === 'Registration Open' && !full ? (
+                      {myReg ? (
+                        <div className="text-xs text-slate-500 text-right">Already registered</div>
+                      ) : t.status === 'Registration Open' && !full ? (
                         <button onClick={() => handleRegister(t)}
                           className="w-full lg:w-auto bg-yellow-500 hover:bg-yellow-400 text-black font-black px-6 py-3 rounded-xl transition-all hover:scale-105 text-sm">
                           ✍️ Join Now
                         </button>
                       ) : t.status === 'Coming Soon' ? (
-                        <button className="w-full lg:w-auto bg-slate-700 text-slate-400 font-bold px-6 py-3 rounded-xl text-sm cursor-not-allowed" disabled>
-                          Coming Soon
-                        </button>
+                        <button className="w-full lg:w-auto bg-slate-700 text-slate-400 font-bold px-6 py-3 rounded-xl text-sm cursor-not-allowed" disabled>Coming Soon</button>
                       ) : full ? (
-                        <button className="w-full lg:w-auto bg-red-900/40 text-red-400 font-bold px-6 py-3 rounded-xl text-sm cursor-not-allowed" disabled>
-                          Full
-                        </button>
+                        <button className="w-full lg:w-auto bg-red-900/40 text-red-400 font-bold px-6 py-3 rounded-xl text-sm cursor-not-allowed" disabled>Full</button>
                       ) : null}
                     </div>
                   </div>
@@ -3430,16 +3501,15 @@ function TournamentsPage({ navigateTo }) {
                 <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
                   <div className="flex-1">
                     <div className="flex flex-wrap items-center gap-2 mb-3">
-                      <span className="text-xs font-bold px-3 py-1 rounded-full bg-blue-500/15 text-blue-400">🌍 Pro / Invitational</span>
+                      <span className="text-xs font-bold px-3 py-1 rounded-full bg-blue-500/15 text-blue-400">👁️ Pro / Invitational</span>
                       <span className="text-xs text-slate-500">{t.game}</span>
                       <span className={`text-xs font-bold px-3 py-1 rounded-full ${statusColor(t.status)}`}>{t.status}</span>
                     </div>
                     <h3 className="text-xl font-black mb-2">{t.name}</h3>
                     <p className="text-slate-400 text-sm mb-4">{t.description}</p>
-                    <div className="flex flex-wrap gap-4 text-sm">
+                    <div className="flex flex-wrap gap-4 text-sm mb-4">
                       <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4 text-blue-400"/>{t.date}</span>
                       <span className="flex items-center gap-1.5"><Zap className="w-4 h-4 text-purple-400"/>{t.type}</span>
-                      <span className="flex items-center gap-1.5 text-slate-400">👥 {t.teams} teams</span>
                       <span className="flex items-center gap-1.5 text-slate-400">🌏 {t.region}</span>
                     </div>
                   </div>
@@ -3448,13 +3518,15 @@ function TournamentsPage({ navigateTo }) {
                       <p className="text-xs text-slate-500 mb-0.5">Prize Pool</p>
                       <p className="text-2xl font-black text-yellow-400">{t.prize}</p>
                     </div>
-                    {t.watchUrl && (
-                      <a href={t.watchUrl} target="_blank" rel="noopener noreferrer"
-                        className="w-full lg:w-auto bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-3 rounded-xl transition-all hover:scale-105 text-sm text-center">
-                        📺 ดูสด
-                      </a>
-                    )}
-                    <p className="text-xs text-slate-600 italic">Not open for registration</p>
+                    <div className="flex flex-col gap-2 w-full lg:w-auto">
+                      {t.watchUrl && (
+                        <a href={t.watchUrl} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white font-bold px-6 py-3 rounded-xl transition-all hover:scale-105 text-sm">
+                          📺 Watch Live
+                        </a>
+                      )}
+                      <p className="text-xs text-slate-600 italic">Not open for registration</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -3463,37 +3535,86 @@ function TournamentsPage({ navigateTo }) {
         </div>
       )}
 
-      {/* Register Modal */}
+      {/* Registration Modal */}
       {registerModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setRegisterModal(null)}>
-          <div className="bg-slate-900 border border-yellow-500/40 rounded-2xl p-8 max-w-md w-full" onClick={e => e.stopPropagation()}>
-            <h3 className="text-xl font-black mb-1">Register to Join</h3>
-            <p className="text-yellow-400 font-bold mb-4">{registerModal.name}</p>
-            <div className="space-y-2 text-sm text-slate-400 mb-6">
-              <p>📅 {registerModal.date}</p>
-              <p>🌏 {registerModal.region}</p>
-              <p>📋 {registerModal.requirements}</p>
-              <p>🏆 Prize: <span className="text-yellow-400 font-bold">{registerModal.prize}</span></p>
-            </div>
-            <div className="bg-slate-800 rounded-xl p-4 mb-6 text-sm text-slate-300">
-              Registration is handled via GameHub's Discord. Our team will contact you within 24 hours after signing up.
-            </div>
-            <div className="flex gap-3">
-              <button onClick={() => setRegisterModal(null)}
-                className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-400 font-bold hover:bg-slate-700 transition-colors">
-                Cancel
-              </button>
-              <a href="https://discord.gg/gamehub" target="_blank" rel="noopener noreferrer"
-                className="flex-1 py-3 rounded-xl bg-yellow-500 text-black font-black hover:bg-yellow-400 transition-all text-center">
-                ✅ Confirm Registration
-              </a>
-            </div>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => !submitting && setRegisterModal(null)}>
+          <div className="bg-slate-900 border border-yellow-500/40 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            {submitDone ? (
+              /* Success state */
+              <div className="p-8 text-center">
+                <div className="text-5xl mb-4">🎉</div>
+                <h3 className="text-xl font-black mb-2 text-green-400">Registration Submitted!</h3>
+                <p className="text-slate-400 text-sm mb-2">Your team <span className="text-white font-bold">"{form.teamName}"</span> has been registered for</p>
+                <p className="text-yellow-400 font-bold mb-6">{registerModal.name}</p>
+                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 mb-6 text-sm text-slate-300">
+                  ⏳ Your registration is <span className="text-yellow-400 font-bold">pending approval</span>. The admin will review and confirm within 24 hours. You can check the status on this page.
+                </div>
+                <button onClick={() => setRegisterModal(null)}
+                  className="bg-yellow-500 hover:bg-yellow-400 text-black font-black px-8 py-3 rounded-xl transition-all">
+                  Done
+                </button>
+              </div>
+            ) : (
+              /* Form */
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="text-lg font-black">Team Registration</h3>
+                  <button onClick={() => setRegisterModal(null)} className="text-slate-500 hover:text-white text-xl leading-none">✕</button>
+                </div>
+                <p className="text-yellow-400 font-bold text-sm mb-5">{registerModal.name}</p>
+
+                {/* Team info */}
+                <div className="space-y-3 mb-5">
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Team Info</p>
+                  <input value={form.teamName} onChange={e => setForm(p => ({ ...p, teamName: e.target.value }))}
+                    placeholder="Team name *" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
+                  <input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
+                    placeholder="Contact phone number *" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
+                  <input value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
+                    placeholder="Contact email *" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
+                </div>
+
+                {/* Players */}
+                <div className="space-y-3 mb-6">
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Players ({form.players.length} players)</p>
+                  {form.players.map((p, i) => (
+                    <div key={i} className="bg-slate-800/60 rounded-xl p-3 space-y-2">
+                      <p className="text-xs text-slate-500 font-bold">Player {i + 1}{i === 0 ? ' (Captain)' : ''}</p>
+                      <div className="flex gap-2">
+                        <input value={p.realName} onChange={e => {
+                          const updated = [...form.players];
+                          updated[i] = { ...updated[i], realName: e.target.value };
+                          setForm(prev => ({ ...prev, players: updated }));
+                        }} placeholder="Real name *" className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
+                        <input value={p.ign} onChange={e => {
+                          const updated = [...form.players];
+                          updated[i] = { ...updated[i], ign: e.target.value };
+                          setForm(prev => ({ ...prev, players: updated }));
+                        }} placeholder="In-game name *" className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex gap-3">
+                  <button onClick={() => setRegisterModal(null)}
+                    className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-400 font-bold hover:bg-slate-700 transition-colors text-sm">
+                    Cancel
+                  </button>
+                  <button onClick={handleSubmit} disabled={submitting || !form.teamName.trim() || !form.phone.trim() || form.players.some(p => !p.realName.trim() || !p.ign.trim())}
+                    className="flex-1 py-3 rounded-xl bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-black transition-all text-sm">
+                    {submitting ? 'Submitting...' : '✍️ Submit Registration'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
     </div>
   );
 }
+
 
 // ─────────────────────────────────────────────
 // COMMUNITY PAGE
@@ -4050,6 +4171,143 @@ function PostCard({ post, user, openComments, commentText, setCommentText, onLik
               Sign in to comment
             </button>
           )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// NEWS PAGE
+// ─────────────────────────────────────────────
+
+// ─────────────────────────────────────────────
+// ADMIN PAGE
+// ─────────────────────────────────────────────
+
+function AdminPage({ navigateTo }) {
+  const { user } = useAuth();
+  const [registrations, setRegistrations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('pending');
+
+  const isAdmin = user && ADMIN_EMAILS.includes(user.email);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    const q = query(collection(db, 'tournament_registrations'), orderBy('createdAt', 'desc'));
+    const unsub = onSnapshot(q, (snap) => {
+      setRegistrations(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setLoading(false);
+    });
+    return () => unsub();
+  }, [isAdmin]);
+
+  const handleAction = async (regId, action) => {
+    await updateDoc(doc(db, 'tournament_registrations', regId), { status: action });
+  };
+
+  if (!user) return (
+    <div className="container mx-auto px-6 py-20 text-center">
+      <p className="text-slate-400">Please sign in to access admin panel.</p>
+    </div>
+  );
+
+  if (!isAdmin) return (
+    <div className="container mx-auto px-6 py-20 text-center">
+      <p className="text-4xl mb-4">🚫</p>
+      <p className="text-slate-400">You don't have permission to access this page.</p>
+    </div>
+  );
+
+  const filtered = registrations.filter(r => filter === 'all' || r.status === filter);
+
+  return (
+    <div className="container mx-auto px-6 py-16 max-w-5xl">
+      <div className="mb-8">
+        <h2 className="text-3xl font-black mb-1" style={{ fontFamily: "'Orbitron', sans-serif" }}>
+          <span className="text-yellow-400">ADMIN</span> PANEL
+        </h2>
+        <p className="text-slate-400 text-sm">Tournament registration management</p>
+      </div>
+
+      {/* Filter tabs */}
+      <div className="flex gap-2 mb-6 bg-slate-900 p-1 rounded-xl w-fit">
+        {[
+          { key: 'pending', label: '⏳ Pending' },
+          { key: 'approved', label: '✅ Approved' },
+          { key: 'rejected', label: '❌ Rejected' },
+          { key: 'all', label: 'All' },
+        ].map(f => (
+          <button key={f.key} onClick={() => setFilter(f.key)}
+            className={`px-4 py-2 rounded-lg font-bold text-xs transition-all ${filter === f.key ? 'bg-yellow-500 text-black' : 'text-slate-400 hover:text-white'}`}>
+            {f.label}
+            <span className="ml-1.5 opacity-60">({registrations.filter(r => f.key === 'all' || r.status === f.key).length})</span>
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="skeleton h-32 rounded-xl"/>)}</div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-16 text-slate-500">
+          <p className="text-3xl mb-3">📋</p>
+          <p>No {filter} registrations</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filtered.map(reg => (
+            <div key={reg.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+              <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                      reg.status === 'approved' ? 'bg-green-500/20 text-green-400' :
+                      reg.status === 'rejected' ? 'bg-red-500/20 text-red-400' :
+                      'bg-yellow-500/20 text-yellow-400'
+                    }`}>
+                      {reg.status === 'approved' ? '✅ Approved' : reg.status === 'rejected' ? '❌ Rejected' : '⏳ Pending'}
+                    </span>
+                    <span className="text-xs text-slate-500">{reg.tournamentName}</span>
+                  </div>
+                  <p className="font-black text-lg mb-1">🏆 {reg.teamName}</p>
+                  <div className="flex flex-wrap gap-3 text-xs text-slate-400 mb-3">
+                    <span>📧 {reg.contactEmail}</span>
+                    <span>📞 {reg.phone}</span>
+                    <span>👤 {reg.userEmail}</span>
+                  </div>
+                  {/* Players list */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {(reg.players || []).map((p, i) => (
+                      <div key={i} className="bg-slate-800 rounded-lg px-3 py-2 text-xs">
+                        <p className="text-slate-500 mb-0.5">Player {i+1}{i===0?' (Captain)':''}</p>
+                        <p className="font-bold text-white">{p.realName}</p>
+                        <p className="text-purple-400">{p.ign}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {reg.status === 'pending' && (
+                  <div className="flex gap-2 flex-shrink-0">
+                    <button onClick={() => handleAction(reg.id, 'rejected')}
+                      className="px-4 py-2 rounded-xl bg-red-600/20 hover:bg-red-600/40 text-red-400 font-bold text-sm transition-colors border border-red-600/30">
+                      ❌ Reject
+                    </button>
+                    <button onClick={() => handleAction(reg.id, 'approved')}
+                      className="px-4 py-2 rounded-xl bg-green-600/20 hover:bg-green-600/40 text-green-400 font-bold text-sm transition-colors border border-green-600/30">
+                      ✅ Approve
+                    </button>
+                  </div>
+                )}
+                {reg.status === 'approved' && (
+                  <button onClick={() => handleAction(reg.id, 'rejected')}
+                    className="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-400 font-bold text-xs transition-colors flex-shrink-0">
+                    Revoke
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>
