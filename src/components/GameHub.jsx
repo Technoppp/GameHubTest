@@ -103,8 +103,6 @@ function useRawgImages() {
 // DATA
 // ─────────────────────────────────────────────
 
-const ADMIN_EMAILS = ['technoppp@gmail.com']; // เพิ่ม email admin ได้ที่นี่
-
 const CATEGORIES = [
   {
     id: 'fps',
@@ -1153,6 +1151,7 @@ export default function GameHub() {
   const [scrolled, setScrolled] = useState(false);
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [showIntro, setShowIntro] = useState(() => !sessionStorage.getItem('introSeen'));
   const rawgImages = useRawgImages();
   const [navHistory, setNavHistory] = useState([]);
@@ -1163,10 +1162,18 @@ export default function GameHub() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Listen to Firebase auth state
+  // Listen to Firebase auth state + check admin
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
+    const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
+      if (u) {
+        try {
+          const snap = await getDoc(doc(db, 'admins', u.email));
+          setIsAdmin(snap.exists());
+        } catch (_) { setIsAdmin(false); }
+      } else {
+        setIsAdmin(false);
+      }
       setAuthLoading(false);
     });
     return () => unsub();
@@ -1225,7 +1232,7 @@ export default function GameHub() {
   if (showIntro) return <IntroScreen onComplete={handleIntroComplete} />;
 
   return (
-    <AuthContext.Provider value={{ user, auth }}>
+    <AuthContext.Provider value={{ user, auth, isAdmin }}>
     <RawgImagesContext.Provider value={rawgImages}>
     <div className="min-h-screen bg-slate-950 text-slate-100" style={{ fontFamily: "'Inter', 'Noto Sans', system-ui, -apple-system, sans-serif" }}>
       <style>{`
@@ -2880,7 +2887,7 @@ const AVATAR_COLORS = [
 ];
 
 function ProfilePage({ navigateTo }) {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [newName, setNewName] = useState('');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -3101,7 +3108,7 @@ function ProfilePage({ navigateTo }) {
       </div>
 
       {/* Admin Panel link */}
-      {user && ADMIN_EMAILS.includes(user.email) && (
+      {isAdmin && (
         <button onClick={() => navigateTo('admin')}
           className="w-full py-3.5 rounded-xl font-bold text-yellow-400 border border-yellow-500/30 hover:bg-yellow-500/10 transition-all mb-3">
           ⚙️ Admin Panel
@@ -4186,12 +4193,10 @@ function PostCard({ post, user, openComments, commentText, setCommentText, onLik
 // ─────────────────────────────────────────────
 
 function AdminPage({ navigateTo }) {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [registrations, setRegistrations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('pending');
-
-  const isAdmin = user && ADMIN_EMAILS.includes(user.email);
 
   useEffect(() => {
     if (!isAdmin) return;
