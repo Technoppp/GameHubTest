@@ -3740,48 +3740,46 @@ function CommunityPage({ navigateTo, tagGame }) {
   const requireLogin = () => { navigateTo('login'); };
 
   const [cropSrc, setCropSrc] = useState(null);
-  const [cropFile, setCropFile] = useState(null);
   const cropImgRef = useRef(null);
   const [cropDrag, setCropDrag] = useState(null);
-  const [cropBox, setCropBox] = useState({ x: 0, y: 0, w: 100, h: 100 });
+  const [cropBox, setCropBox] = useState({ x: 0, y: 0, w: 100, h: 100 }); // display pixels
   const [aspectRatio] = useState(16/9);
 
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) { alert('Image must be under 10MB'); return; }
-    setCropFile(file);
     setCropSrc(URL.createObjectURL(file));
   };
 
   const initCrop = (img) => {
-    // Use naturalWidth/Height for crop coordinates (always in natural pixel space)
-    const iw = img.naturalWidth;
-    const ih = img.naturalHeight;
-    const targetH = Math.round(iw / aspectRatio);
-    if (targetH <= ih) {
-      setCropBox({ x: 0, y: Math.round((ih - targetH) / 2), w: iw, h: targetH });
+    // cropBox in display pixels
+    const dw = img.offsetWidth;
+    const dh = img.offsetHeight;
+    const targetH = dw / aspectRatio;
+    if (targetH <= dh) {
+      setCropBox({ x: 0, y: Math.round((dh - targetH) / 2), w: dw, h: Math.round(targetH) });
     } else {
-      const targetW = Math.round(ih * aspectRatio);
-      setCropBox({ x: Math.round((iw - targetW) / 2), y: 0, w: targetW, h: ih });
+      const targetW = dh * aspectRatio;
+      setCropBox({ x: Math.round((dw - targetW) / 2), y: 0, w: Math.round(targetW), h: dh });
     }
   };
 
   const uploadCropped = () => {
     const img = cropImgRef.current;
     if (!img) return;
-    const rect = img.getBoundingClientRect();
-    const scaleX = img.naturalWidth / rect.width;
-    const scaleY = img.naturalHeight / rect.height;
+    // Convert display pixels → natural pixels
+    const scaleX = img.naturalWidth / img.offsetWidth;
+    const scaleY = img.naturalHeight / img.offsetHeight;
+    const nx = Math.round(cropBox.x * scaleX);
+    const ny = Math.round(cropBox.y * scaleY);
+    const nw = Math.round(cropBox.w * scaleX);
+    const nh = Math.round(cropBox.h * scaleY);
     const canvas = document.createElement('canvas');
-    const cropW = Math.round(cropBox.w * scaleX);
-    const cropH = Math.round(cropBox.h * scaleY);
-    const cropX = Math.round(cropBox.x * scaleX);
-    const cropY = Math.round(cropBox.y * scaleY);
-    canvas.width = cropW;
-    canvas.height = cropH;
+    canvas.width = nw;
+    canvas.height = nh;
     const ctx = canvas.getContext('2d');
-    ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+    ctx.drawImage(img, nx, ny, nw, nh, 0, 0, nw, nh);
     canvas.toBlob(async (blob) => {
       setCropSrc(null);
       setImagePreview(URL.createObjectURL(blob));
@@ -3904,15 +3902,12 @@ function CommunityPage({ navigateTo, tagGame }) {
                 if (!cropDrag) return;
                 const img = cropImgRef.current;
                 if (!img) return;
-                const rect = img.getBoundingClientRect();
-                const scaleX = img.naturalWidth / rect.width;
-                const scaleY = img.naturalHeight / rect.height;
-                const dx = (e.clientX - cropDrag.startX) * scaleX;
-                const dy = (e.clientY - cropDrag.startY) * scaleY;
+                const dx = e.clientX - cropDrag.startX;
+                const dy = e.clientY - cropDrag.startY;
                 setCropBox(prev => ({
                   ...prev,
-                  x: Math.max(0, Math.min(img.naturalWidth - prev.w, Math.round(cropDrag.origX + dx))),
-                  y: Math.max(0, Math.min(img.naturalHeight - prev.h, Math.round(cropDrag.origY + dy))),
+                  x: Math.max(0, Math.min(img.offsetWidth - prev.w, cropDrag.origX + dx)),
+                  y: Math.max(0, Math.min(img.offsetHeight - prev.h, cropDrag.origY + dy)),
                 }));
               }}
               onMouseUp={() => setCropDrag(null)}
@@ -3920,29 +3915,21 @@ function CommunityPage({ navigateTo, tagGame }) {
               <div className="relative">
                 <img ref={cropImgRef} src={cropSrc} alt="crop" className="w-full block"
                   onLoad={e => initCrop(e.target)} draggable={false}/>
-                {cropImgRef.current && (() => {
-                  const img = cropImgRef.current;
-                  const rect = img.getBoundingClientRect();
-                  const dispW = rect.width || img.offsetWidth;
-                  const dispH = rect.height || img.offsetHeight;
-                  const scaleX = dispW / img.naturalWidth;
-                  const scaleY = dispH / img.naturalHeight;
-                  return (
-                    <div className="absolute inset-0 pointer-events-none"
-                      style={{ boxShadow: `${cropBox.x*scaleX}px ${cropBox.y*scaleY}px 0 0 rgba(0,0,0,0.65), inset ${-(dispW-(cropBox.x+cropBox.w)*scaleX)}px ${-(dispH-(cropBox.y+cropBox.h)*scaleY)}px 0 0 rgba(0,0,0,0.65)` }}>
-                      <div className="absolute border-2 border-white pointer-events-auto cursor-move"
-                        style={{ left: cropBox.x*scaleX, top: cropBox.y*scaleY, width: cropBox.w*scaleX, height: cropBox.h*scaleY }}
-                        onMouseDown={e => {
-                          e.preventDefault();
-                          setCropDrag({ startX: e.clientX, startY: e.clientY, origX: cropBox.x, origY: cropBox.y });
-                        }}>
-                        <div className="absolute inset-0 grid grid-cols-3 grid-rows-3">
-                          {Array(9).fill(0).map((_,i) => <div key={i} className="border border-white/20"/>)}
-                        </div>
+                {cropImgRef.current && (
+                  <div className="absolute inset-0 pointer-events-none"
+                    style={{ boxShadow: `${cropBox.x}px ${cropBox.y}px 0 0 rgba(0,0,0,0.65), inset ${-(cropImgRef.current.offsetWidth - cropBox.x - cropBox.w)}px ${-(cropImgRef.current.offsetHeight - cropBox.y - cropBox.h)}px 0 0 rgba(0,0,0,0.65)` }}>
+                    <div className="absolute border-2 border-white pointer-events-auto cursor-move"
+                      style={{ left: cropBox.x, top: cropBox.y, width: cropBox.w, height: cropBox.h }}
+                      onMouseDown={e => {
+                        e.preventDefault();
+                        setCropDrag({ startX: e.clientX, startY: e.clientY, origX: cropBox.x, origY: cropBox.y });
+                      }}>
+                      <div className="absolute inset-0 grid grid-cols-3 grid-rows-3">
+                        {Array(9).fill(0).map((_,i) => <div key={i} className="border border-white/20"/>)}
                       </div>
                     </div>
-                  );
-                })()}
+                  </div>
+                )}
               </div>
             </div>
 
