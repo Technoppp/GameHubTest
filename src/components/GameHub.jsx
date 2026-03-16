@@ -1359,7 +1359,7 @@ export default function GameHub() {
           <div className="flex items-center justify-between">
             {/* Logo */}
             <div className="flex items-center gap-2 flex-shrink-0">
-              <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigateTo('home')}>
+              <div className="flex items-center gap-1 cursor-pointer" onClick={() => navigateTo('home')}>
                 <img
                   src="/images/games/logo.png"
                   alt="GameHub Logo"
