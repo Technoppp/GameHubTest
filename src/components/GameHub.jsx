@@ -1357,9 +1357,23 @@ export default function GameHub() {
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-slate-950/95 backdrop-blur-lg shadow-lg shadow-blue-500/10' : 'bg-transparent'}`}>
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            {/* Logo */}
+            {/* Logo + Back */}
             <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Back button - shows inline on desktop, above logo on mobile */}
+              {navHistory.length > 0 && (currentPage === 'game-detail' || currentPage === 'category') && (
+                <button onClick={goBack}
+                  className="hidden lg:flex items-center gap-1 text-xs text-slate-400 hover:text-white transition-colors mr-2 border border-slate-700 hover:border-slate-500 px-2.5 py-1.5 rounded-lg">
+                  <ChevronLeft className="w-3 h-3" /> Back
+                </button>
+              )}
               <div className="flex flex-col">
+                {/* Mobile back - above logo */}
+                {navHistory.length > 0 && (currentPage === 'game-detail' || currentPage === 'category') && (
+                  <button onClick={goBack}
+                    className="lg:hidden flex items-center gap-1 text-xs text-slate-400 hover:text-white transition-colors mb-1">
+                    <ChevronLeft className="w-3 h-3" /> Back
+                  </button>
+                )}
                 <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigateTo('home')}>
                   <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center glow-effect">
                     <Gamepad2 className="w-6 h-6" />
@@ -1369,12 +1383,6 @@ export default function GameHub() {
                     <span className="text-white">HUB</span>
                   </h1>
                 </div>
-                {navHistory.length > 0 && (currentPage === 'game-detail' || currentPage === 'category') && (
-                  <button onClick={goBack}
-                    className="flex items-center gap-1 text-xs text-slate-400 hover:text-white transition-colors mt-1 ml-12">
-                    <ChevronLeft className="w-3 h-3" /> Back
-                  </button>
-                )}
               </div>
             </div>
 
@@ -3628,8 +3636,8 @@ function TournamentsPage({ navigateTo }) {
 
       {/* Registration Modal */}
       {registerModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => !submitting && setRegisterModal(null)}>
-          <div className="bg-slate-900 border border-yellow-500/40 rounded-2xl w-full max-w-lg flex flex-col" style={{ maxHeight: '90vh' }} onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4" onClick={() => !submitting && setRegisterModal(null)}>
+          <div className="bg-slate-900 border border-yellow-500/40 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg flex flex-col" style={{ maxHeight: '92dvh' }} onClick={e => e.stopPropagation()}>
             {submitDone ? (
               /* Success state */
               <div className="p-8 text-center">
