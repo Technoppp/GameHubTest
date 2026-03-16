@@ -1360,9 +1360,12 @@ export default function GameHub() {
             {/* Logo */}
             <div className="flex items-center gap-2 flex-shrink-0">
               <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigateTo('home')}>
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center glow-effect">
-                  <Gamepad2 className="w-6 h-6" />
-                </div>
+                <img
+                  src="/images/logo.png"
+                  alt="GameHub Logo"
+                  className="w-10 h-10 object-contain glow-effect"
+                  style={{ borderRadius: '8px' }}
+                />
                 <h1 className="text-2xl font-bold" style={{ fontFamily: "'Orbitron', sans-serif" }}>
                   <span className="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">GAME</span>
                   <span className="text-white">HUB</span>
