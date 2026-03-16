@@ -1361,7 +1361,7 @@ export default function GameHub() {
             <div className="flex items-center gap-2 flex-shrink-0">
               <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigateTo('home')}>
                 <img
-                  src="/images/logo.png"
+                  src="/images/games/logo.png"
                   alt="GameHub Logo"
                   className="w-10 h-10 object-contain glow-effect"
                   style={{ borderRadius: '8px' }}
