@@ -1363,7 +1363,7 @@ export default function GameHub() {
                 <img
                   src="/images/games/logo.png"
                   alt="GameHub Logo"
-                  className="h-12 w-auto object-contain"
+                  className="h-16 w-auto object-contain"
                 />
                 <h1 className="text-2xl font-bold" style={{ fontFamily: "'Orbitron', sans-serif" }}>
                   <span className="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">GAME</span>
