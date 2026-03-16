@@ -755,7 +755,7 @@ const GAMES_DATA = [
     title: 'StarCraft II',
     category: 'strategy',
     subcategory: 'RTS',
-    image: 'https://bnetcmsus-a.akamaihd.net/cms/gallery/D1X2MUCPKGS01536259498062.jpg',
+    image: '/images/games/starcraft-ii.jpg',
     description: 'The definitive real-time strategy game. Master one of three asymmetric races - Terran, Zerg, or Protoss - and compete in one of esports\' most enduring scenes.',
     releaseDate: '2010-07-27',
     rating: 4.8,
