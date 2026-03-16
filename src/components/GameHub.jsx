@@ -1371,7 +1371,7 @@ export default function GameHub() {
                 </div>
                 {navHistory.length > 0 && (currentPage === 'game-detail' || currentPage === 'category') && (
                   <button onClick={goBack}
-                    className="flex items-center gap-1 text-xs text-slate-400 hover:text-white transition-colors mt-1 ml-13 pl-1">
+                    className="flex items-center gap-1 text-xs text-slate-400 hover:text-white transition-colors mt-1 ml-12">
                     <ChevronLeft className="w-3 h-3" /> Back
                   </button>
                 )}
@@ -3629,7 +3629,7 @@ function TournamentsPage({ navigateTo }) {
       {/* Registration Modal */}
       {registerModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => !submitting && setRegisterModal(null)}>
-          <div className="bg-slate-900 border border-yellow-500/40 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-slate-900 border border-yellow-500/40 rounded-2xl w-full max-w-lg flex flex-col" style={{ maxHeight: '90vh' }} onClick={e => e.stopPropagation()}>
             {submitDone ? (
               /* Success state */
               <div className="p-8 text-center">
@@ -3638,7 +3638,7 @@ function TournamentsPage({ navigateTo }) {
                 <p className="text-slate-400 text-sm mb-2">Your team <span className="text-white font-bold">"{form.teamName}"</span> has been {editRegId ? 'updated for' : 'registered for'}</p>
                 <p className="text-yellow-400 font-bold mb-6">{registerModal.name}</p>
                 <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 mb-6 text-sm text-slate-300">
-                  ⏳ Your registration is <span className="text-yellow-400 font-bold">pending approval</span>. The admin will review and confirm within 24 hours. You can check the status on this page.
+                  ⏳ Your registration is <span className="text-yellow-400 font-bold">pending approval</span>. The admin will review and confirm within 24 hours.
                 </div>
                 <button onClick={() => setRegisterModal(null)}
                   className="bg-yellow-500 hover:bg-yellow-400 text-black font-black px-8 py-3 rounded-xl transition-all">
@@ -3647,57 +3647,64 @@ function TournamentsPage({ navigateTo }) {
               </div>
             ) : (
               /* Form */
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-1">
-                  <h3 className="text-lg font-black">{editRegId ? 'Edit Registration' : 'Team Registration'}</h3>
-                  <button onClick={() => setRegisterModal(null)} className="text-slate-500 hover:text-white text-xl leading-none">✕</button>
-                </div>
-                <p className="text-yellow-400 font-bold text-sm mb-5">{registerModal.name}</p>
-
-                {/* Team info */}
-                <div className="space-y-3 mb-5">
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Team Info</p>
-                  <input value={form.teamName} onChange={e => setForm(p => ({ ...p, teamName: e.target.value }))}
-                    placeholder="Team name *" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
-                  <input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
-                    placeholder="Contact phone number *" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
-                  <input value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
-                    placeholder="Contact email *" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
+              <>
+                {/* Header - fixed */}
+                <div className="p-5 pb-3 flex-shrink-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <h3 className="text-lg font-black">{editRegId ? 'Edit Registration' : 'Team Registration'}</h3>
+                    <button onClick={() => setRegisterModal(null)} className="text-slate-500 hover:text-white text-xl leading-none">✕</button>
+                  </div>
+                  <p className="text-yellow-400 font-bold text-sm">{registerModal.name}</p>
                 </div>
 
-                {/* Players */}
-                <div className="space-y-3 mb-6">
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Players ({form.players.length} players)</p>
-                  {form.players.map((p, i) => (
-                    <div key={i} className="bg-slate-800/60 rounded-xl p-3 space-y-2">
-                      <p className="text-xs text-slate-500 font-bold">Player {i + 1}{i === 0 ? ' (Captain)' : ''}</p>
-                      <div className="flex gap-2">
-                        <input value={p.realName} onChange={e => {
-                          const updated = [...form.players];
-                          updated[i] = { ...updated[i], realName: e.target.value };
-                          setForm(prev => ({ ...prev, players: updated }));
-                        }} placeholder="Real name *" className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
-                        <input value={p.ign} onChange={e => {
-                          const updated = [...form.players];
-                          updated[i] = { ...updated[i], ign: e.target.value };
-                          setForm(prev => ({ ...prev, players: updated }));
-                        }} placeholder="In-game name *" className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
+                {/* Scrollable form area */}
+                <div className="overflow-y-auto flex-1 px-5 pb-3">
+                  {/* Team info */}
+                  <div className="space-y-3 mb-5">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Team Info</p>
+                    <input value={form.teamName} onChange={e => setForm(p => ({ ...p, teamName: e.target.value }))}
+                      placeholder="Team name *" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
+                    <input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
+                      placeholder="Contact phone number *" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
+                    <input value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
+                      placeholder="Contact email *" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
+                  </div>
+
+                  {/* Players */}
+                  <div className="space-y-3">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Players ({form.players.length} players)</p>
+                    {form.players.map((p, i) => (
+                      <div key={i} className="bg-slate-800/60 rounded-xl p-3 space-y-2">
+                        <p className="text-xs text-slate-500 font-bold">Player {i + 1}{i === 0 ? ' (Captain)' : ''}</p>
+                        <div className="flex gap-2">
+                          <input value={p.realName} onChange={e => {
+                            const updated = [...form.players];
+                            updated[i] = { ...updated[i], realName: e.target.value };
+                            setForm(prev => ({ ...prev, players: updated }));
+                          }} placeholder="Real name *" className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
+                          <input value={p.ign} onChange={e => {
+                            const updated = [...form.players];
+                            updated[i] = { ...updated[i], ign: e.target.value };
+                            setForm(prev => ({ ...prev, players: updated }));
+                          }} placeholder="In-game name *" className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
 
-                <div className="flex gap-3">
+                {/* Buttons - fixed at bottom */}
+                <div className="p-5 pt-3 border-t border-slate-800 flex gap-3 flex-shrink-0">
                   <button onClick={() => setRegisterModal(null)}
                     className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-400 font-bold hover:bg-slate-700 transition-colors text-sm">
                     Cancel
                   </button>
                   <button onClick={handleSubmit} disabled={submitting || !form.teamName.trim() || !form.phone.trim() || form.players.some(p => !p.realName.trim() || !p.ign.trim())}
                     className="flex-1 py-3 rounded-xl bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-black transition-all text-sm">
-                    {submitting ? 'Submitting...' : '✍️ Submit Registration'}
+                    {submitting ? 'Submitting...' : '✍️ Submit'}
                   </button>
                 </div>
-              </div>
+              </>
             )}
           </div>
         </div>
