@@ -1357,32 +1357,16 @@ export default function GameHub() {
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-slate-950/95 backdrop-blur-lg shadow-lg shadow-blue-500/10' : 'bg-transparent'}`}>
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            {/* Logo + Back */}
+            {/* Logo */}
             <div className="flex items-center gap-2 flex-shrink-0">
-              {/* Back button - shows inline on desktop, above logo on mobile */}
-              {navHistory.length > 0 && (currentPage === 'game-detail' || currentPage === 'category') && (
-                <button onClick={goBack}
-                  className="hidden lg:flex items-center gap-1 text-xs text-slate-400 hover:text-white transition-colors mr-2 border border-slate-700 hover:border-slate-500 px-2.5 py-1.5 rounded-lg">
-                  <ChevronLeft className="w-3 h-3" /> Back
-                </button>
-              )}
-              <div className="flex flex-col">
-                {/* Mobile back - above logo */}
-                {navHistory.length > 0 && (currentPage === 'game-detail' || currentPage === 'category') && (
-                  <button onClick={goBack}
-                    className="lg:hidden flex items-center gap-1 text-xs text-slate-400 hover:text-white transition-colors mb-1">
-                    <ChevronLeft className="w-3 h-3" /> Back
-                  </button>
-                )}
-                <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigateTo('home')}>
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center glow-effect">
-                    <Gamepad2 className="w-6 h-6" />
-                  </div>
-                  <h1 className="text-2xl font-bold" style={{ fontFamily: "'Orbitron', sans-serif" }}>
-                    <span className="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">GAME</span>
-                    <span className="text-white">HUB</span>
-                  </h1>
+              <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigateTo('home')}>
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center glow-effect">
+                  <Gamepad2 className="w-6 h-6" />
                 </div>
+                <h1 className="text-2xl font-bold" style={{ fontFamily: "'Orbitron', sans-serif" }}>
+                  <span className="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">GAME</span>
+                  <span className="text-white">HUB</span>
+                </h1>
               </div>
             </div>
 
@@ -2168,7 +2152,9 @@ function CategoryPage({ category, navigateTo, goBack, navHistory }) {
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-sm text-slate-500 mb-8 fade-in-up">
             {navHistory.length > 0 && (
-              <span className="mr-1 text-slate-600">·</span>
+              <button onClick={goBack} className="breadcrumb-item hover:text-white flex items-center gap-1 mr-1">
+                <ChevronLeft className="w-4 h-4" /> Back
+              </button>
             )}
             <button className="breadcrumb-item hover:text-blue-400" onClick={() => navigateTo('games')}>Games</button>
             <ChevronRight className="w-4 h-4" />
@@ -2442,7 +2428,9 @@ function GameDetailPage({ game, navigateTo, goBack, navHistory }) {
             {/* Breadcrumb */}
             <div className="flex items-center gap-2 text-sm text-slate-400 mb-5">
               {navHistory.length > 0 && (
-                <span className="mr-1 text-slate-600">·</span>
+                <button onClick={goBack} className="breadcrumb-item hover:text-white flex items-center gap-1 mr-1">
+                  <ChevronLeft className="w-4 h-4" /> Back
+                </button>
               )}
               <button className="breadcrumb-item hover:text-blue-400" onClick={() => navigateTo('games')}>Games</button>
               <ChevronRight className="w-4 h-4 text-slate-600" />
