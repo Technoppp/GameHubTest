@@ -755,7 +755,7 @@ const GAMES_DATA = [
     title: 'StarCraft II',
     category: 'strategy',
     subcategory: 'RTS',
-    image: 'https://media.rawg.io/media/games/d58/d588a9c6b82e7e1d84c0f7e77c4e956b.jpg',
+    image: 'https://bnetcmsus-a.akamaihd.net/cms/gallery/D1X2MUCPKGS01536259498062.jpg',
     description: 'The definitive real-time strategy game. Master one of three asymmetric races - Terran, Zerg, or Protoss - and compete in one of esports\' most enduring scenes.',
     releaseDate: '2010-07-27',
     rating: 4.8,
@@ -1363,7 +1363,7 @@ export default function GameHub() {
                 <img
                   src="/images/games/logo.png"
                   alt="GameHub Logo"
-                  className="h-9 w-auto object-contain"
+                  className="h-12 w-auto object-contain"
                 />
                 <h1 className="text-2xl font-bold" style={{ fontFamily: "'Orbitron', sans-serif" }}>
                   <span className="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">GAME</span>
