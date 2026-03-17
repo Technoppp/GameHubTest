@@ -2734,9 +2734,7 @@ function LoginPage({ navigateTo }) {
       <div className="w-full max-w-md fade-in-up">
         {/* Logo */}
         <div className="text-center mb-10">
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 glow-effect">
-            <Gamepad2 className="w-9 h-9 text-white" />
-          </div>
+          <img src="/images/games/logo.png" alt="GameHub Logo" className="h-16 w-auto object-contain mx-auto mb-4"/>
           <h2 className="text-3xl font-black" style={{ fontFamily: "'Orbitron', sans-serif" }}>
             <span className="text-blue-400">WELCOME</span> BACK
           </h2>
@@ -2830,9 +2828,7 @@ function RegisterPage({ navigateTo }) {
     <div className="min-h-screen flex items-center justify-center px-4 py-20">
       <div className="w-full max-w-md fade-in-up">
         <div className="text-center mb-10">
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 glow-effect">
-            <Gamepad2 className="w-9 h-9 text-white" />
-          </div>
+          <img src="/images/games/logo.png" alt="GameHub Logo" className="h-16 w-auto object-contain mx-auto mb-4"/>
           <h2 className="text-3xl font-black" style={{ fontFamily: "'Orbitron', sans-serif" }}>
             <span className="text-purple-400">JOIN</span> GAMEHUB
           </h2>
