@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronRight, ChevronLeft, Trophy, Calendar, Zap, Gamepad2, Newspaper, Info, Target, Swords, Users, Laugh, Crown, Brain, Car, Shield } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Trophy, Calendar, Zap, Gamepad2, Newspaper, Info, Target, Swords, Users, Laugh, Crown, Brain, Car, Shield, Globe, HelpCircle } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs, onSnapshot, orderBy, query, where, writeBatch, updateDoc, arrayUnion, arrayRemove, deleteDoc, serverTimestamp } from 'firebase/firestore';
@@ -1359,13 +1359,13 @@ export default function GameHub() {
           <div className="flex items-center justify-between">
             {/* Logo */}
             <div className="flex items-center gap-2 flex-shrink-0">
-              <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigateTo('home')}>
+              <div className="flex items-center gap-1.5 cursor-pointer" onClick={() => navigateTo('home')}>
                 <img
                   src="/images/games/logo.png"
                   alt="GameHub Logo"
-                  className="h-12 w-auto object-contain"
+                  className="h-8 md:h-12 w-auto object-contain"
                 />
-                <h1 className="text-2xl font-bold" style={{ fontFamily: "'Orbitron', sans-serif" }}>
+                <h1 className="text-xl md:text-2xl font-bold" style={{ fontFamily: "'Orbitron', sans-serif" }}>
                   <span className="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">GAME</span>
                   <span className="text-white">HUB</span>
                 </h1>
@@ -1373,10 +1373,10 @@ export default function GameHub() {
             </div>
 
             {/* Desktop Nav */}
-            <nav className="hidden lg:flex gap-5 items-center flex-1 justify-center">
+            <nav className="hidden md:flex gap-3 items-center flex-1 justify-center flex-wrap">
               {[
                 { name: 'Home', icon: Gamepad2, page: 'home' },
-                { name: 'Games', icon: Zap, page: 'games' },
+                { name: 'Games', icon: Gamepad2, page: 'games' },
                 { name: 'Tournaments', icon: Trophy, page: 'tournaments' },
                 { name: 'Leaderboard', icon: Crown, page: 'leaderboard' },
                 { name: 'Community', icon: Users, page: 'community' },
@@ -1386,7 +1386,7 @@ export default function GameHub() {
                 <button
                   key={item.page}
                   onClick={() => navigateTo(item.page)}
-                  className={`flex items-center gap-2 text-sm font-semibold transition-all duration-300 hover:text-blue-400 ${currentPage === item.page || (currentPage === 'category' && item.page === 'games') || (currentPage === 'game-detail' && item.page === 'games') ? 'text-blue-400' : 'text-slate-400'}`}
+                  className={`flex items-center gap-1.5 text-xs font-semibold transition-all duration-300 hover:text-blue-400 ${currentPage === item.page || (currentPage === 'category' && item.page === 'games') || (currentPage === 'game-detail' && item.page === 'games') ? 'text-blue-400' : 'text-slate-400'}`}
                 >
                   <item.icon className="w-4 h-4" />
                   {item.name}
@@ -1396,18 +1396,23 @@ export default function GameHub() {
             </nav>
 
             {/* Desktop Auth */}
-            <div className="hidden lg:flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-3">
               {isAdmin && (
                 <button onClick={() => navigateTo('admin')}
                   className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${currentPage === 'admin' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/40' : 'text-slate-400 hover:text-yellow-400 border border-slate-700 hover:border-yellow-500/40'}`}>
                   ⚙️ Admin
                 </button>
               )}
+              <button onClick={() => navigateTo('about')}
+                title="Help & Support"
+                className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all border ${currentPage === 'about' ? 'bg-green-500/20 text-green-400 border-green-500/40' : 'text-slate-400 hover:text-green-400 border-slate-700 hover:border-green-500/40'}`}>
+                <HelpCircle className="w-4 h-4"/> Help
+              </button>
               <AuthNavButton navigateTo={navigateTo} currentPage={currentPage} user={user} authLoading={authLoading} />
             </div>
 
             {/* Mobile Right: Avatar (if logged in) + Hamburger */}
-            <div className="flex lg:hidden items-center gap-3">
+            <div className="flex md:hidden items-center gap-3">
               {/* Only show avatar on mobile when logged in, login/signup goes inside menu */}
               {user && !authLoading && (
                 <button
@@ -1436,7 +1441,7 @@ export default function GameHub() {
             <div className="flex flex-col gap-1">
               {[
                 { name: 'Home', icon: Gamepad2, page: 'home' },
-                { name: 'Games', icon: Zap, page: 'games' },
+                { name: 'Games', icon: Gamepad2, page: 'games' },
                 { name: 'Tournaments', icon: Trophy, page: 'tournaments' },
                 { name: 'Leaderboard', icon: Crown, page: 'leaderboard' },
                 { name: 'Community', icon: Users, page: 'community' },
@@ -3437,7 +3442,7 @@ function TournamentsPage({ navigateTo }) {
   const joinable  = TOURNAMENTS_DATA.filter(t => t.joinable);
 
   const statusColor = (s) => {
-    if (s === 'Registration Open') return 'bg-green-500/20 text-green-400';
+    if (s === 'Registration Open') return 'bg-green-700 text-green-100';
     if (s === 'Live Now')          return 'bg-red-500/20 text-red-400';
     if (s === 'Coming Soon')       return 'bg-slate-500/20 text-slate-400';
     return 'bg-blue-500/20 text-blue-400';
@@ -3486,7 +3491,7 @@ function TournamentsPage({ navigateTo }) {
                       <p className="text-slate-400 text-sm mb-4">{t.description}</p>
                       <div className="flex flex-wrap gap-4 text-sm mb-4">
                         <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4 text-blue-400"/>{t.date}</span>
-                        <span className="flex items-center gap-1.5"><Zap className="w-4 h-4 text-purple-400"/>{t.type}</span>
+                        <span className="flex items-center gap-1.5"><Globe className="w-4 h-4 text-purple-400"/>{t.type}</span>
                         <span className="flex items-center gap-1.5 text-slate-400">🌏 {t.region}</span>
                       </div>
                       <div className="bg-slate-800/60 rounded-lg px-4 py-2.5 text-xs text-slate-300 mb-4 inline-block">
@@ -3594,7 +3599,7 @@ function TournamentsPage({ navigateTo }) {
                     <p className="text-slate-400 text-sm mb-4">{t.description}</p>
                     <div className="flex flex-wrap gap-4 text-sm mb-4">
                       <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4 text-blue-400"/>{t.date}</span>
-                      <span className="flex items-center gap-1.5"><Zap className="w-4 h-4 text-purple-400"/>{t.type}</span>
+                      <span className="flex items-center gap-1.5"><Globe className="w-4 h-4 text-purple-400"/>{t.type}</span>
                       <span className="flex items-center gap-1.5 text-slate-400">🌏 {t.region}</span>
                     </div>
                   </div>
@@ -4654,6 +4659,31 @@ function AboutPage() {
                     <h4 className="font-bold mb-1">{title}</h4>
                     <p className="text-slate-400">{desc}</p>
                   </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-8">
+            <h3 className="text-2xl font-bold mb-6 text-green-400 flex items-center gap-2">
+              <HelpCircle className="w-6 h-6"/> Help & Support
+            </h3>
+            <p className="text-slate-300 mb-6">Need help? We're here for you. Reach out through any of the channels below.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {[
+                { icon: '💬', title: 'Discord Community', desc: 'Join our Discord for live support and community discussion.', link: 'https://discord.gg/gamehub', label: 'Join Discord' },
+                { icon: '📧', title: 'Email Support', desc: 'Send us an email for tournament or account help.', link: 'mailto:support@gamehub.gg', label: 'Email Us' },
+                { icon: '📋', title: 'FAQ', desc: 'Find answers to the most common questions about GameHub.', link: '#', label: 'View FAQ' },
+              ].map(item => (
+                <div key={item.title} className="bg-slate-800 rounded-xl p-5 flex flex-col gap-3">
+                  <span className="text-2xl">{item.icon}</span>
+                  <div>
+                    <h4 className="font-bold mb-1">{item.title}</h4>
+                    <p className="text-slate-400 text-sm">{item.desc}</p>
+                  </div>
+                  <a href={item.link} target="_blank" rel="noopener noreferrer"
+                    className="text-xs font-bold text-blue-400 hover:text-blue-300 transition-colors mt-auto">
+                    {item.label} →
+                  </a>
                 </div>
               ))}
             </div>
