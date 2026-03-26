@@ -817,6 +817,17 @@ const TOURNAMENTS_DATA = [
   { id: 8, joinable: true, name: 'GameHub Mobile Legends Cup', game: 'Mobile Legends: Bang Bang', date: 'April 27, 2026', prize: '฿3,000', status: 'Coming Soon', type: 'Online', description: 'Open MLBB tournament for mobile players across SEA. Form your team and compete for prizes!', maxTeams: 64, registered: 0, region: 'Southeast Asia', requirements: '5-player team • Epic+ rank • Mobile' },
 ];
 
+const AVATAR_COLORS = [
+  { from: '#3b82f6', to: '#8b5cf6' }, // blue-purple
+  { from: '#ef4444', to: '#f97316' }, // red-orange
+  { from: '#10b981', to: '#06b6d4' }, // green-cyan
+  { from: '#f59e0b', to: '#ef4444' }, // yellow-red
+  { from: '#8b5cf6', to: '#ec4899' }, // purple-pink
+  { from: '#06b6d4', to: '#3b82f6' }, // cyan-blue
+  { from: '#84cc16', to: '#10b981' }, // lime-green
+  { from: '#f97316', to: '#f59e0b' }, // orange-yellow
+];
+
 // ─────────────────────────────────────────────
 // MAIN APP
 // ─────────────────────────────────────────────
@@ -2907,17 +2918,6 @@ function RegisterPage({ navigateTo }) {
 // ─────────────────────────────────────────────
 
 const AVATAR_EMOJIS = ['🎮', '🕹️', '👾', '🏆', '⚔️', '🔥', '💀', '🎯', '🛡️', '🚀', '🐉', '⚡', '🎲', '🦊', '🤖', '👑'];
-const AVATAR_COLORS = [
-  { from: '#3b82f6', to: '#8b5cf6' }, // blue-purple
-  { from: '#ef4444', to: '#f97316' }, // red-orange
-  { from: '#10b981', to: '#06b6d4' }, // green-cyan
-  { from: '#f59e0b', to: '#ef4444' }, // yellow-red
-  { from: '#8b5cf6', to: '#ec4899' }, // purple-pink
-  { from: '#06b6d4', to: '#3b82f6' }, // cyan-blue
-  { from: '#84cc16', to: '#10b981' }, // lime-green
-  { from: '#f97316', to: '#f59e0b' }, // orange-yellow
-];
-
 function ProfilePage({ navigateTo }) {
   const { user, isAdmin } = useAuth();
   const [newName, setNewName] = useState('');
@@ -3915,6 +3915,9 @@ function CommunityPage({ navigateTo, tagGame }) {
     const q = query(collection(db, 'community_posts'), orderBy('createdAt', 'desc'));
     const unsub = onSnapshot(q, (snap) => {
       setPosts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setLoading(false);
+    }, (err) => {
+      console.error('Community posts error:', err);
       setLoading(false);
     });
     return () => unsub();
