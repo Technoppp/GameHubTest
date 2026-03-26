@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronRight, ChevronLeft, Trophy, Calendar, Zap, Gamepad2, Newspaper, Info, Target, Swords, Users, Laugh, Crown, Brain, Car, Shield, Globe, HelpCircle } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Trophy, Calendar, Zap, Gamepad2, Newspaper, Info, Target, Swords, Users, Laugh, Crown, Brain, Car, Shield, Globe, HelpCircle, Home, Joystick } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs, onSnapshot, orderBy, query, where, writeBatch, updateDoc, arrayUnion, arrayRemove, deleteDoc, serverTimestamp } from 'firebase/firestore';
@@ -1375,7 +1375,7 @@ export default function GameHub() {
             {/* Desktop Nav */}
             <nav className="hidden md:flex gap-3 items-center flex-1 justify-center flex-wrap">
               {[
-                { name: 'Home', icon: Gamepad2, page: 'home' },
+                { name: 'Home', icon: Home, page: 'home' },
                 { name: 'Games', icon: Gamepad2, page: 'games' },
                 { name: 'Tournaments', icon: Trophy, page: 'tournaments' },
                 { name: 'Leaderboard', icon: Crown, page: 'leaderboard' },
@@ -1386,7 +1386,7 @@ export default function GameHub() {
                 <button
                   key={item.page}
                   onClick={() => navigateTo(item.page)}
-                  className={`flex items-center gap-1.5 text-xs font-semibold transition-all duration-300 hover:text-blue-400 ${currentPage === item.page || (currentPage === 'category' && item.page === 'games') || (currentPage === 'game-detail' && item.page === 'games') ? 'text-blue-400' : 'text-slate-400'}`}
+                  className={`flex items-center gap-1.5 text-sm font-semibold transition-all duration-300 hover:text-blue-400 ${currentPage === item.page || (currentPage === 'category' && item.page === 'games') || (currentPage === 'game-detail' && item.page === 'games') ? 'text-blue-400' : 'text-slate-300'}`}
                 >
                   <item.icon className="w-4 h-4" />
                   {item.name}
@@ -1440,7 +1440,7 @@ export default function GameHub() {
           <div className="lg:hidden bg-slate-950/98 backdrop-blur-lg border-t border-slate-800 px-6 py-4 fade-in-up">
             <div className="flex flex-col gap-1">
               {[
-                { name: 'Home', icon: Gamepad2, page: 'home' },
+                { name: 'Home', icon: Home, page: 'home' },
                 { name: 'Games', icon: Gamepad2, page: 'games' },
                 { name: 'Tournaments', icon: Trophy, page: 'tournaments' },
                 { name: 'Leaderboard', icon: Crown, page: 'leaderboard' },
@@ -1586,6 +1586,7 @@ const FEATURED_GAMES = [GAMES_DATA[0], GAMES_DATA[22], GAMES_DATA[9], GAMES_DATA
 function HomePage({ navigateTo }) {
   const [heroIndex, setHeroIndex] = useState(0);
   const [transitioning, setTransitioning] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const rawgImages = React.useContext(RawgImagesContext);
 
   const switchHero = (idx) => {
@@ -1598,6 +1599,7 @@ function HomePage({ navigateTo }) {
   };
 
   useEffect(() => {
+    if (isPaused) return;
     const timer = setInterval(() => {
       setTransitioning(true);
       setTimeout(() => {
@@ -1606,7 +1608,7 @@ function HomePage({ navigateTo }) {
       }, 300);
     }, 5000);
     return () => clearInterval(timer);
-  }, []);
+  }, [isPaused]);
 
   const hero = FEATURED_GAMES[heroIndex];
   const heroCat = CATEGORIES.find(c => c.id === hero.category);
@@ -1732,8 +1734,19 @@ function HomePage({ navigateTo }) {
           })}
         </div>
 
-        {/* Progress dots */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+        {/* Progress dots + Pause */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-3 z-20">
+          <button
+            onClick={() => setIsPaused(p => !p)}
+            className="w-7 h-7 rounded-full flex items-center justify-center bg-black/40 hover:bg-black/60 border border-white/20 transition-all"
+            title={isPaused ? 'Play' : 'Pause'}
+          >
+            {isPaused ? (
+              <svg width="10" height="12" viewBox="0 0 10 12" fill="white"><polygon points="0,0 10,6 0,12"/></svg>
+            ) : (
+              <svg width="10" height="12" viewBox="0 0 10 12" fill="white"><rect x="0" y="0" width="3.5" height="12"/><rect x="6.5" y="0" width="3.5" height="12"/></svg>
+            )}
+          </button>
           {FEATURED_GAMES.map((_, i) => (
             <button
               key={i}
