@@ -811,21 +811,10 @@ const TOURNAMENTS_DATA = [
   { id: 3, joinable: false, name: 'LoL World Championship 2026', game: 'League of Legends', date: 'October 1-November 2, 2026', prize: '$2,250,000', status: 'Upcoming', type: 'LAN', description: 'The annual LoL Worlds crowns the best team on the planet. 70M+ viewers. Qualification via regional splits only.', watchUrl: 'https://www.twitch.tv/riotgames', teams: 22, region: 'International' },
   { id: 4, joinable: false, name: 'CS2 Major: Copenhagen 2026', game: 'Counter-Strike 2', date: 'April 14-27, 2026', prize: '$1,250,000', status: 'Upcoming', type: 'LAN', description: 'Valve-sponsored CS2 Major. 24 top teams from Regional Major Rankings only. Qualification through RMR events.', watchUrl: 'https://www.twitch.tv/esl_csgo', teams: 24, region: 'International' },
   // JOINABLE (Public)
-  { id: 5, joinable: true, name: 'GameHub Weekly Valorant Cup', game: 'Valorant', date: 'Every Saturday', prize: '$500', status: 'Registration Open', type: 'Online', description: 'Weekly open tournament for all ranks. Register your team of 5 and compete every weekend. No invite required!', maxTeams: 32, registered: 18, region: 'Southeast Asia', requirements: '5-player team • Any rank • PC only', registrationCloseDate: '2026-04-19' },
-  { id: 6, joinable: true, name: 'GameHub ROV Community Cup', game: 'ROV (Arena of Valor)', date: 'April 20, 2026', prize: '฿5,000', status: 'Registration Open', type: 'Online', description: 'Open ROV tournament for Thai players. Solo queue or pre-made team of 5. Join and prove your skills!', maxTeams: 64, registered: 41, region: 'Thailand', requirements: '5-player team • Gold+ rank • Mobile / PC', registrationCloseDate: '2026-04-15' },
-  { id: 7, joinable: true, name: 'GameHub CS2 Open Qualifier', game: 'Counter-Strike 2', date: 'May 3-4, 2026', prize: '$300', status: 'Registration Open', type: 'Online', description: 'Open CS2 5v5 tournament. Any team can register. Top teams advance to monthly finals. FACEIT accounts required.', maxTeams: 128, registered: 67, region: 'Asia-Pacific', requirements: '5-player team • FACEIT Account • PC only', registrationCloseDate: '2026-04-28' },
+  { id: 5, joinable: true, name: 'GameHub Weekly Valorant Cup', game: 'Valorant', date: 'Every Saturday', prize: '$500', status: 'Registration Open', type: 'Online', description: 'Weekly open tournament for all ranks. Register your team of 5 and compete every weekend. No invite required!', maxTeams: 32, registered: 18, region: 'Southeast Asia', requirements: '5-player team • Any rank • PC only' },
+  { id: 6, joinable: true, name: 'GameHub ROV Community Cup', game: 'ROV (Arena of Valor)', date: 'April 20, 2026', prize: '฿5,000', status: 'Registration Open', type: 'Online', description: 'Open ROV tournament for Thai players. Solo queue or pre-made team of 5. Join and prove your skills!', maxTeams: 64, registered: 41, region: 'Thailand', requirements: '5-player team • Gold+ rank • Mobile / PC' },
+  { id: 7, joinable: true, name: 'GameHub CS2 Open Qualifier', game: 'Counter-Strike 2', date: 'May 3-4, 2026', prize: '$300', status: 'Registration Open', type: 'Online', description: 'Open CS2 5v5 tournament. Any team can register. Top teams advance to monthly finals. FACEIT accounts required.', maxTeams: 128, registered: 67, region: 'Asia-Pacific', requirements: '5-player team • FACEIT Account • PC only' },
   { id: 8, joinable: true, name: 'GameHub Mobile Legends Cup', game: 'Mobile Legends: Bang Bang', date: 'April 27, 2026', prize: '฿3,000', status: 'Coming Soon', type: 'Online', description: 'Open MLBB tournament for mobile players across SEA. Form your team and compete for prizes!', maxTeams: 64, registered: 0, region: 'Southeast Asia', requirements: '5-player team • Epic+ rank • Mobile' },
-];
-
-const AVATAR_COLORS = [
-  { from: '#3b82f6', to: '#8b5cf6' }, // blue-purple
-  { from: '#ef4444', to: '#f97316' }, // red-orange
-  { from: '#10b981', to: '#06b6d4' }, // green-cyan
-  { from: '#f59e0b', to: '#ef4444' }, // yellow-red
-  { from: '#8b5cf6', to: '#ec4899' }, // purple-pink
-  { from: '#06b6d4', to: '#3b82f6' }, // cyan-blue
-  { from: '#84cc16', to: '#10b981' }, // lime-green
-  { from: '#f97316', to: '#f59e0b' }, // orange-yellow
 ];
 
 // ─────────────────────────────────────────────
@@ -2918,6 +2907,17 @@ function RegisterPage({ navigateTo }) {
 // ─────────────────────────────────────────────
 
 const AVATAR_EMOJIS = ['🎮', '🕹️', '👾', '🏆', '⚔️', '🔥', '💀', '🎯', '🛡️', '🚀', '🐉', '⚡', '🎲', '🦊', '🤖', '👑'];
+const AVATAR_COLORS = [
+  { from: '#3b82f6', to: '#8b5cf6' }, // blue-purple
+  { from: '#ef4444', to: '#f97316' }, // red-orange
+  { from: '#10b981', to: '#06b6d4' }, // green-cyan
+  { from: '#f59e0b', to: '#ef4444' }, // yellow-red
+  { from: '#8b5cf6', to: '#ec4899' }, // purple-pink
+  { from: '#06b6d4', to: '#3b82f6' }, // cyan-blue
+  { from: '#84cc16', to: '#10b981' }, // lime-green
+  { from: '#f97316', to: '#f59e0b' }, // orange-yellow
+];
+
 function ProfilePage({ navigateTo }) {
   const { user, isAdmin } = useAuth();
   const [newName, setNewName] = useState('');
@@ -3356,33 +3356,27 @@ function TournamentsPage({ navigateTo }) {
   const [tab, setTab] = useState('join');
   const [registerModal, setRegisterModal] = useState(null);
   const [myRegistrations, setMyRegistrations] = useState({});
+  const [firestoreTournaments, setFirestoreTournaments] = useState([]);
+  const [tLoading, setTLoading] = useState(true);
   const { user } = useAuth();
 
-  // H5-1: Requirements checklist popup
-  const [requirementsPopup, setRequirementsPopup] = useState(null);
-  // H3-1: Confirm-cancel dialog
-  const [confirmCancel, setConfirmCancel] = useState(false);
-  // H6-1: Multi-step form (1 = Team Info, 2 = Players)
-  const [formStep, setFormStep] = useState(1);
+  // Load tournaments from Firestore
+  useEffect(() => {
+    const q = query(collection(db, 'tournaments'), orderBy('createdAt', 'desc'));
+    const unsub = onSnapshot(q, snap => {
+      setFirestoreTournaments(snap.docs.map(d => ({ firestoreId: d.id, ...d.data() })));
+      setTLoading(false);
+    }, () => setTLoading(false));
+    return () => unsub();
+  }, []);
 
+  // Use Firestore tournaments if available, otherwise fallback to hardcode
+  const allTournaments = firestoreTournaments.length > 0 ? firestoreTournaments : TOURNAMENTS_DATA;
+
+  // Number of players per game
   const teamSize = (game) => {
     if (['ROV (Arena of Valor)', 'Mobile Legends: Bang Bang', 'Valorant', 'Counter-Strike 2'].includes(game)) return 5;
     return 5;
-  };
-
-  // H1-2: Countdown label for registration close date
-  const getCountdownLabel = (closeDate) => {
-    if (!closeDate) return null;
-    const now = new Date();
-    const close = new Date(closeDate);
-    const diffMs = close - now;
-    if (diffMs <= 0) return 'Registration closed';
-    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-    if (diffDays === 1) return '⚠️ Closes tomorrow!';
-    if (diffDays <= 3) return `⚠️ Closes in ${diffDays} days`;
-    const month = close.toLocaleString('en-US', { month: 'short' });
-    const day = close.getDate();
-    return `⏰ Closes in ${diffDays} days (${month} ${day})`;
   };
 
   const [form, setForm] = useState({ teamName: '', phone: '', email: '', players: [] });
@@ -3390,22 +3384,7 @@ function TournamentsPage({ navigateTo }) {
   const [submitting, setSubmitting] = useState(false);
   const [submitDone, setSubmitDone] = useState(false);
 
-  // H8-1: Dirty check
-  const isFormDirty = () =>
-    form.teamName.trim() !== '' ||
-    form.phone.trim() !== '' ||
-    form.players.some(p => p.realName.trim() !== '' || p.ign.trim() !== '');
-
-  // H8-1: Draft key per tournament
-  const draftKey = (tid) => `gamehub_draft_reg_${tid}`;
-
-  // H8-1: Auto-save draft on every form change
-  useEffect(() => {
-    if (!registerModal || submitDone) return;
-    try { sessionStorage.setItem(draftKey(registerModal.id), JSON.stringify(form)); } catch (_) {}
-  }, [form, registerModal, submitDone]);
-
-  // Load user's existing registrations
+  // Load user's existing registrations (all including rejected for count)
   useEffect(() => {
     if (!user) return;
     const q = query(collection(db, 'tournament_registrations'), where('userId', '==', user.uid));
@@ -3415,37 +3394,28 @@ function TournamentsPage({ navigateTo }) {
       snap.docs.forEach(d => {
         const data = { id: d.id, ...d.data() };
         const tid = data.tournamentId;
+        // Count rejects per tournament
         if (!rejectCounts[tid]) rejectCounts[tid] = 0;
         if (data.status === 'rejected') rejectCounts[tid]++;
+        // Keep latest non-rejected, or latest rejected if no active
         if (!map[tid] || data.status !== 'rejected') map[tid] = data;
       });
+      // Attach rejectCount to each registration
       Object.keys(map).forEach(tid => { map[tid].rejectCount = rejectCounts[tid] || 0; });
       setMyRegistrations(map);
     });
     return () => unsub();
   }, [user]);
 
-  // H5-1: Show requirements popup first
   const handleRegister = (tournament) => {
     if (!user) { navigateTo('login'); return; }
-    setRequirementsPopup(tournament);
-  };
-
-  // H5-1: User confirmed requirements → open form with H8-1 draft restore
-  const handleConfirmRequirements = (tournament) => {
-    setRequirementsPopup(null);
     const size = teamSize(tournament.game);
-    const emptyForm = {
+    setForm({
       teamName: '', phone: '', email: user.email || '',
       players: Array.from({ length: size }, () => ({ realName: '', ign: '' }))
-    };
-    try {
-      const saved = sessionStorage.getItem(draftKey(tournament.id));
-      setForm(saved ? JSON.parse(saved) : emptyForm);
-    } catch (_) { setForm(emptyForm); }
+    });
     setEditRegId(null);
     setSubmitDone(false);
-    setFormStep(1);
     setRegisterModal(tournament);
   };
 
@@ -3458,25 +3428,7 @@ function TournamentsPage({ navigateTo }) {
     });
     setEditRegId(reg.id);
     setSubmitDone(false);
-    setFormStep(1);
     setRegisterModal(tournament);
-  };
-
-  // H3-1: Close with dirty-check warning
-  const handleCloseModal = () => {
-    if (!submitting && isFormDirty() && !submitDone) {
-      setConfirmCancel(true);
-    } else {
-      doCloseModal();
-    }
-  };
-
-  const doCloseModal = () => {
-    setConfirmCancel(false);
-    if (registerModal) {
-      try { sessionStorage.removeItem(draftKey(registerModal.id)); } catch (_) {}
-    }
-    setRegisterModal(null);
   };
 
   const handleSubmit = async () => {
@@ -3485,6 +3437,7 @@ function TournamentsPage({ navigateTo }) {
     setSubmitting(true);
     try {
       if (editRegId && !form._isResubmit) {
+        // Edit existing pending registration
         await updateDoc(doc(db, 'tournament_registrations', editRegId), {
           teamName: form.teamName.trim(),
           phone: form.phone.trim(),
@@ -3493,8 +3446,9 @@ function TournamentsPage({ navigateTo }) {
           updatedAt: serverTimestamp(),
         });
       } else {
+        // New registration or resubmit after rejection
         await addDoc(collection(db, 'tournament_registrations'), {
-          tournamentId: registerModal.id,
+          tournamentId: registerModal.firestoreId || registerModal.id,
           tournamentName: registerModal.name,
           userId: user.uid,
           userEmail: user.email,
@@ -3506,19 +3460,17 @@ function TournamentsPage({ navigateTo }) {
           createdAt: serverTimestamp(),
         });
       }
-      try { sessionStorage.removeItem(draftKey(registerModal.id)); } catch (_) {}
       setSubmitDone(true);
       setEditRegId(null);
     } catch (e) { console.error(e); }
     setSubmitting(false);
   };
 
-  const watchable = TOURNAMENTS_DATA.filter(t => !t.joinable);
-  const joinable  = TOURNAMENTS_DATA.filter(t => t.joinable);
+  const watchable = allTournaments.filter(t => !t.joinable);
+  const joinable  = allTournaments.filter(t => t.joinable);
 
   const statusColor = (s) => {
-    // H1-1: "Registration Open" ใช้ข้อความขาวบน bg เขียวเข้ม → contrast ผ่าน WCAG AA 4.5:1
-    if (s === 'Registration Open') return 'bg-green-700 text-white';
+    if (s === 'Registration Open') return 'bg-green-700 text-green-100';
     if (s === 'Live Now')          return 'bg-red-500/20 text-red-400';
     if (s === 'Coming Soon')       return 'bg-slate-500/20 text-slate-400';
     return 'bg-blue-500/20 text-blue-400';
@@ -3552,9 +3504,7 @@ function TournamentsPage({ navigateTo }) {
           {joinable.map((t, i) => {
             const pct = Math.round((t.registered / t.maxTeams) * 100);
             const full = t.registered >= t.maxTeams;
-            const myReg = myRegistrations[t.id];
-            // H1-2: Countdown label
-            const countdownLabel = t.registrationCloseDate ? getCountdownLabel(t.registrationCloseDate) : null;
+            const myReg = myRegistrations[t.firestoreId || t.id];
             return (
               <div key={t.id} className="bg-slate-900 border-2 border-slate-800 rounded-2xl overflow-hidden hover:border-yellow-500/40 transition-all fade-in-up" style={{ animationDelay: `${i*0.08}s` }}>
                 <div className="p-6 lg:p-8">
@@ -3567,37 +3517,23 @@ function TournamentsPage({ navigateTo }) {
                       </div>
                       <h3 className="text-xl font-black mb-2">{t.name}</h3>
                       <p className="text-slate-400 text-sm mb-4">{t.description}</p>
-                      <div className="flex flex-wrap gap-4 text-sm mb-2">
+                      <div className="flex flex-wrap gap-4 text-sm mb-4">
                         <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4 text-blue-400"/>{t.date}</span>
                         <span className="flex items-center gap-1.5"><Globe className="w-4 h-4 text-purple-400"/>{t.type}</span>
                         <span className="flex items-center gap-1.5 text-slate-400">🌏 {t.region}</span>
                       </div>
-                      {/* H1-2: Registration countdown */}
-                      {countdownLabel && t.status === 'Registration Open' && (
-                        <p className={`text-xs font-bold mb-3 ${countdownLabel.includes('⚠️') ? 'text-orange-400' : 'text-slate-400'}`}>
-                          {countdownLabel}
-                        </p>
-                      )}
                       <div className="bg-slate-800/60 rounded-lg px-4 py-2.5 text-xs text-slate-300 mb-4 inline-block">
                         📋 {t.requirements}
                       </div>
-                      {/* My registration status — H4-2: show rejection reason if available */}
+                      {/* My registration status */}
                       {myReg && (
-                        <div className="mb-3">
-                          <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold ${
-                            myReg.status === 'approved' ? 'bg-green-500/15 text-green-400 border border-green-500/30' :
-                            myReg.status === 'rejected' ? 'bg-red-500/15 text-red-400 border border-red-500/30' :
-                            'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30'
-                          }`}>
-                            {myReg.status === 'approved' ? '✅ Registered' : myReg.status === 'rejected' ? `❌ Rejected (${myReg.rejectCount}/3)` : '⏳ Pending approval'}
-                            {myReg.status === 'pending' && <span className="font-normal">— Team: {myReg.teamName}</span>}
-                          </div>
-                          {/* H4-2: Rejection reason from admin */}
-                          {myReg.status === 'rejected' && myReg.rejectionReason && (
-                            <p className="mt-1.5 text-xs text-slate-400 pl-1">
-                              📝 Reason: <span className="text-slate-300">{myReg.rejectionReason}</span>
-                            </p>
-                          )}
+                        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold mb-3 ${
+                          myReg.status === 'approved' ? 'bg-green-500/15 text-green-400 border border-green-500/30' :
+                          myReg.status === 'rejected' ? 'bg-red-500/15 text-red-400 border border-red-500/30' :
+                          'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30'
+                        }`}>
+                          {myReg.status === 'approved' ? '✅ Registered' : myReg.status === 'rejected' ? `❌ Rejected (${myReg.rejectCount}/3)` : '⏳ Pending approval'}
+                          {myReg.status === 'pending' && <span className="font-normal">— Team: {myReg.teamName}</span>}
                         </div>
                       )}
                       {/* Slots bar */}
@@ -3641,7 +3577,6 @@ function TournamentsPage({ navigateTo }) {
                                 });
                                 setEditRegId(null);
                                 setSubmitDone(false);
-                                setFormStep(1);
                                 setRegisterModal(t);
                               }}
                                 className="w-full lg:w-auto bg-yellow-500 hover:bg-yellow-400 text-black font-black px-5 py-2.5 rounded-xl text-sm transition-all">
@@ -3654,7 +3589,6 @@ function TournamentsPage({ navigateTo }) {
                           )}
                         </div>
                       ) : t.status === 'Registration Open' && !full ? (
-                        /* H5-1: Join Now now opens requirements popup first */
                         <button onClick={() => handleRegister(t)}
                           className="w-full lg:w-auto bg-yellow-500 hover:bg-yellow-400 text-black font-black px-6 py-3 rounded-xl transition-all hover:scale-105 text-sm">
                           ✍️ Join Now
@@ -3719,59 +3653,9 @@ function TournamentsPage({ navigateTo }) {
         </div>
       )}
 
-      {/* H5-1: Requirements Checklist Popup */}
-      {requirementsPopup && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setRequirementsPopup(null)}>
-          <div className="bg-slate-900 border border-yellow-500/40 rounded-2xl w-full max-w-sm p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-black mb-1">Before You Register</h3>
-            <p className="text-yellow-400 font-bold text-sm mb-4">{requirementsPopup.name}</p>
-            <p className="text-slate-400 text-sm mb-4">Please confirm you meet all requirements:</p>
-            <div className="bg-slate-800 rounded-xl p-4 mb-5 space-y-2">
-              {requirementsPopup.requirements.split('•').filter(Boolean).map((req, i) => (
-                <div key={i} className="flex items-center gap-2 text-sm text-slate-300">
-                  <span className="text-green-400 text-base">✓</span>
-                  <span>{req.trim()}</span>
-                </div>
-              ))}
-            </div>
-            <p className="text-xs text-slate-500 mb-4">By clicking Confirm, you acknowledge that you meet the above requirements. Registrations that don't meet requirements may be rejected.</p>
-            <div className="flex gap-3">
-              <button onClick={() => setRequirementsPopup(null)}
-                className="flex-1 py-2.5 rounded-xl bg-slate-800 text-slate-400 font-bold hover:bg-slate-700 transition-colors text-sm">
-                Cancel
-              </button>
-              <button onClick={() => handleConfirmRequirements(requirementsPopup)}
-                className="flex-1 py-2.5 rounded-xl bg-yellow-500 hover:bg-yellow-400 text-black font-black transition-all text-sm">
-                ✅ I Qualify — Continue
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* H3-1: Confirm Cancel Dialog */}
-      {confirmCancel && (
-        <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4">
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-80 shadow-2xl">
-            <p className="text-base font-black text-white mb-2">Leave without saving?</p>
-            <p className="text-sm text-slate-400 mb-5">ข้อมูลที่กรอกไว้จะหายไปทั้งหมด</p>
-            <div className="flex gap-3">
-              <button onClick={() => setConfirmCancel(false)}
-                className="flex-1 py-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-bold text-sm transition-colors">
-                ← Stay
-              </button>
-              <button onClick={doCloseModal}
-                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-sm transition-colors">
-                Leave
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Registration Modal — H6-1: 2-step form */}
+      {/* Registration Modal */}
       {registerModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4" onClick={() => !submitting && handleCloseModal()}>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4" onClick={() => !submitting && setRegisterModal(null)}>
           <div className="bg-slate-900 border border-yellow-500/40 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg flex flex-col" style={{ maxHeight: '92dvh' }} onClick={e => e.stopPropagation()}>
             {submitDone ? (
               /* Success state */
@@ -3789,96 +3673,63 @@ function TournamentsPage({ navigateTo }) {
                 </button>
               </div>
             ) : (
+              /* Form */
               <>
-                {/* Header */}
+                {/* Header - fixed */}
                 <div className="p-5 pb-3 flex-shrink-0">
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between mb-1">
                     <h3 className="text-lg font-black">{editRegId ? 'Edit Registration' : 'Team Registration'}</h3>
-                    <button onClick={handleCloseModal} className="text-slate-500 hover:text-white text-xl leading-none">✕</button>
+                    <button onClick={() => setRegisterModal(null)} className="text-slate-500 hover:text-white text-xl leading-none">✕</button>
                   </div>
-                  <p className="text-yellow-400 font-bold text-sm mb-3">{registerModal.name}</p>
-                  {/* H6-1: Step indicator */}
-                  <div className="flex items-center gap-2">
-                    <div className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full transition-all ${formStep === 1 ? 'bg-yellow-500 text-black' : 'bg-green-600 text-white'}`}>
-                      {formStep > 1 ? '✓' : '1'} Team Info
-                    </div>
-                    <div className="flex-1 h-0.5 bg-slate-700 rounded">
-                      <div className={`h-full rounded transition-all duration-300 ${formStep === 2 ? 'bg-yellow-500 w-full' : 'w-0'}`}/>
-                    </div>
-                    <div className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full transition-all ${formStep === 2 ? 'bg-yellow-500 text-black' : 'bg-slate-700 text-slate-400'}`}>
-                      2 Players
-                    </div>
-                    <span className="text-xs text-slate-500 ml-1">Step {formStep} of 2</span>
-                  </div>
+                  <p className="text-yellow-400 font-bold text-sm">{registerModal.name}</p>
                 </div>
 
                 {/* Scrollable form area */}
                 <div className="overflow-y-auto flex-1 px-5 pb-3">
-                  {/* Step 1: Team Info */}
-                  {formStep === 1 && (
-                    <div className="space-y-3 pt-2">
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Team Info</p>
-                      <input value={form.teamName} onChange={e => setForm(p => ({ ...p, teamName: e.target.value }))}
-                        placeholder="Team name *" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
-                      <input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
-                        placeholder="Contact phone number *" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
-                      <input value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
-                        placeholder="Contact email *" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
-                    </div>
-                  )}
-                  {/* Step 2: Players */}
-                  {formStep === 2 && (
-                    <div className="space-y-3 pt-2">
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Players ({form.players.length} players)</p>
-                      {form.players.map((p, i) => (
-                        <div key={i} className="bg-slate-800/60 rounded-xl p-3 space-y-2">
-                          <p className="text-xs text-slate-500 font-bold">Player {i + 1}{i === 0 ? ' (Captain)' : ''}</p>
-                          <div className="flex gap-2">
-                            <input value={p.realName} onChange={e => {
-                              const updated = [...form.players];
-                              updated[i] = { ...updated[i], realName: e.target.value };
-                              setForm(prev => ({ ...prev, players: updated }));
-                            }} placeholder="Real name *" className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
-                            <input value={p.ign} onChange={e => {
-                              const updated = [...form.players];
-                              updated[i] = { ...updated[i], ign: e.target.value };
-                              setForm(prev => ({ ...prev, players: updated }));
-                            }} placeholder="In-game name *" className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
-                          </div>
+                  {/* Team info */}
+                  <div className="space-y-3 mb-5">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Team Info</p>
+                    <input value={form.teamName} onChange={e => setForm(p => ({ ...p, teamName: e.target.value }))}
+                      placeholder="Team name *" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
+                    <input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
+                      placeholder="Contact phone number *" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
+                    <input value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
+                      placeholder="Contact email *" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
+                  </div>
+
+                  {/* Players */}
+                  <div className="space-y-3">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Players ({form.players.length} players)</p>
+                    {form.players.map((p, i) => (
+                      <div key={i} className="bg-slate-800/60 rounded-xl p-3 space-y-2">
+                        <p className="text-xs text-slate-500 font-bold">Player {i + 1}{i === 0 ? ' (Captain)' : ''}</p>
+                        <div className="flex gap-2">
+                          <input value={p.realName} onChange={e => {
+                            const updated = [...form.players];
+                            updated[i] = { ...updated[i], realName: e.target.value };
+                            setForm(prev => ({ ...prev, players: updated }));
+                          }} placeholder="Real name *" className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
+                          <input value={p.ign} onChange={e => {
+                            const updated = [...form.players];
+                            updated[i] = { ...updated[i], ign: e.target.value };
+                            setForm(prev => ({ ...prev, players: updated }));
+                          }} placeholder="In-game name *" className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
                         </div>
-                      ))}
-                    </div>
-                  )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
-                {/* Buttons */}
+                {/* Buttons - fixed at bottom */}
                 <div className="p-5 pt-3 border-t border-slate-800 flex gap-3 flex-shrink-0">
-                  {formStep === 1 ? (
-                    <>
-                      <button onClick={handleCloseModal}
-                        className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-400 font-bold hover:bg-slate-700 transition-colors text-sm">
-                        Cancel
-                      </button>
-                      <button
-                        onClick={() => setFormStep(2)}
-                        disabled={!form.teamName.trim() || !form.phone.trim() || !form.email.trim()}
-                        className="flex-1 py-3 rounded-xl bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-black transition-all text-sm">
-                        Next: Players →
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button onClick={() => setFormStep(1)}
-                        className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-400 font-bold hover:bg-slate-700 transition-colors text-sm">
-                        ← Back
-                      </button>
-                      <button onClick={handleSubmit}
-                        disabled={submitting || form.players.some(p => !p.realName.trim() || !p.ign.trim())}
-                        className="flex-1 py-3 rounded-xl bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-black transition-all text-sm">
-                        {submitting ? 'Submitting...' : '✍️ Submit'}
-                      </button>
-                    </>
-                  )}
+                  <button onClick={() => setRegisterModal(null)}
+                    className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-400 font-bold hover:bg-slate-700 transition-colors text-sm">
+                    Cancel
+                  </button>
+                  <button onClick={handleSubmit} disabled={submitting || !form.teamName.trim() || !form.phone.trim() || form.players.some(p => !p.realName.trim() || !p.ign.trim())}
+                    className="flex-1 py-3 rounded-xl bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-black transition-all text-sm">
+                    {submitting ? 'Submitting...' : '✍️ Submit'}
+                  </button>
                 </div>
               </>
             )}
@@ -3915,9 +3766,6 @@ function CommunityPage({ navigateTo, tagGame }) {
     const q = query(collection(db, 'community_posts'), orderBy('createdAt', 'desc'));
     const unsub = onSnapshot(q, (snap) => {
       setPosts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-      setLoading(false);
-    }, (err) => {
-      console.error('Community posts error:', err);
       setLoading(false);
     });
     return () => unsub();
@@ -4631,33 +4479,6 @@ function PostCard({ post, user, isAdmin, openComments, commentText, setCommentTe
           )}
         </div>
       )}
-
-      {/* H4-2: Reject Reason Dialog */}
-      {rejectDialog && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-96 shadow-2xl">
-            <p className="text-base font-black text-white mb-1">Reject Registration</p>
-            <p className="text-xs text-slate-400 mb-4">กรอกเหตุผลที่ reject เพื่อให้ผู้สมัครทราบ (ไม่บังคับ)</p>
-            <textarea
-              value={rejectDialog.reason}
-              onChange={e => setRejectDialog(p => ({ ...p, reason: e.target.value }))}
-              placeholder="e.g. Team roster incomplete, doesn't meet rank requirement..."
-              rows={3}
-              className="w-full bg-slate-700 border border-slate-600 rounded-xl px-3 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-red-500 transition-colors resize-none mb-4"
-            />
-            <div className="flex gap-3">
-              <button onClick={() => setRejectDialog(null)}
-                className="flex-1 bg-slate-700 hover:bg-slate-600 text-white text-sm font-bold py-2.5 rounded-xl transition-colors">
-                Cancel
-              </button>
-              <button onClick={() => handleAction(rejectDialog.regId, 'rejected', rejectDialog.reason)}
-                className="flex-1 bg-red-600 hover:bg-red-500 text-white text-sm font-bold py-2.5 rounded-xl transition-colors">
-                ❌ Confirm Reject
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -4672,44 +4493,97 @@ function PostCard({ post, user, isAdmin, openComments, commentText, setCommentTe
 
 function AdminPage({ navigateTo }) {
   const { user, isAdmin } = useAuth();
+  const [activeTab, setActiveTab] = useState('registrations');
+
+  // Registrations state
   const [registrations, setRegistrations] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [regLoading, setRegLoading] = useState(true);
   const [filter, setFilter] = useState('pending');
+
+  // Tournament management state
+  const [tournaments, setTournaments] = useState([]);
+  const [tLoading, setTLoading] = useState(true);
+  const [showTForm, setShowTForm] = useState(false);
+  const [tForm, setTForm] = useState({
+    name: '', game: '', date: '', prize: '', type: 'Online',
+    region: 'Southeast Asia', description: '', requirements: '',
+    maxTeams: 32, joinable: true, status: 'Registration Open', watchUrl: '',
+  });
+  const [tSaving, setTSaving] = useState(false);
+  const [editTId, setEditTId] = useState(null);
 
   useEffect(() => {
     if (!isAdmin) return;
     const q = query(collection(db, 'tournament_registrations'), orderBy('createdAt', 'desc'));
-    const unsub = onSnapshot(q, (snap) => {
+    const unsub = onSnapshot(q, snap => {
       setRegistrations(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-      setLoading(false);
+      setRegLoading(false);
     });
     return () => unsub();
   }, [isAdmin]);
 
-  // H4-2: Rejection reason state
-  const [rejectDialog, setRejectDialog] = useState(null); // { regId, reason }
+  useEffect(() => {
+    if (!isAdmin) return;
+    const q = query(collection(db, 'tournaments'), orderBy('createdAt', 'desc'));
+    const unsub = onSnapshot(q, snap => {
+      setTournaments(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setTLoading(false);
+    });
+    return () => unsub();
+  }, [isAdmin]);
 
-  const handleAction = async (regId, action, reason = '') => {
-    const update = { status: action };
-    if (action === 'rejected' && reason.trim()) update.rejectionReason = reason.trim();
-    await updateDoc(doc(db, 'tournament_registrations', regId), update);
-    setRejectDialog(null);
+  const handleAction = async (regId, action) => {
+    await updateDoc(doc(db, 'tournament_registrations', regId), { status: action });
   };
 
-  const openRejectDialog = (regId) => setRejectDialog({ regId, reason: '' });
+  const resetTForm = () => {
+    setTForm({ name: '', game: '', date: '', prize: '', type: 'Online', region: 'Southeast Asia', description: '', requirements: '', maxTeams: 32, joinable: true, status: 'Registration Open', watchUrl: '' });
+    setEditTId(null);
+    setShowTForm(false);
+  };
 
-  if (!user) return (
-    <div className="container mx-auto px-6 py-20 text-center">
-      <p className="text-slate-400">Please sign in to access admin panel.</p>
-    </div>
-  );
+  const handleSaveTournament = async () => {
+    if (!tForm.name.trim() || !tForm.game.trim() || !tForm.date.trim()) return;
+    setTSaving(true);
+    try {
+      const data = {
+        ...tForm,
+        maxTeams: Number(tForm.maxTeams),
+        registered: editTId ? undefined : 0,
+        createdAt: editTId ? undefined : serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      };
+      if (!editTId) { data.registered = 0; }
+      // remove undefined
+      Object.keys(data).forEach(k => data[k] === undefined && delete data[k]);
+      if (editTId) {
+        await updateDoc(doc(db, 'tournaments', editTId), data);
+      } else {
+        await addDoc(collection(db, 'tournaments'), data);
+      }
+      resetTForm();
+    } catch (e) { console.error(e); }
+    setTSaving(false);
+  };
 
-  if (!isAdmin) return (
-    <div className="container mx-auto px-6 py-20 text-center">
-      <p className="text-4xl mb-4">🚫</p>
-      <p className="text-slate-400">You don't have permission to access this page.</p>
-    </div>
-  );
+  const handleEditTournament = (t) => {
+    setTForm({
+      name: t.name, game: t.game, date: t.date, prize: t.prize,
+      type: t.type, region: t.region, description: t.description,
+      requirements: t.requirements || '', maxTeams: t.maxTeams,
+      joinable: t.joinable, status: t.status, watchUrl: t.watchUrl || '',
+    });
+    setEditTId(t.id);
+    setShowTForm(true);
+  };
+
+  const handleDeleteTournament = async (id) => {
+    if (!window.confirm('Delete this tournament?')) return;
+    await deleteDoc(doc(db, 'tournaments', id));
+  };
+
+  if (!user) return <div className="container mx-auto px-6 py-20 text-center"><p className="text-slate-400">Please sign in.</p></div>;
+  if (!isAdmin) return <div className="container mx-auto px-6 py-20 text-center"><p className="text-4xl mb-4">🚫</p><p className="text-slate-400">No permission.</p></div>;
 
   const filtered = registrations.filter(r => filter === 'all' || r.status === filter);
 
@@ -4719,88 +4593,205 @@ function AdminPage({ navigateTo }) {
         <h2 className="text-3xl font-black mb-1" style={{ fontFamily: "'Orbitron', sans-serif" }}>
           <span className="text-yellow-400">ADMIN</span> PANEL
         </h2>
-        <p className="text-slate-400 text-sm">Tournament registration management</p>
       </div>
 
-      {/* Filter tabs */}
-      <div className="flex gap-2 mb-6 bg-slate-900 p-1 rounded-xl w-fit">
-        {[
-          { key: 'pending', label: '⏳ Pending' },
-          { key: 'approved', label: '✅ Approved' },
-          { key: 'rejected', label: '❌ Rejected' },
-          { key: 'all', label: 'All' },
-        ].map(f => (
-          <button key={f.key} onClick={() => setFilter(f.key)}
-            className={`px-4 py-2 rounded-lg font-bold text-xs transition-all ${filter === f.key ? 'bg-yellow-500 text-black' : 'text-slate-400 hover:text-white'}`}>
-            {f.label}
-            <span className="ml-1.5 opacity-60">({registrations.filter(r => f.key === 'all' || r.status === f.key).length})</span>
-          </button>
-        ))}
+      {/* Admin tabs */}
+      <div className="flex gap-2 mb-8 bg-slate-900 p-1 rounded-xl w-fit">
+        <button onClick={() => setActiveTab('registrations')}
+          className={`px-5 py-2.5 rounded-lg font-bold text-sm transition-all ${activeTab === 'registrations' ? 'bg-yellow-500 text-black' : 'text-slate-400 hover:text-white'}`}>
+          📋 Registrations
+        </button>
+        <button onClick={() => setActiveTab('tournaments')}
+          className={`px-5 py-2.5 rounded-lg font-bold text-sm transition-all ${activeTab === 'tournaments' ? 'bg-yellow-500 text-black' : 'text-slate-400 hover:text-white'}`}>
+          🏆 Tournaments
+        </button>
       </div>
 
-      {loading ? (
-        <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="skeleton h-32 rounded-xl"/>)}</div>
-      ) : filtered.length === 0 ? (
-        <div className="text-center py-16 text-slate-500">
-          <p className="text-3xl mb-3">📋</p>
-          <p>No {filter} registrations</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {filtered.map(reg => (
-            <div key={reg.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-              <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex flex-wrap items-center gap-2 mb-2">
-                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-                      reg.status === 'approved' ? 'bg-green-500/20 text-green-400' :
-                      reg.status === 'rejected' ? 'bg-red-500/20 text-red-400' :
-                      'bg-yellow-500/20 text-yellow-400'
-                    }`}>
-                      {reg.status === 'approved' ? '✅ Approved' : reg.status === 'rejected' ? '❌ Rejected' : '⏳ Pending'}
-                    </span>
-                    <span className="text-xs text-slate-500">{reg.tournamentName}</span>
-                  </div>
-                  <p className="font-black text-lg mb-1">🏆 {reg.teamName}</p>
-                  <div className="flex flex-wrap gap-3 text-xs text-slate-400 mb-3">
-                    <span>📧 {reg.contactEmail}</span>
-                    <span>📞 {reg.phone}</span>
-                    <span>👤 {reg.userEmail}</span>
-                  </div>
-                  {/* Players list */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {(reg.players || []).map((p, i) => (
-                      <div key={i} className="bg-slate-800 rounded-lg px-3 py-2 text-xs">
-                        <p className="text-slate-500 mb-0.5">Player {i+1}{i===0?' (Captain)':''}</p>
-                        <p className="font-bold text-white">{p.realName}</p>
-                        <p className="text-purple-400">{p.ign}</p>
+      {/* ── REGISTRATIONS TAB ── */}
+      {activeTab === 'registrations' && (
+        <>
+          <div className="flex gap-2 mb-6 bg-slate-900 p-1 rounded-xl w-fit">
+            {[{ key: 'pending', label: '⏳ Pending' }, { key: 'approved', label: '✅ Approved' }, { key: 'rejected', label: '❌ Rejected' }, { key: 'all', label: 'All' }].map(f => (
+              <button key={f.key} onClick={() => setFilter(f.key)}
+                className={`px-4 py-2 rounded-lg font-bold text-xs transition-all ${filter === f.key ? 'bg-yellow-500 text-black' : 'text-slate-400 hover:text-white'}`}>
+                {f.label} <span className="ml-1 opacity-60">({registrations.filter(r => f.key === 'all' || r.status === f.key).length})</span>
+              </button>
+            ))}
+          </div>
+          {regLoading ? (
+            <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="skeleton h-32 rounded-xl"/>)}</div>
+          ) : filtered.length === 0 ? (
+            <div className="text-center py-16 text-slate-500"><p className="text-3xl mb-3">📋</p><p>No {filter} registrations</p></div>
+          ) : (
+            <div className="space-y-4">
+              {filtered.map(reg => (
+                <div key={reg.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+                  <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${reg.status === 'approved' ? 'bg-green-500/20 text-green-400' : reg.status === 'rejected' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                          {reg.status === 'approved' ? '✅ Approved' : reg.status === 'rejected' ? '❌ Rejected' : '⏳ Pending'}
+                        </span>
+                        <span className="text-xs text-slate-500">{reg.tournamentName}</span>
                       </div>
-                    ))}
+                      <p className="font-black text-lg mb-1">🏆 {reg.teamName}</p>
+                      <div className="flex flex-wrap gap-3 text-xs text-slate-400 mb-3">
+                        <span>📧 {reg.contactEmail}</span>
+                        <span>📞 {reg.phone}</span>
+                        <span>👤 {reg.userEmail}</span>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {(reg.players || []).map((p, i) => (
+                          <div key={i} className="bg-slate-800 rounded-lg px-3 py-2 text-xs">
+                            <p className="text-slate-500 mb-0.5">Player {i+1}{i===0?' (Captain)':''}</p>
+                            <p className="font-bold text-white">{p.realName}</p>
+                            <p className="text-purple-400">{p.ign}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    {reg.status === 'pending' && (
+                      <div className="flex gap-2 flex-shrink-0">
+                        <button onClick={() => handleAction(reg.id, 'rejected')} className="px-4 py-2 rounded-xl bg-red-600/20 hover:bg-red-600/40 text-red-400 font-bold text-sm transition-colors border border-red-600/30">❌ Reject</button>
+                        <button onClick={() => handleAction(reg.id, 'approved')} className="px-4 py-2 rounded-xl bg-green-600/20 hover:bg-green-600/40 text-green-400 font-bold text-sm transition-colors border border-green-600/30">✅ Approve</button>
+                      </div>
+                    )}
+                    {reg.status === 'approved' && (
+                      <button onClick={() => handleAction(reg.id, 'rejected')} className="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-400 font-bold text-xs transition-colors flex-shrink-0">Revoke</button>
+                    )}
                   </div>
                 </div>
-                {reg.status === 'pending' && (
-                  <div className="flex gap-2 flex-shrink-0">
-                    {/* H4-2: Open reject dialog to enter reason */}
-                    <button onClick={() => openRejectDialog(reg.id)}
-                      className="px-4 py-2 rounded-xl bg-red-600/20 hover:bg-red-600/40 text-red-400 font-bold text-sm transition-colors border border-red-600/30">
-                      ❌ Reject
-                    </button>
-                    <button onClick={() => handleAction(reg.id, 'approved')}
-                      className="px-4 py-2 rounded-xl bg-green-600/20 hover:bg-green-600/40 text-green-400 font-bold text-sm transition-colors border border-green-600/30">
-                      ✅ Approve
-                    </button>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ── TOURNAMENTS TAB ── */}
+      {activeTab === 'tournaments' && (
+        <>
+          <div className="flex items-center justify-between mb-6">
+            <p className="text-slate-400 text-sm">{tournaments.length} tournament{tournaments.length !== 1 ? 's' : ''}</p>
+            <button onClick={() => { resetTForm(); setShowTForm(true); }}
+              className="bg-yellow-500 hover:bg-yellow-400 text-black font-black px-5 py-2.5 rounded-xl text-sm transition-all">
+              + Create Tournament
+            </button>
+          </div>
+
+          {/* Create/Edit Form */}
+          {showTForm && (
+            <div className="bg-slate-900 border border-yellow-500/40 rounded-2xl p-6 mb-6">
+              <h3 className="font-black text-lg mb-4">{editTId ? '✏️ Edit Tournament' : '+ New Tournament'}</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                {[
+                  { key: 'name', label: 'Tournament Name *', placeholder: 'e.g. GameHub Valorant Cup' },
+                  { key: 'game', label: 'Game *', placeholder: 'e.g. Valorant' },
+                  { key: 'date', label: 'Date *', placeholder: 'e.g. April 20, 2026' },
+                  { key: 'prize', label: 'Prize Pool', placeholder: 'e.g. $500 or ฿5,000' },
+                  { key: 'region', label: 'Region', placeholder: 'e.g. Southeast Asia' },
+                  { key: 'requirements', label: 'Requirements', placeholder: 'e.g. 5-player team • PC only' },
+                ].map(f => (
+                  <div key={f.key}>
+                    <p className="text-xs text-slate-400 mb-1">{f.label}</p>
+                    <input value={tForm[f.key]} onChange={e => setTForm(p => ({ ...p, [f.key]: e.target.value }))}
+                      placeholder={f.placeholder}
+                      className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-yellow-500 transition-colors"/>
+                  </div>
+                ))}
+                <div>
+                  <p className="text-xs text-slate-400 mb-1">Max Teams</p>
+                  <input type="number" value={tForm.maxTeams} onChange={e => setTForm(p => ({ ...p, maxTeams: e.target.value }))}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-yellow-500 transition-colors"/>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400 mb-1">Status</p>
+                  <select value={tForm.status} onChange={e => setTForm(p => ({ ...p, status: e.target.value }))}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-yellow-500 transition-colors">
+                    <option>Registration Open</option>
+                    <option>Coming Soon</option>
+                    <option>Live Now</option>
+                    <option>Upcoming</option>
+                    <option>Ended</option>
+                  </select>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400 mb-1">Type</p>
+                  <select value={tForm.type} onChange={e => setTForm(p => ({ ...p, type: e.target.value }))}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-yellow-500 transition-colors">
+                    <option>Online</option>
+                    <option>LAN</option>
+                    <option>LAN Finals</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-3 pt-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={tForm.joinable} onChange={e => setTForm(p => ({ ...p, joinable: e.target.checked }))}
+                      className="w-4 h-4 accent-yellow-500"/>
+                    <span className="text-sm text-slate-300">Open for registration (Joinable)</span>
+                  </label>
+                </div>
+                {!tForm.joinable && (
+                  <div>
+                    <p className="text-xs text-slate-400 mb-1">Watch URL (Twitch/YouTube)</p>
+                    <input value={tForm.watchUrl} onChange={e => setTForm(p => ({ ...p, watchUrl: e.target.value }))}
+                      placeholder="https://twitch.tv/..."
+                      className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-yellow-500 transition-colors"/>
                   </div>
                 )}
-                {reg.status === 'approved' && (
-                  <button onClick={() => openRejectDialog(reg.id)}
-                    className="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-400 font-bold text-xs transition-colors flex-shrink-0">
-                    Revoke
-                  </button>
-                )}
+              </div>
+              <div>
+                <p className="text-xs text-slate-400 mb-1">Description</p>
+                <textarea value={tForm.description} onChange={e => setTForm(p => ({ ...p, description: e.target.value }))}
+                  placeholder="Tournament description..." rows={2}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-yellow-500 transition-colors resize-none mb-4"/>
+              </div>
+              <div className="flex gap-3">
+                <button onClick={resetTForm} className="flex-1 py-2.5 rounded-xl bg-slate-800 text-slate-400 font-bold text-sm hover:bg-slate-700 transition-colors">Cancel</button>
+                <button onClick={handleSaveTournament} disabled={tSaving || !tForm.name.trim() || !tForm.game.trim() || !tForm.date.trim()}
+                  className="flex-1 py-2.5 rounded-xl bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 text-black font-black text-sm transition-all">
+                  {tSaving ? 'Saving...' : editTId ? 'Save Changes' : 'Create Tournament'}
+                </button>
               </div>
             </div>
-          ))}
-        </div>
+          )}
+
+          {/* Tournament list */}
+          {tLoading ? (
+            <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="skeleton h-20 rounded-xl"/>)}</div>
+          ) : tournaments.length === 0 ? (
+            <div className="text-center py-16 text-slate-500">
+              <p className="text-3xl mb-3">🏆</p>
+              <p>No tournaments yet — create your first one!</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {tournaments.map(t => (
+                <div key={t.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex items-center justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${t.joinable ? 'bg-yellow-500/20 text-yellow-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                        {t.joinable ? '🎮 Joinable' : '👁️ Watch Only'}
+                      </span>
+                      <span className="text-xs text-slate-500">{t.status}</span>
+                    </div>
+                    <p className="font-black truncate">{t.name}</p>
+                    <p className="text-xs text-slate-500">{t.game} · {t.date} · Prize: {t.prize}</p>
+                  </div>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <button onClick={() => handleEditTournament(t)}
+                      className="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold transition-colors">
+                      ✏️ Edit
+                    </button>
+                    <button onClick={() => handleDeleteTournament(t.id)}
+                      className="px-3 py-1.5 rounded-lg bg-red-600/20 hover:bg-red-600/40 text-red-400 text-xs font-bold transition-colors border border-red-600/30">
+                      🗑️ Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
