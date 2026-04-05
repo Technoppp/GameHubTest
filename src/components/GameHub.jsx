@@ -3370,8 +3370,8 @@ function TournamentsPage({ navigateTo }) {
     return () => unsub();
   }, []);
 
-  // Use Firestore tournaments if available, otherwise fallback to hardcode
-  const allTournaments = firestoreTournaments.length > 0 ? firestoreTournaments : TOURNAMENTS_DATA;
+  // Use only Firestore tournaments — no hardcode fallback
+  const allTournaments = firestoreTournaments;
 
   // Number of players per game
   const teamSize = (game) => {
@@ -3383,6 +3383,7 @@ function TournamentsPage({ navigateTo }) {
   const [editRegId, setEditRegId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitDone, setSubmitDone] = useState(false);
+  const [formStep, setFormStep] = useState(1); // 1 = Team Info, 2 = Players
 
   // Load user's existing registrations (all including rejected for count)
   useEffect(() => {
@@ -3416,6 +3417,7 @@ function TournamentsPage({ navigateTo }) {
     });
     setEditRegId(null);
     setSubmitDone(false);
+    setFormStep(1);
     setRegisterModal(tournament);
   };
 
@@ -3428,6 +3430,7 @@ function TournamentsPage({ navigateTo }) {
     });
     setEditRegId(reg.id);
     setSubmitDone(false);
+    setFormStep(1);
     setRegisterModal(tournament);
   };
 
@@ -3673,63 +3676,93 @@ function TournamentsPage({ navigateTo }) {
                 </button>
               </div>
             ) : (
-              /* Form */
               <>
-                {/* Header - fixed */}
-                <div className="p-5 pb-3 flex-shrink-0">
+                {/* Header */}
+                <div className="p-5 pb-0 flex-shrink-0">
                   <div className="flex items-center justify-between mb-1">
                     <h3 className="text-lg font-black">{editRegId ? 'Edit Registration' : 'Team Registration'}</h3>
                     <button onClick={() => setRegisterModal(null)} className="text-slate-500 hover:text-white text-xl leading-none">✕</button>
                   </div>
-                  <p className="text-yellow-400 font-bold text-sm">{registerModal.name}</p>
-                </div>
+                  <p className="text-yellow-400 font-bold text-sm mb-4">{registerModal.name}</p>
 
-                {/* Scrollable form area */}
-                <div className="overflow-y-auto flex-1 px-5 pb-3">
-                  {/* Team info */}
-                  <div className="space-y-3 mb-5">
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Team Info</p>
-                    <input value={form.teamName} onChange={e => setForm(p => ({ ...p, teamName: e.target.value }))}
-                      placeholder="Team name *" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
-                    <input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
-                      placeholder="Contact phone number *" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
-                    <input value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
-                      placeholder="Contact email *" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
-                  </div>
-
-                  {/* Players */}
-                  <div className="space-y-3">
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Players ({form.players.length} players)</p>
-                    {form.players.map((p, i) => (
-                      <div key={i} className="bg-slate-800/60 rounded-xl p-3 space-y-2">
-                        <p className="text-xs text-slate-500 font-bold">Player {i + 1}{i === 0 ? ' (Captain)' : ''}</p>
-                        <div className="flex gap-2">
-                          <input value={p.realName} onChange={e => {
-                            const updated = [...form.players];
-                            updated[i] = { ...updated[i], realName: e.target.value };
-                            setForm(prev => ({ ...prev, players: updated }));
-                          }} placeholder="Real name *" className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
-                          <input value={p.ign} onChange={e => {
-                            const updated = [...form.players];
-                            updated[i] = { ...updated[i], ign: e.target.value };
-                            setForm(prev => ({ ...prev, players: updated }));
-                          }} placeholder="In-game name *" className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
+                  {/* Step indicator */}
+                  <div className="flex items-center gap-2 mb-4">
+                    {[1, 2].map(s => (
+                      <React.Fragment key={s}>
+                        <div className={`flex items-center gap-1.5 text-xs font-bold ${formStep === s ? 'text-yellow-400' : formStep > s ? 'text-green-400' : 'text-slate-600'}`}>
+                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${formStep === s ? 'bg-yellow-500 text-black' : formStep > s ? 'bg-green-500 text-white' : 'bg-slate-700 text-slate-500'}`}>
+                            {formStep > s ? '✓' : s}
+                          </div>
+                          {s === 1 ? 'Team Info' : 'Players'}
                         </div>
-                      </div>
+                        {s < 2 && <div className={`flex-1 h-0.5 rounded ${formStep > s ? 'bg-green-500' : 'bg-slate-700'}`}/>}
+                      </React.Fragment>
                     ))}
                   </div>
                 </div>
 
-                {/* Buttons - fixed at bottom */}
+                {/* Scrollable form area */}
+                <div className="overflow-y-auto flex-1 px-5 pb-3">
+                  {formStep === 1 ? (
+                    /* Step 1: Team Info */
+                    <div className="space-y-3 py-3">
+                      <input value={form.teamName} onChange={e => setForm(p => ({ ...p, teamName: e.target.value }))}
+                        placeholder="Team name *" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
+                      <input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
+                        placeholder="Contact phone number *" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
+                      <input value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
+                        placeholder="Contact email *" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
+                    </div>
+                  ) : (
+                    /* Step 2: Players */
+                    <div className="space-y-3 py-3">
+                      <p className="text-xs text-slate-500">Enter real name and in-game name for each player</p>
+                      {form.players.map((p, i) => (
+                        <div key={i} className="bg-slate-800/60 rounded-xl p-3 space-y-2">
+                          <p className="text-xs text-yellow-400 font-bold">Player {i + 1}{i === 0 ? ' — Captain' : ''}</p>
+                          <div className="flex gap-2">
+                            <input value={p.realName} onChange={e => {
+                              const updated = [...form.players];
+                              updated[i] = { ...updated[i], realName: e.target.value };
+                              setForm(prev => ({ ...prev, players: updated }));
+                            }} placeholder="Real name *" className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
+                            <input value={p.ign} onChange={e => {
+                              const updated = [...form.players];
+                              updated[i] = { ...updated[i], ign: e.target.value };
+                              setForm(prev => ({ ...prev, players: updated }));
+                            }} placeholder="In-game name *" className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Buttons */}
                 <div className="p-5 pt-3 border-t border-slate-800 flex gap-3 flex-shrink-0">
-                  <button onClick={() => setRegisterModal(null)}
-                    className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-400 font-bold hover:bg-slate-700 transition-colors text-sm">
-                    Cancel
-                  </button>
-                  <button onClick={handleSubmit} disabled={submitting || !form.teamName.trim() || !form.phone.trim() || form.players.some(p => !p.realName.trim() || !p.ign.trim())}
-                    className="flex-1 py-3 rounded-xl bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-black transition-all text-sm">
-                    {submitting ? 'Submitting...' : '✍️ Submit'}
-                  </button>
+                  {formStep === 1 ? (
+                    <>
+                      <button onClick={() => setRegisterModal(null)}
+                        className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-400 font-bold hover:bg-slate-700 transition-colors text-sm">
+                        Cancel
+                      </button>
+                      <button onClick={() => setFormStep(2)} disabled={!form.teamName.trim() || !form.phone.trim() || !form.email.trim()}
+                        className="flex-1 py-3 rounded-xl bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 text-black font-black transition-all text-sm">
+                        Next → Players
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => setFormStep(1)}
+                        className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-400 font-bold hover:bg-slate-700 transition-colors text-sm">
+                        ← Back
+                      </button>
+                      <button onClick={handleSubmit} disabled={submitting || form.players.some(p => !p.realName.trim() || !p.ign.trim())}
+                        className="flex-1 py-3 rounded-xl bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 text-black font-black transition-all text-sm">
+                        {submitting ? 'Submitting...' : '✍️ Submit'}
+                      </button>
+                    </>
+                  )}
                 </div>
               </>
             )}
@@ -4681,32 +4714,105 @@ function AdminPage({ navigateTo }) {
           {/* Create/Edit Form */}
           {showTForm && (
             <div className="bg-slate-900 border border-yellow-500/40 rounded-2xl p-6 mb-6">
-              <h3 className="font-black text-lg mb-4">{editTId ? '✏️ Edit Tournament' : '+ New Tournament'}</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                {[
-                  { key: 'name', label: 'Tournament Name *', placeholder: 'e.g. GameHub Valorant Cup' },
-                  { key: 'game', label: 'Game *', placeholder: 'e.g. Valorant' },
-                  { key: 'date', label: 'Date *', placeholder: 'e.g. April 20, 2026' },
-                  { key: 'prize', label: 'Prize Pool', placeholder: 'e.g. $500 or ฿5,000' },
-                  { key: 'region', label: 'Region', placeholder: 'e.g. Southeast Asia' },
-                  { key: 'requirements', label: 'Requirements', placeholder: 'e.g. 5-player team • PC only' },
-                ].map(f => (
-                  <div key={f.key}>
-                    <p className="text-xs text-slate-400 mb-1">{f.label}</p>
-                    <input value={tForm[f.key]} onChange={e => setTForm(p => ({ ...p, [f.key]: e.target.value }))}
-                      placeholder={f.placeholder}
-                      className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-yellow-500 transition-colors"/>
-                  </div>
-                ))}
-                <div>
-                  <p className="text-xs text-slate-400 mb-1">Max Teams</p>
-                  <input type="number" value={tForm.maxTeams} onChange={e => setTForm(p => ({ ...p, maxTeams: e.target.value }))}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-yellow-500 transition-colors"/>
+              <h3 className="font-black text-lg mb-5">{editTId ? '✏️ Edit Tournament' : '+ New Tournament'}</h3>
+
+              {/* Style shared across all inputs */}
+              <style>{`.tf-input { width:100%; background:#1e293b; border:1px solid #334155; border-radius:10px; padding:10px 14px; font-size:14px; color:#f1f5f9; outline:none; transition:border-color .2s; }
+              .tf-input:focus { border-color:#eab308; }
+              .tf-label { font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px; display:block; }`}</style>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+
+                {/* Tournament Name */}
+                <div className="sm:col-span-2">
+                  <label className="tf-label">Tournament Name *</label>
+                  <input value={tForm.name} onChange={e => setTForm(p=>({...p,name:e.target.value}))}
+                    placeholder="e.g. GameHub Valorant Cup Season 1" className="tf-input"/>
                 </div>
+
+                {/* Game - dropdown from GAMES_DATA */}
                 <div>
-                  <p className="text-xs text-slate-400 mb-1">Status</p>
-                  <select value={tForm.status} onChange={e => setTForm(p => ({ ...p, status: e.target.value }))}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-yellow-500 transition-colors">
+                  <label className="tf-label">Game *</label>
+                  <select value={tForm.game} onChange={e => setTForm(p=>({...p,game:e.target.value}))} className="tf-input">
+                    <option value="">— Select game —</option>
+                    {GAMES_DATA.map(g => <option key={g.id} value={g.title}>{g.title}</option>)}
+                  </select>
+                </div>
+
+                {/* Platform */}
+                <div>
+                  <label className="tf-label">Platform</label>
+                  <select value={tForm.platform || ''} onChange={e => setTForm(p=>({...p,platform:e.target.value}))} className="tf-input">
+                    <option value="">— Select platform —</option>
+                    <option>PC</option>
+                    <option>Mobile</option>
+                    <option>PC / Mobile</option>
+                    <option>Console</option>
+                  </select>
+                </div>
+
+                {/* Date picker */}
+                <div>
+                  <label className="tf-label">Start Date *</label>
+                  <input type="date" value={tForm.dateRaw || ''} onChange={e => {
+                    const d = new Date(e.target.value);
+                    const formatted = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                    setTForm(p=>({...p, dateRaw: e.target.value, date: formatted}));
+                  }} className="tf-input" style={{ colorScheme: 'dark' }}/>
+                </div>
+
+                {/* End Date */}
+                <div>
+                  <label className="tf-label">End Date (optional)</label>
+                  <input type="date" value={tForm.dateEndRaw || ''} onChange={e => {
+                    const d = new Date(e.target.value);
+                    const formatted = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                    setTForm(p=>({...p, dateEndRaw: e.target.value, dateEnd: formatted}));
+                  }} className="tf-input" style={{ colorScheme: 'dark' }}/>
+                </div>
+
+                {/* Prize */}
+                <div>
+                  <label className="tf-label">Prize Pool</label>
+                  <input value={tForm.prize} onChange={e => setTForm(p=>({...p,prize:e.target.value}))}
+                    placeholder="e.g. $500 or ฿5,000" className="tf-input"/>
+                </div>
+
+                {/* Max Teams */}
+                <div>
+                  <label className="tf-label">Max Teams</label>
+                  <select value={tForm.maxTeams} onChange={e => setTForm(p=>({...p,maxTeams:Number(e.target.value)}))} className="tf-input">
+                    {[8,16,32,64,128].map(n => <option key={n} value={n}>{n} teams</option>)}
+                  </select>
+                </div>
+
+                {/* Region */}
+                <div>
+                  <label className="tf-label">Region</label>
+                  <select value={tForm.region} onChange={e => setTForm(p=>({...p,region:e.target.value}))} className="tf-input">
+                    <option>Southeast Asia</option>
+                    <option>Thailand</option>
+                    <option>Asia-Pacific</option>
+                    <option>International</option>
+                    <option>North America</option>
+                    <option>Europe</option>
+                  </select>
+                </div>
+
+                {/* Type */}
+                <div>
+                  <label className="tf-label">Tournament Type</label>
+                  <select value={tForm.type} onChange={e => setTForm(p=>({...p,type:e.target.value}))} className="tf-input">
+                    <option>Online</option>
+                    <option>LAN</option>
+                    <option>LAN Finals</option>
+                  </select>
+                </div>
+
+                {/* Status */}
+                <div>
+                  <label className="tf-label">Status</label>
+                  <select value={tForm.status} onChange={e => setTForm(p=>({...p,status:e.target.value}))} className="tf-input">
                     <option>Registration Open</option>
                     <option>Coming Soon</option>
                     <option>Live Now</option>
@@ -4714,42 +4820,51 @@ function AdminPage({ navigateTo }) {
                     <option>Ended</option>
                   </select>
                 </div>
-                <div>
-                  <p className="text-xs text-slate-400 mb-1">Type</p>
-                  <select value={tForm.type} onChange={e => setTForm(p => ({ ...p, type: e.target.value }))}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-yellow-500 transition-colors">
-                    <option>Online</option>
-                    <option>LAN</option>
-                    <option>LAN Finals</option>
-                  </select>
-                </div>
-                <div className="flex items-center gap-3 pt-4">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={tForm.joinable} onChange={e => setTForm(p => ({ ...p, joinable: e.target.checked }))}
-                      className="w-4 h-4 accent-yellow-500"/>
-                    <span className="text-sm text-slate-300">Open for registration (Joinable)</span>
+
+                {/* Joinable toggle */}
+                <div className="sm:col-span-2">
+                  <label className="flex items-center gap-3 cursor-pointer bg-slate-800 rounded-xl px-4 py-3 border border-slate-700">
+                    <div onClick={() => setTForm(p=>({...p,joinable:!p.joinable}))}
+                      className={`w-10 h-6 rounded-full transition-colors flex items-center ${tForm.joinable ? 'bg-yellow-500' : 'bg-slate-600'}`}>
+                      <div className={`w-4 h-4 bg-white rounded-full mx-1 transition-transform ${tForm.joinable ? 'translate-x-4' : 'translate-x-0'}`}/>
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-white">{tForm.joinable ? 'Open for Registration' : 'Watch Only'}</p>
+                      <p className="text-xs text-slate-400">{tForm.joinable ? 'Users can join and register their team' : 'Spectator/pro tournament — no public registration'}</p>
+                    </div>
                   </label>
                 </div>
+
+                {/* Watch URL if not joinable */}
                 {!tForm.joinable && (
-                  <div>
-                    <p className="text-xs text-slate-400 mb-1">Watch URL (Twitch/YouTube)</p>
-                    <input value={tForm.watchUrl} onChange={e => setTForm(p => ({ ...p, watchUrl: e.target.value }))}
-                      placeholder="https://twitch.tv/..."
-                      className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-yellow-500 transition-colors"/>
+                  <div className="sm:col-span-2">
+                    <label className="tf-label">Watch URL (Twitch / YouTube)</label>
+                    <input value={tForm.watchUrl} onChange={e => setTForm(p=>({...p,watchUrl:e.target.value}))}
+                      placeholder="https://twitch.tv/..." className="tf-input"/>
                   </div>
                 )}
+
+                {/* Requirements */}
+                <div className="sm:col-span-2">
+                  <label className="tf-label">Requirements</label>
+                  <input value={tForm.requirements} onChange={e => setTForm(p=>({...p,requirements:e.target.value}))}
+                    placeholder="e.g. 5-player team • Gold+ rank • PC only" className="tf-input"/>
+                </div>
+
+                {/* Description */}
+                <div className="sm:col-span-2">
+                  <label className="tf-label">Description</label>
+                  <textarea value={tForm.description} onChange={e => setTForm(p=>({...p,description:e.target.value}))}
+                    placeholder="Describe the tournament..." rows={3}
+                    className="tf-input" style={{ resize: 'vertical' }}/>
+                </div>
               </div>
-              <div>
-                <p className="text-xs text-slate-400 mb-1">Description</p>
-                <textarea value={tForm.description} onChange={e => setTForm(p => ({ ...p, description: e.target.value }))}
-                  placeholder="Tournament description..." rows={2}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-yellow-500 transition-colors resize-none mb-4"/>
-              </div>
+
               <div className="flex gap-3">
-                <button onClick={resetTForm} className="flex-1 py-2.5 rounded-xl bg-slate-800 text-slate-400 font-bold text-sm hover:bg-slate-700 transition-colors">Cancel</button>
+                <button onClick={resetTForm} className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-400 font-bold text-sm hover:bg-slate-700 transition-colors">Cancel</button>
                 <button onClick={handleSaveTournament} disabled={tSaving || !tForm.name.trim() || !tForm.game.trim() || !tForm.date.trim()}
-                  className="flex-1 py-2.5 rounded-xl bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 text-black font-black text-sm transition-all">
-                  {tSaving ? 'Saving...' : editTId ? 'Save Changes' : 'Create Tournament'}
+                  className="flex-1 py-3 rounded-xl bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 text-black font-black text-sm transition-all">
+                  {tSaving ? 'Saving...' : editTId ? 'Save Changes' : '🏆 Create Tournament'}
                 </button>
               </div>
             </div>
