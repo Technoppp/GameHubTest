@@ -804,6 +804,35 @@ const NEWS_DATA = [
   { id: 5, title: 'Cyberpunk 2077 Free Update 2.3 Now Available', date: '2026-02-01', category: 'Update', game: 'Cyberpunk 2077', content: 'CD Projekt Red drops Update 2.3 for Cyberpunk 2077, adding new vehicles, expanded photo mode features, and quality-of-life improvements across all platforms.' },
 ];
 
+function formatNewsDate(value) {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (value?.toDate) return value.toDate().toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' });
+  if (value instanceof Date) return value.toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' });
+  return String(value);
+}
+
+function normalizeNewsItem(news, index = 0) {
+  const toText = (value, fallback = '') => {
+    if (typeof value === 'string') return value;
+    if (value == null) return fallback;
+    return String(value);
+  };
+
+  return {
+    id: news?.id ?? `news-${index}`,
+    title: toText(news?.title, 'Untitled News'),
+    category: toText(news?.category, 'News'),
+    game: toText(news?.game, ''),
+    summary: toText(news?.summary, toText(news?.content, '')),
+    content: toText(news?.content, toText(news?.summary, '')),
+    imageUrl: toText(news?.imageUrl, ''),
+    sourceUrl: toText(news?.sourceUrl, ''),
+    publishedAt: news?.publishedAt ?? news?.date ?? '',
+    dateLabel: formatNewsDate(news?.publishedAt ?? news?.date),
+  };
+}
+
 const TOURNAMENTS_DATA = [
   // WATCHABLE ONLY
   { id: 1, joinable: false, name: 'Valorant Champions Tour 2026', game: 'Valorant', date: 'March 10-30, 2026', prize: '$1,000,000', status: 'Live Now', type: 'LAN Finals', description: 'The premier Valorant global event. Only top VCT regional teams qualify. Open for spectators worldwide.', watchUrl: 'https://www.twitch.tv/valorant', teams: 16, region: 'International' },
@@ -857,6 +886,7 @@ function AuthNavButton({ navigateTo, currentPage, user, authLoading }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [avatarEmoji, setAvatarEmoji] = useState(null);
   const [avatarColor, setAvatarColor] = useState(0);
+  const [avatarPhoto, setAvatarPhoto] = useState('');
   const ref = useRef(null);
 
   useEffect(() => {
@@ -872,9 +902,11 @@ function AuthNavButton({ navigateTo, currentPage, user, authLoading }) {
       if (snap.exists()) {
         setAvatarEmoji(snap.data().emoji || null);
         setAvatarColor(snap.data().colorIndex ?? 0);
+        setAvatarPhoto(snap.data().photoURL || '');
       } else {
         setAvatarEmoji(null);
         setAvatarColor(0);
+        setAvatarPhoto('');
       }
     }, () => {});
     return () => unsub();
@@ -911,9 +943,13 @@ function AuthNavButton({ navigateTo, currentPage, user, authLoading }) {
         {/* Avatar */}
         <div
           className="w-9 h-9 rounded-full flex items-center justify-center font-black text-sm"
-          style={{ background: `linear-gradient(135deg, ${color.from}, ${color.to})` }}
+          style={avatarPhoto ? {
+            backgroundImage: `url(${avatarPhoto})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          } : { background: `linear-gradient(135deg, ${color.from}, ${color.to})` }}
         >
-          {avatarEmoji || initials}
+          {!avatarPhoto && (avatarEmoji || initials)}
         </div>
         <span className="text-sm font-bold text-white hidden md:block max-w-[100px] truncate">
           {user.displayName || user.email.split('@')[0]}
@@ -1148,6 +1184,7 @@ export default function GameHub() {
   const [currentPage, setCurrentPage] = useState('home');
   const [selectedGame, setSelectedGame] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedNews, setSelectedNews] = useState(null);
   const [scrolled, setScrolled] = useState(false);
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -1187,16 +1224,19 @@ export default function GameHub() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileAvatarEmoji, setMobileAvatarEmoji] = useState(null);
   const [mobileAvatarColor, setMobileAvatarColor] = useState(0);
+  const [mobileAvatarPhoto, setMobileAvatarPhoto] = useState('');
 
   useEffect(() => {
-    if (!user) { setMobileAvatarEmoji(null); setMobileAvatarColor(0); return; }
+     if (!user) { setMobileAvatarEmoji(null); setMobileAvatarColor(0); setMobileAvatarPhoto(''); return; }
     const unsub = onSnapshot(doc(db, 'avatars', user.uid), (snap) => {
       if (snap.exists()) {
         setMobileAvatarEmoji(snap.data().emoji || null);
         setMobileAvatarColor(snap.data().colorIndex ?? 0);
+        setMobileAvatarPhoto(snap.data().photoURL || '');
       } else {
         setMobileAvatarEmoji(null);
         setMobileAvatarColor(0);
+        setMobileAvatarPhoto('');
       }
     }, () => {});
     return () => unsub();
@@ -1205,16 +1245,18 @@ export default function GameHub() {
   const [communityTagGame, setCommunityTagGame] = useState(null);
 
   const navigateTo = (page, data = null) => {
-    setNavHistory(prev => [...prev, { page: currentPage, game: selectedGame, category: selectedCategory }]);
+    setNavHistory(prev => [...prev, { page: currentPage, game: selectedGame, category: selectedCategory, news: selectedNews }]);
     setCurrentPage(page);
     setMenuOpen(false);
     if (page === 'game-detail') setSelectedGame(data);
     else if (page === 'category') setSelectedCategory(data);
+    else if (page === 'news-detail') setSelectedNews(data);
     else if (page === 'games') { setSelectedCategory(null); setSelectedGame(null); }
     else if (page === 'community') {
       if (data?.tagGame) setCommunityTagGame(data.tagGame);
       else setCommunityTagGame(null);
     }
+    if (page !== 'news-detail') setSelectedNews(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -1226,6 +1268,7 @@ export default function GameHub() {
     setMenuOpen(false);
     if (prev.game) setSelectedGame(prev.game);
     if (prev.category) setSelectedCategory(prev.category);
+    setSelectedNews(prev.news || null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -1418,9 +1461,13 @@ export default function GameHub() {
                 <button
                   onClick={() => navigateTo('profile')}
                   className="w-9 h-9 rounded-full flex items-center justify-center font-black text-sm flex-shrink-0"
-                  style={{ background: `linear-gradient(135deg, ${AVATAR_COLORS[mobileAvatarColor % AVATAR_COLORS.length].from}, ${AVATAR_COLORS[mobileAvatarColor % AVATAR_COLORS.length].to})` }}
+                  style={mobileAvatarPhoto ? {
+                    backgroundImage: `url(${mobileAvatarPhoto})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                  } : { background: `linear-gradient(135deg, ${AVATAR_COLORS[mobileAvatarColor % AVATAR_COLORS.length].from}, ${AVATAR_COLORS[mobileAvatarColor % AVATAR_COLORS.length].to})` }}
                 >
-                  {mobileAvatarEmoji || (user.displayName ? user.displayName[0].toUpperCase() : user.email[0].toUpperCase())}
+                  {!mobileAvatarPhoto && (mobileAvatarEmoji || (user.displayName ? user.displayName[0].toUpperCase() : user.email[0].toUpperCase()))}
                 </button>
               )}
               <button
@@ -1498,8 +1545,12 @@ export default function GameHub() {
                 <div className="mt-3 pt-3 border-t border-slate-800 flex items-center justify-between px-2">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full flex items-center justify-center font-black text-xs"
-                      style={{ background: `linear-gradient(135deg, ${AVATAR_COLORS[mobileAvatarColor % AVATAR_COLORS.length].from}, ${AVATAR_COLORS[mobileAvatarColor % AVATAR_COLORS.length].to})` }}>
-                      {mobileAvatarEmoji || (user.displayName ? user.displayName[0].toUpperCase() : user.email[0].toUpperCase())}
+                      style={mobileAvatarPhoto ? {
+                        backgroundImage: `url(${mobileAvatarPhoto})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                      } : { background: `linear-gradient(135deg, ${AVATAR_COLORS[mobileAvatarColor % AVATAR_COLORS.length].from}, ${AVATAR_COLORS[mobileAvatarColor % AVATAR_COLORS.length].to})` }}>
+                      {!mobileAvatarPhoto && (mobileAvatarEmoji || (user.displayName ? user.displayName[0].toUpperCase() : user.email[0].toUpperCase()))}
                     </div>
                     <span className="text-sm font-bold text-white">{user.displayName || user.email.split('@')[0]}</span>
                   </div>
@@ -1525,6 +1576,7 @@ export default function GameHub() {
         {currentPage === 'wishlist' && <WishlistPage navigateTo={navigateTo} />}
         {currentPage === 'community' && <CommunityPage navigateTo={navigateTo} tagGame={communityTagGame} />}
         {currentPage === 'news' && <NewsPage navigateTo={navigateTo} />}
+        {currentPage === 'news-detail' && selectedNews && <NewsDetailPage news={selectedNews} navigateTo={navigateTo} goBack={goBack} />}
         {currentPage === 'about' && <AboutPage />}
         {currentPage === 'login' && <LoginPage navigateTo={navigateTo} />}
         {currentPage === 'register' && <RegisterPage navigateTo={navigateTo} />}
@@ -2848,7 +2900,7 @@ function RegisterPage({ navigateTo }) {
         <div className="text-center mb-10">
           <img src="/images/games/logo.png" alt="GameHub Logo" className="h-16 w-auto object-contain mx-auto mb-4"/>
           <h2 className="text-3xl font-black" style={{ fontFamily: "'Orbitron', sans-serif" }}>
-            <span className="text-blue-400">JOIN</span> GAMEHUB
+            <span className="text-purple-400">JOIN</span> GAMEHUB
           </h2>
           <p className="text-slate-400 mt-2">Create your free account</p>
         </div>
@@ -2869,7 +2921,7 @@ function RegisterPage({ navigateTo }) {
                   onChange={e => field.setter(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleRegister()}
                   placeholder={field.placeholder}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors"
                 />
               </div>
             ))}
@@ -2884,7 +2936,7 @@ function RegisterPage({ navigateTo }) {
               onClick={handleRegister}
               disabled={loading}
               className="w-full py-3.5 rounded-xl font-black text-white transition-all disabled:opacity-50 text-sm tracking-wider"
-              style={{ background: 'linear-gradient(135deg, #3b82f6, #0ea5e9)' }}
+              style={{ background: 'linear-gradient(135deg, #8b5cf6, #ec4899)' }}
             >
               {loading ? 'Creating account...' : 'CREATE ACCOUNT'}
             </button>
@@ -2892,7 +2944,7 @@ function RegisterPage({ navigateTo }) {
 
           <div className="mt-6 text-center text-sm text-slate-500">
             Already have an account?{' '}
-            <button onClick={() => navigateTo('login')} className="text-blue-400 font-bold hover:underline">
+            <button onClick={() => navigateTo('login')} className="text-purple-400 font-bold hover:underline">
               Sign In
             </button>
           </div>
@@ -2924,12 +2976,20 @@ function ProfilePage({ navigateTo }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [wishlistCount, setWishlistCount] = useState(0);
+  const [photoUploading, setPhotoUploading] = useState(false);
 
   // Avatar state
   const [selectedEmoji, setSelectedEmoji] = useState('🎮');
   const [selectedColor, setSelectedColor] = useState(0);
+  const [photoURL, setPhotoURL] = useState('');
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [avatarSaved, setAvatarSaved] = useState(false);
+  const fileInputRef = useRef(null);
+  const [cropSrc, setCropSrc] = useState(null);
+  const cropImgRef = useRef(null);
+  const [cropDrag, setCropDrag] = useState(null);
+  const [cropBox, setCropBox] = useState({ x: 0, y: 0, w: 100, h: 100 });
+  const cropAspectRatio = 1;
 
   useEffect(() => {
     if (!user) { navigateTo('login'); return; }
@@ -2947,6 +3007,7 @@ function ProfilePage({ navigateTo }) {
           if (avatarSnap.exists()) {
             setSelectedEmoji(avatarSnap.data().emoji || '🎮');
             setSelectedColor(avatarSnap.data().colorIndex ?? 0);
+            setPhotoURL(avatarSnap.data().photoURL || '');
           }
         }
       } catch (_) {}
@@ -2997,11 +3058,62 @@ function ProfilePage({ navigateTo }) {
       await setDoc(doc(db, 'avatars', auth.currentUser.uid), {
         emoji: selectedEmoji,
         colorIndex: selectedColor,
+        photoURL,
       });
       setAvatarSaved(true);
       setShowAvatarPicker(false);
       setTimeout(() => setAvatarSaved(false), 2000);
     } catch (_) {}
+  };
+
+  const initCrop = (img) => {
+    const dw = img.offsetWidth;
+    const dh = img.offsetHeight;
+    const targetH = dw / cropAspectRatio;
+    if (targetH <= dh) {
+      setCropBox({ x: 0, y: Math.round((dh - targetH) / 2), w: dw, h: Math.round(targetH) });
+    } else {
+      const targetW = dh * cropAspectRatio;
+      setCropBox({ x: Math.round((dw - targetW) / 2), y: 0, w: Math.round(targetW), h: dh });
+    }
+  };
+
+  const handlePhotoSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCropSrc(URL.createObjectURL(file));
+  };
+
+  const uploadCroppedProfile = () => {
+    const img = cropImgRef.current;
+    if (!img) return;
+    const scaleX = img.naturalWidth / img.offsetWidth;
+    const scaleY = img.naturalHeight / img.offsetHeight;
+    const nx = Math.round(cropBox.x * scaleX);
+    const ny = Math.round(cropBox.y * scaleY);
+    const nw = Math.round(cropBox.w * scaleX);
+    const nh = Math.round(cropBox.h * scaleY);
+    const canvas = document.createElement('canvas');
+    canvas.width = nw;
+    canvas.height = nh;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, nx, ny, nw, nh, 0, 0, nw, nh);
+    canvas.toBlob(async (blob) => {
+      if (!blob) return;
+      setCropSrc(null);
+      setPhotoUploading(true);
+      try {
+        const formData = new FormData();
+        formData.append('file', blob, 'avatar.jpg');
+        formData.append('upload_preset', 'GameHub');
+        const res = await fetch('https://api.cloudinary.com/v1_1/dz7hage1z/image/upload', { method: 'POST', body: formData });
+        const data = await res.json();
+        setPhotoURL(data.secure_url || '');
+      } catch {
+        alert('Upload failed');
+      }
+      setPhotoUploading(false);
+    }, 'image/jpeg', 0.95);
   };
 
   if (!user) return null;
@@ -3024,10 +3136,14 @@ function ProfilePage({ navigateTo }) {
           <div className="relative flex-shrink-0">
             <div
               className="w-20 h-20 rounded-2xl flex items-center justify-center text-4xl cursor-pointer hover:scale-105 transition-transform"
-              style={{ background: `linear-gradient(135deg, ${color.from}, ${color.to})` }}
+              style={photoURL ? {
+                backgroundImage: `url(${photoURL})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              } : { background: `linear-gradient(135deg, ${color.from}, ${color.to})` }}
               onClick={() => setShowAvatarPicker(!showAvatarPicker)}
             >
-              {selectedEmoji}
+              {!photoURL && selectedEmoji}
             </div>
             <div
               className="absolute -bottom-1 -right-1 w-6 h-6 bg-slate-700 border border-slate-600 rounded-full flex items-center justify-center text-xs cursor-pointer hover:bg-slate-600 transition-colors"
@@ -3081,8 +3197,23 @@ function ProfilePage({ navigateTo }) {
               <p className="text-xs text-slate-500">Preview:</p>
               <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
-                style={{ background: `linear-gradient(135deg, ${color.from}, ${color.to})` }}
-              >{selectedEmoji}</div>
+                style={photoURL ? {
+                  backgroundImage: `url(${photoURL})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                } : { background: `linear-gradient(135deg, ${color.from}, ${color.to})` }}
+              >{!photoURL && selectedEmoji}</div>
+            </div>
+
+            <div className="mb-4">
+              <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePhotoSelect} className="hidden" />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={photoUploading}
+                className="w-full py-2.5 rounded-xl font-bold text-sm bg-slate-700 hover:bg-slate-600 text-slate-100 transition-colors disabled:opacity-50"
+              >
+                {photoUploading ? 'Uploading...' : photoURL ? 'Change Photo' : 'Upload Photo'}
+              </button>
             </div>
 
             <div className="flex gap-3">
@@ -3146,6 +3277,66 @@ function ProfilePage({ navigateTo }) {
       >
         🚪 Sign Out
       </button>
+
+      {cropSrc && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex flex-col items-center justify-center p-4">
+          <div className="bg-slate-900 rounded-2xl border border-slate-700 w-full max-w-lg flex flex-col" style={{ maxHeight: '90vh' }}>
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
+              <p className="font-bold text-sm">Crop Profile Photo (1:1)</p>
+              <button onClick={() => { setCropSrc(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                className="text-slate-500 hover:text-white text-lg leading-none">✕</button>
+            </div>
+
+            <div className="p-4 overflow-auto"
+              onMouseMove={e => {
+                if (!cropDrag) return;
+                const img = cropImgRef.current;
+                if (!img) return;
+                const dx = e.clientX - cropDrag.startX;
+                const dy = e.clientY - cropDrag.startY;
+                setCropBox(prev => ({
+                  ...prev,
+                  x: Math.max(0, Math.min(img.offsetWidth - prev.w, cropDrag.origX + dx)),
+                  y: Math.max(0, Math.min(img.offsetHeight - prev.h, cropDrag.origY + dy)),
+                }));
+              }}
+              onMouseUp={() => setCropDrag(null)}
+              onMouseLeave={() => setCropDrag(null)}>
+              <div className="relative">
+                <img ref={cropImgRef} src={cropSrc} alt="crop" className="w-full block"
+                  onLoad={e => initCrop(e.target)} draggable={false}/>
+                {cropImgRef.current && (
+                  <div className="absolute inset-0 pointer-events-none"
+                    style={{ boxShadow: `${cropBox.x}px ${cropBox.y}px 0 0 rgba(0,0,0,0.65), inset ${-(cropImgRef.current.offsetWidth - cropBox.x - cropBox.w)}px ${-(cropImgRef.current.offsetHeight - cropBox.y - cropBox.h)}px 0 0 rgba(0,0,0,0.65)` }}>
+                    <div className="absolute border-2 border-white pointer-events-auto cursor-move"
+                      style={{ left: cropBox.x, top: cropBox.y, width: cropBox.w, height: cropBox.h }}
+                      onMouseDown={e => {
+                        e.preventDefault();
+                        setCropDrag({ startX: e.clientX, startY: e.clientY, origX: cropBox.x, origY: cropBox.y });
+                      }}>
+                      <div className="absolute inset-0 grid grid-cols-3 grid-rows-3">
+                        {Array(9).fill(0).map((_, i) => <div key={i} className="border border-white/20"/>)}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-slate-800 flex gap-3 flex-shrink-0 bg-slate-900">
+              <p className="text-xs text-slate-500 flex items-center flex-1">Drag box to reposition</p>
+              <button onClick={() => { setCropSrc(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                className="py-2.5 px-4 rounded-xl bg-slate-800 text-slate-400 font-bold text-sm hover:bg-slate-700 transition-colors">
+                Cancel
+              </button>
+              <button onClick={uploadCroppedProfile}
+                className="py-2.5 px-5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-colors">
+                Crop
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -3550,10 +3741,10 @@ function TournamentsPage({ navigateTo }) {
                         </div>
                       </div>
                     </div>
-                    <div className="flex flex-col items-start lg:items-end gap-3 lg:min-w-[160px] lg:self-stretch lg:justify-between">
+                    <div className="flex flex-col items-start lg:items-end gap-3 lg:min-w-[160px]">
                       <div>
                         <p className="text-xs text-slate-500 mb-0.5">Prize Pool</p>
-                        <p className="text-4xl lg:text-[2.75rem] leading-none font-black text-yellow-400">{t.prize}</p>
+                        <p className="text-3xl font-black text-yellow-400">{t.prize}</p>
                       </div>
                       {myReg ? (
                         <div className="flex flex-col gap-2 w-full lg:w-auto">
@@ -3594,7 +3785,7 @@ function TournamentsPage({ navigateTo }) {
                       ) : t.status === 'Registration Open' && !full ? (
                         <button onClick={() => handleRegister(t)}
                           className="w-full lg:w-auto bg-yellow-500 hover:bg-yellow-400 text-black font-black px-6 py-3 rounded-xl transition-all hover:scale-105 text-sm">
-                          Join Now
+                          ✍️ Join Now
                         </button>
                       ) : t.status === 'Coming Soon' ? (
                         <button className="w-full lg:w-auto bg-slate-700 text-slate-400 font-bold px-6 py-3 rounded-xl text-sm cursor-not-allowed" disabled>Coming Soon</button>
@@ -4163,15 +4354,18 @@ function CommunityPage({ navigateTo, tagGame }) {
 function UserAvatar({ uid, name, size = 'md', db }) {
   const [emoji, setEmoji] = useState(null);
   const [colorIdx, setColorIdx] = useState(0);
+  const [photoURL, setPhotoURL] = useState('');
 
   useEffect(() => {
     if (!uid) return;
-    getDoc(doc(db, 'avatars', uid)).then(snap => {
+    const unsub = onSnapshot(doc(db, 'avatars', uid), (snap) => {
       if (snap.exists()) {
         setEmoji(snap.data().emoji || null);
         setColorIdx(snap.data().colorIndex ?? 0);
+        setPhotoURL(snap.data().photoURL || '');
       }
-    }).catch(() => {});
+    }, () => {});
+    return () => unsub();
   }, [uid]);
 
   const color = AVATAR_COLORS[colorIdx % AVATAR_COLORS.length];
@@ -4180,8 +4374,12 @@ function UserAvatar({ uid, name, size = 'md', db }) {
 
   return (
     <div className={`${sizeClass} rounded-full flex items-center justify-center font-bold text-white flex-shrink-0`}
-      style={{ background: `linear-gradient(135deg, ${color.from}, ${color.to})` }}>
-      {emoji || fallbackLetter}
+      style={photoURL ? {
+        backgroundImage: `url(${photoURL})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      } : { background: `linear-gradient(135deg, ${color.from}, ${color.to})` }}>
+      {!photoURL && (emoji || fallbackLetter)}
     </div>
   );
 }
@@ -4913,31 +5111,140 @@ function AdminPage({ navigateTo }) {
 // ─────────────────────────────────────────────
 
 function NewsPage({ navigateTo }) {
+  const [items, setItems] = useState(NEWS_DATA.map(normalizeNewsItem));
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const newsQuery = query(collection(db, 'news'), orderBy('publishedAt', 'desc'));
+    const unsub = onSnapshot(newsQuery, (snap) => {
+      if (snap.empty) {
+        setItems(NEWS_DATA.map(normalizeNewsItem));
+      } else {
+        setItems(snap.docs.map((docSnap, index) => normalizeNewsItem({ id: docSnap.id, ...docSnap.data() }, index)));
+      }
+      setLoading(false);
+    }, () => {
+      setItems(NEWS_DATA.map(normalizeNewsItem));
+      setLoading(false);
+    });
+    return () => unsub();
+  }, []);
+
   return (
     <div className="container mx-auto px-6 py-20">
       <div className="mb-12 fade-in-up">
         <h2 className="text-4xl font-black mb-4" style={{ fontFamily: "'Orbitron', sans-serif" }}>
           <span className="text-purple-400">GAMING</span> NEWS
         </h2>
-        <p className="text-slate-400">Stay updated with the latest news and announcements</p>
+        <p className="text-slate-400">Latest topics from Firestore with a full detail view for each story</p>
       </div>
-      <div className="space-y-6">
-        {NEWS_DATA.map((news, index) => {
-          const game = GAMES_DATA.find(g => g.title === news.game);
-          return (
-            <article key={news.id} className="bg-slate-900 border border-slate-800 rounded-xl p-8 hover:border-purple-500/50 transition-all cursor-pointer fade-in-up" style={{ animationDelay: `${index * 0.05}s` }} onClick={() => game && navigateTo('game-detail', game)}>
-              <div className="flex items-center gap-3 mb-4">
-                <span className="bg-purple-500/20 text-purple-400 text-xs font-bold px-4 py-2 rounded-full">{news.category}</span>
-                <span className="text-sm text-slate-500">{news.date}</span>
-                <span className="text-sm text-slate-600">•</span>
-                <span className="text-sm text-blue-400 font-semibold">{news.game}</span>
-              </div>
-              <h3 className="text-2xl font-bold mb-3 hover:text-purple-400 transition-colors">{news.title}</h3>
-              <p className="text-slate-300 leading-relaxed">{news.content}</p>
-            </article>
-          );
-        })}
-      </div>
+
+      {loading ? (
+        <div className="space-y-6">
+          {[1, 2, 3].map(i => <div key={i} className="bg-slate-900 border border-slate-800 rounded-xl p-8 h-40 skeleton" />)}
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {items.map((news, index) => {
+            const game = GAMES_DATA.find(g => g.title === news.game);
+            return (
+              <article
+                key={news.id}
+                className="bg-slate-900 border border-slate-800 rounded-xl p-8 hover:border-purple-500/50 transition-all fade-in-up"
+                style={{ animationDelay: `${index * 0.05}s` }}
+              >
+                <div className="flex flex-col lg:flex-row gap-6">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-4 flex-wrap">
+                      <span className="bg-purple-500/20 text-purple-400 text-xs font-bold px-4 py-2 rounded-full">{news.category}</span>
+                      {news.dateLabel && <span className="text-sm text-slate-500">{news.dateLabel}</span>}
+                      {news.game && <span className="text-sm text-blue-400 font-semibold">{news.game}</span>}
+                    </div>
+                    <h3 className="text-2xl font-bold mb-3">{news.title}</h3>
+                    <p className="text-slate-300 leading-relaxed">{news.summary || news.content}</p>
+                    <div className="mt-5 flex items-center gap-3 flex-wrap">
+                      <button
+                        onClick={() => navigateTo('news-detail', news)}
+                        className="px-4 py-2 rounded-lg bg-blue-600/20 text-blue-300 text-sm font-bold hover:bg-blue-600/30 transition-colors"
+                      >
+                        Read Details
+                      </button>
+                      {game && (
+                        <button
+                          onClick={() => navigateTo('game-detail', game)}
+                          className="text-sm font-semibold text-slate-400 hover:text-white transition-colors"
+                        >
+                          View Game
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {news.imageUrl && (
+                    <img src={news.imageUrl} alt={news.title} className="w-full lg:w-64 h-40 object-cover rounded-xl border border-slate-800" />
+                  )}
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function NewsDetailPage({ news, navigateTo, goBack }) {
+  const safeNews = normalizeNewsItem(news);
+  const game = GAMES_DATA.find(g => g.title === safeNews.game);
+
+  return (
+    <div className="container mx-auto px-6 py-20 max-w-4xl fade-in-up">
+      <button
+        onClick={goBack}
+        className="mb-8 text-sm font-bold text-slate-400 hover:text-white transition-colors flex items-center gap-2"
+      >
+        <ChevronLeft className="w-4 h-4" /> Back to News
+      </button>
+
+      <article className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+        {safeNews.imageUrl && (
+          <img src={safeNews.imageUrl} alt={safeNews.title} className="w-full h-64 md:h-80 object-cover border-b border-slate-800" />
+        )}
+        <div className="p-8">
+          <div className="flex flex-wrap items-center gap-3 mb-5">
+            <span className="bg-purple-500/20 text-purple-400 text-xs font-bold px-4 py-2 rounded-full">{safeNews.category}</span>
+            {safeNews.dateLabel && <span className="text-sm text-slate-500">{safeNews.dateLabel}</span>}
+            {safeNews.game && <span className="text-sm text-blue-400 font-semibold">{safeNews.game}</span>}
+          </div>
+          <h1 className="text-3xl md:text-4xl font-black mb-4" style={{ fontFamily: "'Orbitron', sans-serif" }}>
+            {safeNews.title}
+          </h1>
+          {safeNews.summary && <p className="text-lg text-slate-300 mb-6 leading-relaxed">{safeNews.summary}</p>}
+          <div className="text-slate-300 leading-8 whitespace-pre-line">
+            {safeNews.content || 'No details available for this news yet.'}
+          </div>
+
+          <div className="mt-8 flex flex-wrap gap-3">
+            {game && (
+              <button
+                onClick={() => navigateTo('game-detail', game)}
+                className="px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold transition-colors"
+              >
+                Open Game Page
+              </button>
+            )}
+            {safeNews.sourceUrl && (
+              <a
+                href={safeNews.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold transition-colors"
+              >
+                Open Source
+              </a>
+            )}
+          </div>
+        </div>
+      </article>
     </div>
   );
 }
