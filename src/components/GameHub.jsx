@@ -2217,9 +2217,7 @@ function CategoryPage({ category, navigateTo, goBack, navHistory }) {
   return (
     <div>
       {/* Category Hero */}
-      <div className="relative overflow-hidden" style={{ background: `linear-gradient(135deg, ${category.color}18, transparent 60%)` }}>
-        <div className="absolute inset-0 grid-bg opacity-10"></div>
-        <div className="absolute top-0 left-0 w-96 h-96 rounded-full blur-3xl opacity-10" style={{ background: category.color, transform: 'translate(-30%, -30%)' }} />
+      <div className="relative overflow-hidden">
         <div className="container mx-auto px-6 py-20 relative z-10">
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-sm text-slate-500 mb-8 fade-in-up">
@@ -2234,7 +2232,7 @@ function CategoryPage({ category, navigateTo, goBack, navHistory }) {
           </div>
 
           <div className="flex items-center gap-6 fade-in-up">
-            <div className="w-20 h-20 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: `${category.color}22`, border: `2px solid ${category.color}44` }}>
+            <div className="w-20 h-20 rounded-2xl flex items-center justify-center flex-shrink-0 bg-slate-900 border border-slate-800">
               <Icon className="w-10 h-10" style={{ color: category.color }} />
             </div>
             <div>
