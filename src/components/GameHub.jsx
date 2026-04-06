@@ -3493,11 +3493,11 @@ function TournamentsPage({ navigateTo }) {
       <div className="flex gap-2 mb-8 bg-slate-900 p-1 rounded-xl w-fit">
         <button onClick={() => setTab('join')}
           className={`px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${tab === 'join' ? 'bg-yellow-500 text-black' : 'text-slate-400 hover:text-white'}`}>
-          🎮 Joinable
+          Joinable
         </button>
         <button onClick={() => setTab('watch')}
           className={`px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${tab === 'watch' ? 'bg-blue-500 text-white' : 'text-slate-400 hover:text-white'}`}>
-          👁️ Watch Only
+          Watch Only
         </button>
       </div>
 
@@ -3514,8 +3514,8 @@ function TournamentsPage({ navigateTo }) {
                   <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
                     <div className="flex-1">
                       <div className="flex flex-wrap items-center gap-2 mb-3">
-                        <span className="text-xs font-bold px-3 py-1 rounded-full bg-yellow-500/15 text-yellow-400">🏆 Open Tournament</span>
-                        <span className="text-xs text-slate-500">{t.game}</span>
+                        <span className="text-xs font-bold px-3 py-1 rounded-full bg-yellow-500/15 text-yellow-400">Open Tournament</span>
+                        <span className="text-xs font-bold px-3 py-1 rounded-full bg-blue-500/15 text-blue-300">{t.game}</span>
                         <span className={`text-xs font-bold px-3 py-1 rounded-full ${statusColor(t.status)}`}>{t.status}</span>
                       </div>
                       <h3 className="text-xl font-black mb-2">{t.name}</h3>
@@ -3553,7 +3553,7 @@ function TournamentsPage({ navigateTo }) {
                     <div className="flex flex-col items-start lg:items-end gap-3 lg:min-w-[160px]">
                       <div>
                         <p className="text-xs text-slate-500 mb-0.5">Prize Pool</p>
-                        <p className="text-2xl font-black text-yellow-400">{t.prize}</p>
+                        <p className="text-3xl font-black text-yellow-400">{t.prize}</p>
                       </div>
                       {myReg ? (
                         <div className="flex flex-col gap-2 w-full lg:w-auto">
@@ -3613,9 +3613,6 @@ function TournamentsPage({ navigateTo }) {
       {/* WATCHABLE TAB */}
       {tab === 'watch' && (
         <div className="space-y-5">
-          <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl px-5 py-3 text-sm text-blue-300 mb-6">
-            👁️ These are pro-level and invitational tournaments — <strong>Watch only</strong>. Not open for public registration.
-          </div>
           {watchable.map((t, i) => (
             <div key={t.id} className="bg-slate-900 border-2 border-slate-800 rounded-2xl overflow-hidden hover:border-blue-500/40 transition-all fade-in-up" style={{ animationDelay: `${i*0.08}s` }}>
               <div className="p-6 lg:p-8">
@@ -3623,7 +3620,7 @@ function TournamentsPage({ navigateTo }) {
                   <div className="flex-1">
                     <div className="flex flex-wrap items-center gap-2 mb-3">
                       <span className="text-xs font-bold px-3 py-1 rounded-full bg-blue-500/15 text-blue-400">👁️ Pro / Invitational</span>
-                      <span className="text-xs text-slate-500">{t.game}</span>
+                      <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-700 text-slate-300">{t.game}</span>
                       <span className={`text-xs font-bold px-3 py-1 rounded-full ${statusColor(t.status)}`}>{t.status}</span>
                     </div>
                     <h3 className="text-xl font-black mb-2">{t.name}</h3>
@@ -3637,7 +3634,7 @@ function TournamentsPage({ navigateTo }) {
                   <div className="flex flex-col items-start lg:items-end gap-3 lg:min-w-[160px]">
                     <div>
                       <p className="text-xs text-slate-500 mb-0.5">Prize Pool</p>
-                      <p className="text-2xl font-black text-yellow-400">{t.prize}</p>
+                      <p className="text-3xl font-black text-yellow-400">{t.prize}</p>
                     </div>
                     <div className="flex flex-col gap-2 w-full lg:w-auto">
                       {t.watchUrl && (
@@ -3646,7 +3643,6 @@ function TournamentsPage({ navigateTo }) {
                           📺 Watch Live
                         </a>
                       )}
-                      <p className="text-xs text-slate-600 italic">Not open for registration</p>
                     </div>
                   </div>
                 </div>
