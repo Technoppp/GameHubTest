@@ -4738,6 +4738,7 @@ function AdminPage({ navigateTo }) {
   });
   const [tSaving, setTSaving] = useState(false);
   const [editTId, setEditTId] = useState(null);
+  const [editTAutoImported, setEditTAutoImported] = useState(false);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -4766,6 +4767,7 @@ function AdminPage({ navigateTo }) {
   const resetTForm = () => {
     setTForm({ name: '', game: '', date: '', prize: '', type: 'Online', region: 'Southeast Asia', description: '', requirements: '', maxTeams: 32, joinable: true, status: 'Registration Open', watchUrl: '' });
     setEditTId(null);
+    setEditTAutoImported(false);
     setShowTForm(false);
   };
 
@@ -4780,6 +4782,9 @@ function AdminPage({ navigateTo }) {
         createdAt: editTId ? undefined : serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
+      if (editTId && editTAutoImported) {
+        data.manualOverride = true;
+      }
       if (!editTId) { data.registered = 0; }
       // remove undefined
       Object.keys(data).forEach(k => data[k] === undefined && delete data[k]);
@@ -4801,6 +4806,7 @@ function AdminPage({ navigateTo }) {
       joinable: t.joinable, status: t.status, watchUrl: t.watchUrl || '',
     });
     setEditTId(t.id);
+    setEditTAutoImported(Boolean(t.autoImported));
     setShowTForm(true);
   };
 

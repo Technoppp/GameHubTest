@@ -65,3 +65,30 @@ Notes:
 - Only recent articles are imported.
 - Duplicate articles are skipped based on source URL and title.
 - Imported documents are marked with `autoImported: true`.
+
+## Auto Watch Tournament Sync
+
+This project also includes an automated watch-only tournament sync job for the Firestore `tournaments` collection.
+
+Files:
+
+- `.github/workflows/sync-watch-tournaments.yml`
+- `scripts/sync-watch-tournaments.mjs`
+
+How it works:
+
+1. GitHub Actions runs every hour, or manually through `workflow_dispatch`.
+2. The job imports running and upcoming esports matches from PandaScore.
+3. Imported records are stored as `joinable: false` so they appear in the existing Watch Only tab.
+4. If an admin edits an auto-imported tournament in the dashboard, it is marked with `manualOverride: true` so later syncs do not overwrite it.
+
+Required GitHub secrets:
+
+- `FIREBASE_SERVICE_ACCOUNT_JSON`
+- `PANDASCORE_API_TOKEN`
+
+Notes:
+
+- Auto-imported tournaments use `sourceType: "pandascore-match"` and `autoImported: true`.
+- If PandaScore does not provide a stream URL yet, the card can still appear first and the watch button will appear once a stream URL becomes available.
+- Manual tournaments created in the admin dashboard are not affected.
