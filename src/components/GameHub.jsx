@@ -3549,6 +3549,7 @@ function TournamentsPage({ navigateTo }) {
   const [myRegistrations, setMyRegistrations] = useState({});
   const [firestoreTournaments, setFirestoreTournaments] = useState([]);
   const [tLoading, setTLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
   const { user } = useAuth();
 
   // Load tournaments from Firestore
@@ -3663,6 +3664,26 @@ function TournamentsPage({ navigateTo }) {
   const watchable = allTournaments.filter(t => !t.joinable);
   const joinable  = allTournaments.filter(t => t.joinable);
 
+  const matchesTournamentSearch = (tournament) => {
+    const queryText = searchQuery.trim().toLowerCase();
+    if (!queryText) return true;
+
+    const searchableText = [
+      tournament.name,
+      tournament.game,
+      tournament.region,
+      tournament.status,
+      tournament.type,
+      tournament.description,
+      tournament.requirements,
+    ].filter(Boolean).join(' ').toLowerCase();
+
+    return searchableText.includes(queryText);
+  };
+
+  const filteredJoinable = joinable.filter(matchesTournamentSearch);
+  const filteredWatchable = watchable.filter(matchesTournamentSearch);
+
   const statusColor = (s) => {
     if (s === 'Registration Open') return 'bg-green-700 text-green-100';
     if (s === 'Live Now')          return 'bg-red-500/20 text-red-400';
@@ -3692,15 +3713,46 @@ function TournamentsPage({ navigateTo }) {
         </button>
       </div>
 
+      <div className="mb-8 bg-slate-900 border border-slate-800 rounded-2xl p-4 fade-in-up">
+        <div className="relative">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm">🔍</span>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder={tab === 'watch' ? 'Search watch tournaments, games, or regions...' : 'Search joinable tournaments, games, or regions...'}
+            className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-10 pr-12 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 text-lg leading-none"
+            >
+              ×
+            </button>
+          )}
+        </div>
+        <p className="mt-3 text-xs text-slate-500">
+          {tab === 'watch'
+            ? `${filteredWatchable.length} watch-only tournament${filteredWatchable.length !== 1 ? 's' : ''} found`
+            : `${filteredJoinable.length} joinable tournament${filteredJoinable.length !== 1 ? 's' : ''} found`}
+        </p>
+      </div>
+
       {/* JOINABLE TAB */}
       {tab === 'join' && (
         <div className="space-y-5">
-          {joinable.map((t, i) => {
+          {filteredJoinable.length === 0 ? (
+            <div className="text-center py-16 text-slate-500 bg-slate-900 border border-slate-800 rounded-2xl">
+              <p className="text-3xl mb-3">🔎</p>
+              <p>No joinable tournaments match your search.</p>
+            </div>
+          ) : filteredJoinable.map((t, i) => {
             const pct = Math.round((t.registered / t.maxTeams) * 100);
             const full = t.registered >= t.maxTeams;
             const myReg = myRegistrations[t.firestoreId || t.id];
             return (
-              <div key={t.id} className="bg-slate-900 border-2 border-slate-800 rounded-2xl overflow-hidden hover:border-yellow-500/40 transition-all fade-in-up" style={{ animationDelay: `${i*0.08}s` }}>
+              <div key={t.firestoreId || t.id} className="bg-slate-900 border-2 border-slate-800 rounded-2xl overflow-hidden hover:border-yellow-500/40 transition-all fade-in-up" style={{ animationDelay: `${i*0.08}s` }}>
                 <div className="p-6 lg:p-8">
                   <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
                     <div className="flex-1">
@@ -3804,8 +3856,13 @@ function TournamentsPage({ navigateTo }) {
       {/* WATCHABLE TAB */}
       {tab === 'watch' && (
         <div className="space-y-5">
-          {watchable.map((t, i) => (
-            <div key={t.id} className="bg-slate-900 border-2 border-slate-800 rounded-2xl overflow-hidden hover:border-blue-500/40 transition-all fade-in-up" style={{ animationDelay: `${i*0.08}s` }}>
+          {filteredWatchable.length === 0 ? (
+            <div className="text-center py-16 text-slate-500 bg-slate-900 border border-slate-800 rounded-2xl">
+              <p className="text-3xl mb-3">🔎</p>
+              <p>No watch-only tournaments match your search.</p>
+            </div>
+          ) : filteredWatchable.map((t, i) => (
+            <div key={t.firestoreId || t.id} className="bg-slate-900 border-2 border-slate-800 rounded-2xl overflow-hidden hover:border-blue-500/40 transition-all fade-in-up" style={{ animationDelay: `${i*0.08}s` }}>
               <div className="p-6 lg:p-8">
                 <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
                   <div className="flex-1">
