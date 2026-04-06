@@ -4,9 +4,9 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs, onSnapshot, orderBy, query, where, writeBatch, updateDoc, arrayUnion, arrayRemove, deleteDoc, serverTimestamp } from 'firebase/firestore';
 
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 // FIREBASE AUTH
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 
 const firebaseConfig = {
   apiKey: "AIzaSyBnZxbaVzPMLdRKtadjLfjyf8kt3UHb0mk",
@@ -26,9 +26,9 @@ const db = getFirestore(firebaseApp);
 const AuthContext = React.createContext(null);
 const useAuth = () => React.useContext(AuthContext);
 
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 // RAWG API
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 
 const RAWG_API_KEY = '2e74ac2b248241ab924856c410254295';
 
@@ -64,7 +64,7 @@ const RAWG_SLUGS = {
   'Clash of Clans': 'clash-of-clans',
 };
 
-// Fetches background images for all games from RAWG and returns a title→url map
+// Fetches background images for all games from RAWG and returns a titleโ’url map
 function useRawgImages() {
   const [images, setImages] = useState({});
   const fetched = useRef(false);
@@ -99,9 +99,9 @@ function useRawgImages() {
   return images;
 }
 
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 // DATA
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 
 const CATEGORIES = [
   {
@@ -167,7 +167,7 @@ const CATEGORIES = [
 ];
 
 const GAMES_DATA = [
-  // ── FPS ──
+  // โ”€โ”€ FPS โ”€โ”€
   {
     id: 1,
     title: 'Valorant',
@@ -301,7 +301,7 @@ const GAMES_DATA = [
     ],
   },
 
-  // ── MOBA ──
+  // โ”€โ”€ MOBA โ”€โ”€
   {
     id: 7,
     title: 'ROV (Arena of Valor)',
@@ -391,7 +391,7 @@ const GAMES_DATA = [
     ],
   },
 
-  // ── SPORTS ──
+  // โ”€โ”€ SPORTS โ”€โ”€
   {
     id: 11,
     title: 'EA Sports FC 26',
@@ -525,7 +525,7 @@ const GAMES_DATA = [
     ],
   },
 
-  // ── PARTY ──
+  // โ”€โ”€ PARTY โ”€โ”€
   {
     id: 17,
     title: 'Overcooked! All You Can Eat',
@@ -615,7 +615,7 @@ const GAMES_DATA = [
     ],
   },
 
-  // ── RPG ──
+  // โ”€โ”€ RPG โ”€โ”€
   {
     id: 21,
     title: 'The Witcher 3: Wild Hunt',
@@ -705,7 +705,7 @@ const GAMES_DATA = [
     ],
   },
 
-  // ── STRATEGY ──
+  // โ”€โ”€ STRATEGY โ”€โ”€
   {
     id: 25,
     title: 'Civilization VI',
@@ -811,15 +811,15 @@ const TOURNAMENTS_DATA = [
   { id: 3, joinable: false, name: 'LoL World Championship 2026', game: 'League of Legends', date: 'October 1-November 2, 2026', prize: '$2,250,000', status: 'Upcoming', type: 'LAN', description: 'The annual LoL Worlds crowns the best team on the planet. 70M+ viewers. Qualification via regional splits only.', watchUrl: 'https://www.twitch.tv/riotgames', teams: 22, region: 'International' },
   { id: 4, joinable: false, name: 'CS2 Major: Copenhagen 2026', game: 'Counter-Strike 2', date: 'April 14-27, 2026', prize: '$1,250,000', status: 'Upcoming', type: 'LAN', description: 'Valve-sponsored CS2 Major. 24 top teams from Regional Major Rankings only. Qualification through RMR events.', watchUrl: 'https://www.twitch.tv/esl_csgo', teams: 24, region: 'International' },
   // JOINABLE (Public)
-  { id: 5, joinable: true, name: 'GameHub Weekly Valorant Cup', game: 'Valorant', date: 'Every Saturday', prize: '$500', status: 'Registration Open', type: 'Online', description: 'Weekly open tournament for all ranks. Register your team of 5 and compete every weekend. No invite required!', maxTeams: 32, registered: 18, region: 'Southeast Asia', requirements: '5-player team • Any rank • PC only' },
-  { id: 6, joinable: true, name: 'GameHub ROV Community Cup', game: 'ROV (Arena of Valor)', date: 'April 20, 2026', prize: '฿5,000', status: 'Registration Open', type: 'Online', description: 'Open ROV tournament for Thai players. Solo queue or pre-made team of 5. Join and prove your skills!', maxTeams: 64, registered: 41, region: 'Thailand', requirements: '5-player team • Gold+ rank • Mobile / PC' },
-  { id: 7, joinable: true, name: 'GameHub CS2 Open Qualifier', game: 'Counter-Strike 2', date: 'May 3-4, 2026', prize: '$300', status: 'Registration Open', type: 'Online', description: 'Open CS2 5v5 tournament. Any team can register. Top teams advance to monthly finals. FACEIT accounts required.', maxTeams: 128, registered: 67, region: 'Asia-Pacific', requirements: '5-player team • FACEIT Account • PC only' },
-  { id: 8, joinable: true, name: 'GameHub Mobile Legends Cup', game: 'Mobile Legends: Bang Bang', date: 'April 27, 2026', prize: '฿3,000', status: 'Coming Soon', type: 'Online', description: 'Open MLBB tournament for mobile players across SEA. Form your team and compete for prizes!', maxTeams: 64, registered: 0, region: 'Southeast Asia', requirements: '5-player team • Epic+ rank • Mobile' },
+  { id: 5, joinable: true, name: 'GameHub Weekly Valorant Cup', game: 'Valorant', date: 'Every Saturday', prize: '$500', status: 'Registration Open', type: 'Online', description: 'Weekly open tournament for all ranks. Register your team of 5 and compete every weekend. No invite required!', maxTeams: 32, registered: 18, region: 'Southeast Asia', requirements: '5-player team โ€ข Any rank โ€ข PC only' },
+  { id: 6, joinable: true, name: 'GameHub ROV Community Cup', game: 'ROV (Arena of Valor)', date: 'April 20, 2026', prize: 'เธฟ5,000', status: 'Registration Open', type: 'Online', description: 'Open ROV tournament for Thai players. Solo queue or pre-made team of 5. Join and prove your skills!', maxTeams: 64, registered: 41, region: 'Thailand', requirements: '5-player team โ€ข Gold+ rank โ€ข Mobile / PC' },
+  { id: 7, joinable: true, name: 'GameHub CS2 Open Qualifier', game: 'Counter-Strike 2', date: 'May 3-4, 2026', prize: '$300', status: 'Registration Open', type: 'Online', description: 'Open CS2 5v5 tournament. Any team can register. Top teams advance to monthly finals. FACEIT accounts required.', maxTeams: 128, registered: 67, region: 'Asia-Pacific', requirements: '5-player team โ€ข FACEIT Account โ€ข PC only' },
+  { id: 8, joinable: true, name: 'GameHub Mobile Legends Cup', game: 'Mobile Legends: Bang Bang', date: 'April 27, 2026', prize: 'เธฟ3,000', status: 'Coming Soon', type: 'Online', description: 'Open MLBB tournament for mobile players across SEA. Form your team and compete for prizes!', maxTeams: 64, registered: 0, region: 'Southeast Asia', requirements: '5-player team โ€ข Epic+ rank โ€ข Mobile' },
 ];
 
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 // MAIN APP
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 
 // Wishlist nav button with live count badge
 function WishlistNavButton({ navigateTo, currentPage }) {
@@ -842,7 +842,7 @@ function WishlistNavButton({ navigateTo, currentPage }) {
       onClick={() => navigateTo('wishlist')}
       className={`flex items-center gap-2 text-sm font-semibold transition-all duration-300 hover:text-red-400 relative ${currentPage === 'wishlist' ? 'text-red-400' : 'text-slate-400'}`}
     >
-      ♥ Wishlist
+      โฅ Wishlist
       {count > 0 && (
         <span className="absolute -top-2 -right-3 bg-red-500 text-white text-xs font-black rounded-full w-4 h-4 flex items-center justify-center leading-none">
           {count}
@@ -918,7 +918,7 @@ function AuthNavButton({ navigateTo, currentPage, user, authLoading }) {
         <span className="text-sm font-bold text-white hidden md:block max-w-[100px] truncate">
           {user.displayName || user.email.split('@')[0]}
         </span>
-        <span className="text-slate-400 text-xs">▾</span>
+        <span className="text-slate-400 text-xs">โ–พ</span>
       </button>
 
       {/* Dropdown */}
@@ -930,9 +930,9 @@ function AuthNavButton({ navigateTo, currentPage, user, authLoading }) {
           </div>
           <div className="py-1">
             {[
-              { label: '👤 My Profile', page: 'profile' },
-              { label: '♥ Wishlist', page: 'wishlist' },
-              { label: '🏆 Leaderboard', page: 'leaderboard' },
+              { label: '๐‘ค My Profile', page: 'profile' },
+              { label: 'โฅ Wishlist', page: 'wishlist' },
+              { label: '๐ Leaderboard', page: 'leaderboard' },
             ].map(item => (
               <button
                 key={item.page}
@@ -945,7 +945,7 @@ function AuthNavButton({ navigateTo, currentPage, user, authLoading }) {
             <button
               onClick={async () => { await signOut(auth); setDropdownOpen(false); navigateTo('home'); }}
               className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-slate-800 transition-colors"
-            >🚪 Sign Out</button>
+            >๐ช Sign Out</button>
           </div>
         </div>
       )}
@@ -962,9 +962,9 @@ export const useGameImage = (game) => {
   return images[game.title] || game.image;
 };
 
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 // INTRO SCREEN
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 
 function IntroScreen({ onComplete }) {
   const [phase, setPhase] = useState(0);
@@ -1133,7 +1133,7 @@ function IntroScreen({ onComplete }) {
                 onMouseEnter={e=>{ e.currentTarget.style.background='rgba(168,85,247,.15)'; e.currentTarget.style.boxShadow='0 0 50px rgba(168,85,247,.6)'; }}
                 onMouseLeave={e=>{ e.currentTarget.style.background='none'; e.currentTarget.style.boxShadow='none'; }}
               >
-                ▶ &nbsp;PRESS START
+                โ–ถ &nbsp;PRESS START
               </button>
             </div>
           )}
@@ -1353,7 +1353,7 @@ export default function GameHub() {
 
       `}</style>
 
-      {/* ── Header ── */}
+      {/* โ”€โ”€ Header โ”€โ”€ */}
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-slate-950/95 backdrop-blur-lg shadow-lg shadow-blue-500/10' : 'bg-transparent'}`}>
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
@@ -1400,7 +1400,7 @@ export default function GameHub() {
               {isAdmin && (
                 <button onClick={() => navigateTo('admin')}
                   className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${currentPage === 'admin' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/40' : 'text-slate-400 hover:text-yellow-400 border border-slate-700 hover:border-yellow-500/40'}`}>
-                  ⚙️ Admin
+                  โ๏ธ Admin
                 </button>
               )}
               <button onClick={() => navigateTo('about')}
@@ -1468,7 +1468,7 @@ export default function GameHub() {
                   currentPage === 'wishlist' ? 'bg-red-500/15 text-red-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
                 }`}
               >
-                <span className="text-base">♥</span>
+                <span className="text-base">โฅ</span>
                 Wishlist
               </button>
               {/* Admin Panel in mobile menu */}
@@ -1477,7 +1477,7 @@ export default function GameHub() {
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all text-left ${
                     currentPage === 'admin' ? 'bg-yellow-500/15 text-yellow-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
                   }`}>
-                  <span className="text-base">⚙️</span>
+                  <span className="text-base">โ๏ธ</span>
                   Admin Panel
                 </button>
               )}
@@ -1514,7 +1514,7 @@ export default function GameHub() {
         )}
       </header>
 
-      {/* ── Main Content ── */}
+      {/* โ”€โ”€ Main Content โ”€โ”€ */}
       <main className="pt-20">
         {currentPage === 'home' && <HomePage navigateTo={navigateTo} />}
         {currentPage === 'games' && <GamesPage navigateTo={navigateTo} />}
@@ -1532,7 +1532,7 @@ export default function GameHub() {
         {currentPage === 'admin' && <AdminPage navigateTo={navigateTo} />}
       </main>
 
-      {/* ── Footer ── */}
+      {/* โ”€โ”€ Footer โ”€โ”€ */}
       <footer className="mt-32 bg-slate-900/50 border-t border-blue-500/20">
         <div className="container mx-auto px-6 py-12">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -1566,7 +1566,7 @@ export default function GameHub() {
             </div>
           </div>
           <div className="mt-12 pt-8 border-t border-slate-800 text-center text-sm text-slate-500">
-            <p>© 2026 GameHub. All rights reserved. MVP Version 1.0</p>
+            <p>ยฉ 2026 GameHub. All rights reserved. MVP Version 1.0</p>
           </div>
         </div>
       </footer>
@@ -1576,9 +1576,9 @@ export default function GameHub() {
   );
 }
 
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 // HOME PAGE
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 
 // Featured: Valorant, Elden Ring, League of Legends, EA Sports FC 26, Cyberpunk 2077
 const FEATURED_GAMES = [GAMES_DATA[0], GAMES_DATA[22], GAMES_DATA[9], GAMES_DATA[10], GAMES_DATA[21]];
@@ -1616,7 +1616,7 @@ function HomePage({ navigateTo }) {
 
   return (
     <div>
-      {/* ── Cinematic Hero ── */}
+      {/* โ”€โ”€ Cinematic Hero โ”€โ”€ */}
       <section className="relative overflow-hidden" style={{ height: '92vh', minHeight: 600, maxHeight: 900 }}>
         {/* Background image */}
         <div
@@ -1656,7 +1656,7 @@ function HomePage({ navigateTo }) {
                   {hero.subcategory}
                 </span>
                 <span className="flex items-center gap-1 text-yellow-400 text-xs font-bold">
-                  ★ {hero.rating}
+                  โ… {hero.rating}
                 </span>
               </div>
 
@@ -1704,7 +1704,7 @@ function HomePage({ navigateTo }) {
           </div>
         </div>
 
-        {/* ── Hero Selector - right side thumbnails ── */}
+        {/* โ”€โ”€ Hero Selector - right side thumbnails โ”€โ”€ */}
         <div className="hidden sm:flex absolute right-8 top-1/2 -translate-y-1/2 z-20 flex-col gap-3">
           {FEATURED_GAMES.map((g, i) => {
             const c = CATEGORIES.find(cat => cat.id === g.category);
@@ -1761,7 +1761,7 @@ function HomePage({ navigateTo }) {
         </div>
       </section>
 
-      {/* ── Genre Quick Access ── */}
+      {/* โ”€โ”€ Genre Quick Access โ”€โ”€ */}
       <section className="container mx-auto px-6 py-16">
         <div className="flex items-center justify-between mb-8">
           <h3 className="text-2xl font-black" style={{ fontFamily: "'Orbitron', sans-serif" }}>
@@ -1799,7 +1799,7 @@ function HomePage({ navigateTo }) {
         </div>
       </section>
 
-      {/* ── Featured Games ── */}
+      {/* โ”€โ”€ Featured Games โ”€โ”€ */}
       <section className="container mx-auto px-6 py-4 pb-20">
         <div className="flex items-center justify-between mb-8">
           <h3 className="text-2xl font-black" style={{ fontFamily: "'Orbitron', sans-serif" }}>
@@ -1832,7 +1832,7 @@ function HomePage({ navigateTo }) {
                 <div className="p-4">
                   <div className="flex items-start justify-between mb-1">
                     <h4 className="font-black text-base leading-tight">{game.title}</h4>
-                    <span className="text-yellow-400 text-xs font-bold flex-shrink-0 ml-2">★ {game.rating}</span>
+                    <span className="text-yellow-400 text-xs font-bold flex-shrink-0 ml-2">โ… {game.rating}</span>
                   </div>
                   <p className="text-xs text-slate-500 mb-3">{game.developer}</p>
                   <div className="flex items-center justify-between pt-2 border-t border-slate-800">
@@ -1848,7 +1848,7 @@ function HomePage({ navigateTo }) {
         </div>
       </section>
 
-      {/* ── Active Tournaments Strip ── */}
+      {/* โ”€โ”€ Active Tournaments Strip โ”€โ”€ */}
       <section className="border-y border-slate-800 bg-slate-900/40 py-12">
         <div className="container mx-auto px-6">
           <div className="flex items-center justify-between mb-8">
@@ -1871,7 +1871,7 @@ function HomePage({ navigateTo }) {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-bold text-green-400 status-badge">● OPEN</span>
+                    <span className="text-xs font-bold text-green-400 status-badge">โ— OPEN</span>
                     <span className="text-xs text-slate-500">{t.game}</span>
                   </div>
                   <p className="font-bold text-sm truncate">{t.name}</p>
@@ -1887,7 +1887,7 @@ function HomePage({ navigateTo }) {
         </div>
       </section>
 
-      {/* ── Latest News ── */}
+      {/* โ”€โ”€ Latest News โ”€โ”€ */}
       <section className="container mx-auto px-6 py-20">
         <div className="flex items-center justify-between mb-8">
           <h3 className="text-2xl font-black" style={{ fontFamily: "'Orbitron', sans-serif" }}>
@@ -1956,9 +1956,9 @@ function HomePage({ navigateTo }) {
   );
 }
 
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 // GAMES PAGE  - Category Grid + Search + Filter
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 
 function GamesPage({ navigateTo }) {
   const [search, setSearch] = useState('');
@@ -2002,7 +2002,7 @@ function GamesPage({ navigateTo }) {
             className="flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-sm transition-all duration-200"
             style={{ background: showSearch ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.05)', color: showSearch ? '#60a5fa' : '#94a3b8', border: '1px solid', borderColor: showSearch ? 'rgba(59,130,246,0.4)' : 'rgba(255,255,255,0.1)' }}
           >
-            🔍 Search & Filter
+            ๐” Search & Filter
           </button>
         </div>
 
@@ -2011,7 +2011,7 @@ function GamesPage({ navigateTo }) {
           <div className="bg-slate-900 rounded-2xl p-5 border border-slate-800 fade-in-up space-y-4">
             {/* Search input */}
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">๐”</span>
               <input
                 type="text"
                 value={search}
@@ -2020,7 +2020,7 @@ function GamesPage({ navigateTo }) {
                 className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
               />
               {search && (
-                <button onClick={() => setSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 text-lg">×</button>
+                <button onClick={() => setSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 text-lg">ร—</button>
               )}
             </div>
 
@@ -2058,7 +2058,7 @@ function GamesPage({ navigateTo }) {
                         color: ratingFilter === r ? '#facc15' : '#64748b',
                         border: `1px solid ${ratingFilter === r ? 'rgba(234,179,8,0.3)' : 'rgba(255,255,255,0.08)'}`,
                       }}
-                    >{r === 'All' ? 'All' : `★ ${r}`}</button>
+                    >{r === 'All' ? 'All' : `โ… ${r}`}</button>
                   ))}
                 </div>
               </div>
@@ -2084,7 +2084,7 @@ function GamesPage({ navigateTo }) {
             </div>
           ) : (
             <div className="text-center py-24 text-slate-600">
-              <p className="text-6xl mb-4">🎮</p>
+              <p className="text-6xl mb-4">๐ฎ</p>
               <p className="text-xl font-bold">No games found</p>
               <p className="text-sm mt-2">Try adjusting your search or filters</p>
             </div>
@@ -2150,9 +2150,9 @@ function GamesPage({ navigateTo }) {
   );
 }
 
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 // CATEGORY PAGE  - Subcategory filter + game list
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 
 function CategoryPage({ category, navigateTo, goBack, navHistory }) {
   const [activeSub, setActiveSub] = useState('All');
@@ -2238,9 +2238,9 @@ function CategoryPage({ category, navigateTo, goBack, navHistory }) {
   );
 }
 
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 // GAME CARD  - shared component
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 
 function GameCard({ game, index, navigateTo, accentColor = '#3b82f6' }) {
   const cat = CATEGORIES.find(c => c.id === game.category);
@@ -2273,7 +2273,7 @@ function GameCard({ game, index, navigateTo, accentColor = '#3b82f6' }) {
         <div className="flex items-start justify-between mb-2">
           <h3 className="text-xl font-bold leading-tight">{game.title}</h3>
           <div className="flex items-center gap-1 text-yellow-400 flex-shrink-0 ml-3">
-            <span className="text-sm">★</span>
+            <span className="text-sm">โ…</span>
             <span className="font-bold text-sm">{game.rating}</span>
           </div>
         </div>
@@ -2319,7 +2319,7 @@ function RelatedGameCard({ game, navigateTo }) {
       <div className="p-3">
         <p className="font-bold text-sm truncate">{game.title}</p>
         <div className="flex items-center gap-1 text-yellow-400 mt-1">
-          <span className="text-xs">★</span>
+          <span className="text-xs">โ…</span>
           <span className="text-xs font-bold">{game.rating}</span>
         </div>
       </div>
@@ -2327,9 +2327,9 @@ function RelatedGameCard({ game, navigateTo }) {
   );
 }
 
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 // GAME DETAIL PAGE  - with Community Features
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 
 function GameDetailPage({ game, navigateTo, goBack, navHistory }) {
   const cat = CATEGORIES.find(c => c.id === game.category);
@@ -2479,7 +2479,7 @@ function GameDetailPage({ game, navigateTo, goBack, navHistory }) {
       <div className="container mx-auto px-6 py-10">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-          {/* ── Left: Tabbed Content ── */}
+          {/* โ”€โ”€ Left: Tabbed Content โ”€โ”€ */}
           <div className="lg:col-span-2 lg:order-1 order-2">
 
             <div className="space-y-10">
@@ -2521,7 +2521,7 @@ function GameDetailPage({ game, navigateTo, goBack, navHistory }) {
             </div>
           </div>
 
-          {/* ── Right: Sidebar ── */}
+          {/* โ”€โ”€ Right: Sidebar โ”€โ”€ */}
           <div className="space-y-6 lg:order-2 order-1">
             {/* Wishlist button */}
             <button
@@ -2533,7 +2533,7 @@ function GameDetailPage({ game, navigateTo, goBack, navHistory }) {
                 border: `2px solid ${isWishlisted ? 'rgba(239,68,68,0.4)' : `${color}44`}`,
               }}
             >
-              {isWishlisted ? '♥ Remove from Wishlist' : '♡ Add to Wishlist'}
+              {isWishlisted ? 'โฅ Remove from Wishlist' : 'โก Add to Wishlist'}
             </button>
 
             {/* Store Links */}
@@ -2575,9 +2575,9 @@ function GameDetailPage({ game, navigateTo, goBack, navHistory }) {
               const mobileOnly = stores.mobileOnly;
 
               const buttons = mobileOnly ? [] : [
-                stores.steam    && { label: 'Steam',        url: stores.steam,    bg: '#1b2838', border: '#4a90d9', icon: '🎮' },
-                stores.epic     && { label: 'Epic Games',   url: stores.epic,     bg: '#2a2a2a', border: '#0078f2', icon: '⚡' },
-                stores.official && { label: 'Official Site',url: stores.official, bg: '#1a1a2e', border: color,     icon: '🌐' },
+                stores.steam    && { label: 'Steam',        url: stores.steam,    bg: '#1b2838', border: '#4a90d9', icon: '๐ฎ' },
+                stores.epic     && { label: 'Epic Games',   url: stores.epic,     bg: '#2a2a2a', border: '#0078f2', icon: 'โก' },
+                stores.official && { label: 'Official Site',url: stores.official, bg: '#1a1a2e', border: color,     icon: '๐' },
               ].filter(Boolean);
 
               if (buttons.length === 0 && !mobileOnly) return null;
@@ -2589,14 +2589,14 @@ function GameDetailPage({ game, navigateTo, goBack, navHistory }) {
                     <div className="space-y-3">
                       <p className="text-slate-300 text-sm mb-3">This game is available on mobile. Download for free on</p>
                       <div className="flex items-center gap-3 py-3 px-4 rounded-xl bg-slate-800 border border-slate-700">
-                        <span className="text-2xl">🍎</span>
+                        <span className="text-2xl">๐</span>
                         <div>
                           <p className="font-bold text-white text-sm">App Store</p>
                           <p className="text-slate-400 text-xs">For iPhone / iPad</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 py-3 px-4 rounded-xl bg-slate-800 border border-slate-700">
-                        <span className="text-2xl">🤖</span>
+                        <span className="text-2xl">๐ค–</span>
                         <div>
                           <p className="font-bold text-white text-sm">Google Play Store</p>
                           <p className="text-slate-400 text-xs">For Android</p>
@@ -2615,7 +2615,7 @@ function GameDetailPage({ game, navigateTo, goBack, navHistory }) {
                         >
                           <span className="text-lg">{btn.icon}</span>
                           <span>Play on {btn.label}</span>
-                          <span className="ml-auto text-slate-400">→</span>
+                          <span className="ml-auto text-slate-400">โ’</span>
                         </a>
                       ))}
                     </div>
@@ -2643,7 +2643,7 @@ function GameDetailPage({ game, navigateTo, goBack, navHistory }) {
                   <div>
                     <span className="text-slate-500 block mb-1">Rating</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl text-yellow-400">★</span>
+                      <span className="text-2xl text-yellow-400">โ…</span>
                       <span className="text-white font-black text-xl">{game.rating}</span>
                       <span className="text-slate-500">/ 5.0</span>
                     </div>
@@ -2665,7 +2665,7 @@ function GameDetailPage({ game, navigateTo, goBack, navHistory }) {
               <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-3">Rate This Game</h4>
               {avgRating && (
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="text-yellow-400 font-black text-lg">★ {avgRating}</span>
+                  <span className="text-yellow-400 font-black text-lg">โ… {avgRating}</span>
                   <span className="text-xs text-slate-500">from {ratingCount} user{ratingCount !== 1 ? 's' : ''}</span>
                 </div>
               )}
@@ -2676,11 +2676,11 @@ function GameDetailPage({ game, navigateTo, goBack, navHistory }) {
                     onMouseEnter={() => setHoverRating(star)}
                     onMouseLeave={() => setHoverRating(0)}
                     className="text-2xl transition-transform hover:scale-125">
-                    {star <= (hoverRating || userRating) ? '⭐' : '☆'}
+                    {star <= (hoverRating || userRating) ? 'โญ' : 'โ'}
                   </button>
                 ))}
               </div>
-              {ratingSubmitted && <p className="text-xs text-green-400">Thanks for rating! ✓</p>}
+              {ratingSubmitted && <p className="text-xs text-green-400">Thanks for rating! โ“</p>}
             </div>
 
             {/* Discuss in Community */}
@@ -2688,7 +2688,7 @@ function GameDetailPage({ game, navigateTo, goBack, navHistory }) {
               onClick={() => navigateTo('community', { tagGame: game })}
               className="w-full py-3.5 rounded-xl font-bold text-sm transition-all duration-200 flex items-center justify-center gap-2 bg-blue-600/20 hover:bg-blue-600/30 border-2 border-blue-500/40 hover:border-blue-500/70 text-blue-400"
             >
-              💬 Discuss in Community
+              ๐’ฌ Discuss in Community
             </button>
 
             {/* Genre card */}
@@ -2722,9 +2722,9 @@ function GameDetailPage({ game, navigateTo, goBack, navHistory }) {
   );
 }
 
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 // LOGIN PAGE
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 
 function LoginPage({ navigateTo }) {
   const [email, setEmail] = useState('');
@@ -2779,7 +2779,7 @@ function LoginPage({ navigateTo }) {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleLogin()}
-                placeholder="••••••••"
+                placeholder="โ€ขโ€ขโ€ขโ€ขโ€ขโ€ขโ€ขโ€ข"
                 className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
               />
             </div>
@@ -2812,9 +2812,9 @@ function LoginPage({ navigateTo }) {
   );
 }
 
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 // REGISTER PAGE
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 
 function RegisterPage({ navigateTo }) {
   const [displayName, setDisplayName] = useState('');
@@ -2848,7 +2848,7 @@ function RegisterPage({ navigateTo }) {
         <div className="text-center mb-10">
           <img src="/images/games/logo.png" alt="GameHub Logo" className="h-16 w-auto object-contain mx-auto mb-4"/>
           <h2 className="text-3xl font-black" style={{ fontFamily: "'Orbitron', sans-serif" }}>
-            <span className="text-purple-400">JOIN</span> GAMEHUB
+            <span className="text-blue-400">JOIN</span> GAMEHUB
           </h2>
           <p className="text-slate-400 mt-2">Create your free account</p>
         </div>
@@ -2858,8 +2858,8 @@ function RegisterPage({ navigateTo }) {
             {[
               { label: 'Display Name', value: displayName, setter: setDisplayName, type: 'text', placeholder: 'GamerTag123' },
               { label: 'Email', value: email, setter: setEmail, type: 'email', placeholder: 'you@example.com' },
-              { label: 'Password', value: password, setter: setPassword, type: 'password', placeholder: '•••••••• (min 6 chars)' },
-              { label: 'Confirm Password', value: confirm, setter: setConfirm, type: 'password', placeholder: '••••••••' },
+              { label: 'Password', value: password, setter: setPassword, type: 'password', placeholder: 'โ€ขโ€ขโ€ขโ€ขโ€ขโ€ขโ€ขโ€ข (min 6 chars)' },
+              { label: 'Confirm Password', value: confirm, setter: setConfirm, type: 'password', placeholder: 'โ€ขโ€ขโ€ขโ€ขโ€ขโ€ขโ€ขโ€ข' },
             ].map(field => (
               <div key={field.label}>
                 <label className="block text-xs font-bold text-slate-400 mb-2 tracking-widest uppercase">{field.label}</label>
@@ -2869,7 +2869,7 @@ function RegisterPage({ navigateTo }) {
                   onChange={e => field.setter(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleRegister()}
                   placeholder={field.placeholder}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
                 />
               </div>
             ))}
@@ -2884,7 +2884,7 @@ function RegisterPage({ navigateTo }) {
               onClick={handleRegister}
               disabled={loading}
               className="w-full py-3.5 rounded-xl font-black text-white transition-all disabled:opacity-50 text-sm tracking-wider"
-              style={{ background: 'linear-gradient(135deg, #8b5cf6, #ec4899)' }}
+              style={{ background: 'linear-gradient(135deg, #3b82f6, #0ea5e9)' }}
             >
               {loading ? 'Creating account...' : 'CREATE ACCOUNT'}
             </button>
@@ -2892,7 +2892,7 @@ function RegisterPage({ navigateTo }) {
 
           <div className="mt-6 text-center text-sm text-slate-500">
             Already have an account?{' '}
-            <button onClick={() => navigateTo('login')} className="text-purple-400 font-bold hover:underline">
+            <button onClick={() => navigateTo('login')} className="text-blue-400 font-bold hover:underline">
               Sign In
             </button>
           </div>
@@ -2902,11 +2902,11 @@ function RegisterPage({ navigateTo }) {
   );
 }
 
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 // PROFILE PAGE
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 
-const AVATAR_EMOJIS = ['🎮', '🕹️', '👾', '🏆', '⚔️', '🔥', '💀', '🎯', '🛡️', '🚀', '🐉', '⚡', '🎲', '🦊', '🤖', '👑'];
+const AVATAR_EMOJIS = ['๐ฎ', '๐•น๏ธ', '๐‘พ', '๐', 'โ”๏ธ', '๐”ฅ', '๐’€', '๐ฏ', '๐ก๏ธ', '๐€', '๐', 'โก', '๐ฒ', '๐ฆ', '๐ค–', '๐‘‘'];
 const AVATAR_COLORS = [
   { from: '#3b82f6', to: '#8b5cf6' }, // blue-purple
   { from: '#ef4444', to: '#f97316' }, // red-orange
@@ -2926,7 +2926,7 @@ function ProfilePage({ navigateTo }) {
   const [wishlistCount, setWishlistCount] = useState(0);
 
   // Avatar state
-  const [selectedEmoji, setSelectedEmoji] = useState('🎮');
+  const [selectedEmoji, setSelectedEmoji] = useState('๐ฎ');
   const [selectedColor, setSelectedColor] = useState(0);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [avatarSaved, setAvatarSaved] = useState(false);
@@ -2945,7 +2945,7 @@ function ProfilePage({ navigateTo }) {
         if (auth.currentUser) {
           const avatarSnap = await getDoc(doc(db, 'avatars', auth.currentUser.uid));
           if (avatarSnap.exists()) {
-            setSelectedEmoji(avatarSnap.data().emoji || '🎮');
+            setSelectedEmoji(avatarSnap.data().emoji || '๐ฎ');
             setSelectedColor(avatarSnap.data().colorIndex ?? 0);
           }
         }
@@ -3032,13 +3032,13 @@ function ProfilePage({ navigateTo }) {
             <div
               className="absolute -bottom-1 -right-1 w-6 h-6 bg-slate-700 border border-slate-600 rounded-full flex items-center justify-center text-xs cursor-pointer hover:bg-slate-600 transition-colors"
               onClick={() => setShowAvatarPicker(!showAvatarPicker)}
-            >✏️</div>
+            >โ๏ธ</div>
           </div>
           <div>
             <h3 className="text-2xl font-black">{user.displayName || 'Gamer'}</h3>
             <p className="text-slate-400 text-sm mt-1">{user.email}</p>
             <p className="text-slate-500 text-xs mt-1">Joined {joinDate}</p>
-            {avatarSaved && <p className="text-green-400 text-xs mt-1 font-bold">✓ Avatar saved!</p>}
+            {avatarSaved && <p className="text-green-400 text-xs mt-1 font-bold">โ“ Avatar saved!</p>}
           </div>
         </div>
 
@@ -3102,8 +3102,8 @@ function ProfilePage({ navigateTo }) {
         {/* Stats */}
         <div className="grid grid-cols-2 gap-4 mb-8">
           {[
-            { label: 'Wishlist', value: wishlistCount, icon: '♥', color: '#f87171', page: 'wishlist' },
-            { label: 'Leaderboard', value: '🏆', icon: '👑', color: '#facc15', page: 'leaderboard' },
+            { label: 'Wishlist', value: wishlistCount, icon: 'โฅ', color: '#f87171', page: 'wishlist' },
+            { label: 'Leaderboard', value: '๐', icon: '๐‘‘', color: '#facc15', page: 'leaderboard' },
           ].map(stat => (
             <button
               key={stat.label}
@@ -3133,7 +3133,7 @@ function ProfilePage({ navigateTo }) {
               className="px-5 py-3 rounded-xl font-bold text-sm transition-all text-white"
               style={{ background: saved ? '#22c55e' : 'linear-gradient(135deg, #3b82f6, #8b5cf6)' }}
             >
-              {saved ? '✓ Saved!' : saving ? '...' : 'Save'}
+              {saved ? 'โ“ Saved!' : saving ? '...' : 'Save'}
             </button>
           </div>
         </div>
@@ -3144,15 +3144,15 @@ function ProfilePage({ navigateTo }) {
         onClick={async () => { await signOut(auth); navigateTo('home'); }}
         className="w-full py-3.5 rounded-xl font-bold text-red-400 border border-red-500/30 hover:bg-red-500/10 transition-all"
       >
-        🚪 Sign Out
+        ๐ช Sign Out
       </button>
     </div>
   );
 }
 
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 // LEADERBOARD PAGE
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 
 function LeaderboardPage({ navigateTo }) {
   const [leaderboard, setLeaderboard] = useState([]);
@@ -3198,7 +3198,7 @@ function LeaderboardPage({ navigateTo }) {
         {/* Community Activity Rankings */}
         <div>
           <h3 className="text-lg font-black mb-5 flex items-center gap-2">
-            <span className="text-blue-400">💬</span> Most Active Community
+            <span className="text-blue-400">๐’ฌ</span> Most Active Community
           </h3>
           {loading ? (
             <div className="space-y-3">
@@ -3206,16 +3206,16 @@ function LeaderboardPage({ navigateTo }) {
             </div>
           ) : leaderboard.length === 0 ? (
             <div className="bg-slate-900 rounded-2xl p-10 border border-slate-800 text-center text-slate-500">
-              <p className="text-4xl mb-3">🏆</p>
+              <p className="text-4xl mb-3">๐</p>
               <p className="font-bold">No community activity yet</p>
               <p className="text-sm mt-1">Be the first to review or discuss a game!</p>
-              <button onClick={() => navigateTo('games')} className="mt-4 text-blue-400 text-sm font-bold hover:underline">Browse Games →</button>
+              <button onClick={() => navigateTo('games')} className="mt-4 text-blue-400 text-sm font-bold hover:underline">Browse Games โ’</button>
             </div>
           ) : (
             <div className="space-y-3">
               {leaderboard.map((entry, i) => {
                 const cat = CATEGORIES.find(c => c.id === entry.game.category);
-                const medal = ['🥇','🥈','🥉'][i] || `#${i+1}`;
+                const medal = ['๐ฅ','๐ฅ','๐ฅ'][i] || `#${i+1}`;
                 return (
                   <div
                     key={entry.game.id}
@@ -3226,9 +3226,9 @@ function LeaderboardPage({ navigateTo }) {
                     <div className="flex-1 min-w-0">
                       <p className="font-bold truncate">{entry.game.title}</p>
                       <div className="flex items-center gap-3 text-xs text-slate-500 mt-0.5">
-                        <span style={{ color: cat?.color }}>● {cat?.label}</span>
-                        <span>💬 {entry.posts} posts</span>
-                        <span>❤️ {entry.likes} likes</span>
+                        <span style={{ color: cat?.color }}>โ— {cat?.label}</span>
+                        <span>๐’ฌ {entry.posts} posts</span>
+                        <span>โค๏ธ {entry.likes} likes</span>
                       </div>
                     </div>
                     {entry.posts > 0 && (
@@ -3247,12 +3247,12 @@ function LeaderboardPage({ navigateTo }) {
         {/* Top Rated by Score */}
         <div>
           <h3 className="text-lg font-black mb-5 flex items-center gap-2">
-            <span className="text-yellow-400">⭐</span> Top Rated Games
+            <span className="text-yellow-400">โญ</span> Top Rated Games
           </h3>
           <div className="space-y-3">
             {topRated.map((game, i) => {
               const cat = CATEGORIES.find(c => c.id === game.category);
-              const medal = ['🥇','🥈','🥉'][i] || `#${i+1}`;
+              const medal = ['๐ฅ','๐ฅ','๐ฅ'][i] || `#${i+1}`;
               return (
                 <div
                   key={game.id}
@@ -3262,10 +3262,10 @@ function LeaderboardPage({ navigateTo }) {
                   <span className="text-2xl w-8 text-center">{medal}</span>
                   <div className="flex-1 min-w-0">
                     <p className="font-bold truncate">{game.title}</p>
-                    <p className="text-xs mt-0.5" style={{ color: cat?.color }}>● {cat?.label} · {game.subcategory}</p>
+                    <p className="text-xs mt-0.5" style={{ color: cat?.color }}>โ— {cat?.label} ยท {game.subcategory}</p>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <p className="text-yellow-400 font-black text-lg">★ {game.rating}</p>
+                    <p className="text-yellow-400 font-black text-lg">โ… {game.rating}</p>
                   </div>
                 </div>
               );
@@ -3277,9 +3277,9 @@ function LeaderboardPage({ navigateTo }) {
   );
 }
 
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 // WISHLIST PAGE
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 
 function WishlistPage({ navigateTo }) {
   const [wishlist, setWishlist] = useState([]);
@@ -3320,7 +3320,7 @@ function WishlistPage({ navigateTo }) {
         </div>
       ) : wishlistedGames.length === 0 ? (
         <div className="text-center py-32 text-slate-600">
-          <p className="text-6xl mb-4">♡</p>
+          <p className="text-6xl mb-4">โก</p>
           <p className="text-xl font-bold">Your wishlist is empty</p>
           <p className="text-sm mt-2 mb-6">Go to any game and click "Add to Wishlist"</p>
           <button
@@ -3338,7 +3338,7 @@ function WishlistPage({ navigateTo }) {
                 <button
                   onClick={(e) => { e.stopPropagation(); removeFromWishlist(game.id); }}
                   className="absolute top-3 left-3 bg-red-500/80 hover:bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                >✕ Remove</button>
+                >โ• Remove</button>
               </div>
             );
           })}
@@ -3348,9 +3348,9 @@ function WishlistPage({ navigateTo }) {
   );
 }
 
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 // TOURNAMENTS PAGE
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 
 function TournamentsPage({ navigateTo }) {
   const [tab, setTab] = useState('join');
@@ -3370,7 +3370,7 @@ function TournamentsPage({ navigateTo }) {
     return () => unsub();
   }, []);
 
-  // Use only Firestore tournaments — no hardcode fallback
+  // Use only Firestore tournaments โ€” no hardcode fallback
   const allTournaments = firestoreTournaments;
 
   // Number of players per game
@@ -3523,10 +3523,10 @@ function TournamentsPage({ navigateTo }) {
                       <div className="flex flex-wrap gap-4 text-sm mb-4">
                         <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4 text-blue-400"/>{t.date}</span>
                         <span className="flex items-center gap-1.5"><Globe className="w-4 h-4 text-purple-400"/>{t.type}</span>
-                        <span className="flex items-center gap-1.5 text-slate-400">🌏 {t.region}</span>
+                        <span className="flex items-center gap-1.5 text-slate-400">๐ {t.region}</span>
                       </div>
                       <div className="bg-slate-800/60 rounded-lg px-4 py-2.5 text-xs text-slate-300 mb-4 inline-block">
-                        📋 {t.requirements}
+                        ๐“ {t.requirements}
                       </div>
                       {/* My registration status */}
                       {myReg && (
@@ -3535,38 +3535,38 @@ function TournamentsPage({ navigateTo }) {
                           myReg.status === 'rejected' ? 'bg-red-500/15 text-red-400 border border-red-500/30' :
                           'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30'
                         }`}>
-                          {myReg.status === 'approved' ? '✅ Registered' : myReg.status === 'rejected' ? `❌ Rejected (${myReg.rejectCount}/3)` : '⏳ Pending approval'}
-                          {myReg.status === 'pending' && <span className="font-normal">— Team: {myReg.teamName}</span>}
+                          {myReg.status === 'approved' ? 'โ… Registered' : myReg.status === 'rejected' ? `โ Rejected (${myReg.rejectCount}/3)` : 'โณ Pending approval'}
+                          {myReg.status === 'pending' && <span className="font-normal">โ€” Team: {myReg.teamName}</span>}
                         </div>
                       )}
                       {/* Slots bar */}
                       <div>
                         <div className="flex justify-between text-xs text-slate-400 mb-1.5">
                           <span>Teams Registered</span>
-                          <span className={full ? 'text-red-400 font-bold' : 'text-green-400 font-bold'}>{t.registered} / {t.maxTeams} teams{full ? ' — Full' : ''}</span>
+                          <span className={full ? 'text-red-400 font-bold' : 'text-green-400 font-bold'}>{t.registered} / {t.maxTeams} teams{full ? ' โ€” Full' : ''}</span>
                         </div>
                         <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
                           <div className={`h-full rounded-full transition-all ${full ? 'bg-red-500' : pct > 70 ? 'bg-yellow-500' : 'bg-green-500'}`} style={{ width: `${pct}%` }}/>
                         </div>
                       </div>
                     </div>
-                    <div className="flex flex-col items-start lg:items-end gap-3 lg:min-w-[160px]">
+                    <div className="flex flex-col items-start lg:items-end gap-3 lg:min-w-[160px] lg:self-stretch lg:justify-between">
                       <div>
                         <p className="text-xs text-slate-500 mb-0.5">Prize Pool</p>
-                        <p className="text-3xl font-black text-yellow-400">{t.prize}</p>
+                        <p className="text-4xl lg:text-[2.75rem] leading-none font-black text-yellow-400">{t.prize}</p>
                       </div>
                       {myReg ? (
                         <div className="flex flex-col gap-2 w-full lg:w-auto">
                           {myReg.status === 'pending' && (
                             <button onClick={() => handleEdit(t, myReg)}
                               className="w-full lg:w-auto bg-slate-700 hover:bg-slate-600 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-all">
-                              ✏️ Edit Registration
+                              โ๏ธ Edit Registration
                             </button>
                           )}
                           {myReg.status === 'rejected' && (
                             myReg.rejectCount >= 3 ? (
                               <div className="text-xs text-red-400 font-bold text-center px-3 py-2 bg-red-500/10 rounded-xl border border-red-500/20">
-                                ⛔ Max attempts reached
+                                โ” Max attempts reached
                               </div>
                             ) : (
                               <button onClick={() => {
@@ -3583,7 +3583,7 @@ function TournamentsPage({ navigateTo }) {
                                 setRegisterModal(t);
                               }}
                                 className="w-full lg:w-auto bg-yellow-500 hover:bg-yellow-400 text-black font-black px-5 py-2.5 rounded-xl text-sm transition-all">
-                                🔄 Resubmit ({3 - myReg.rejectCount} left)
+                                ๐” Resubmit ({3 - myReg.rejectCount} left)
                               </button>
                             )
                           )}
@@ -3594,7 +3594,7 @@ function TournamentsPage({ navigateTo }) {
                       ) : t.status === 'Registration Open' && !full ? (
                         <button onClick={() => handleRegister(t)}
                           className="w-full lg:w-auto bg-yellow-500 hover:bg-yellow-400 text-black font-black px-6 py-3 rounded-xl transition-all hover:scale-105 text-sm">
-                          ✍️ Join Now
+                          Join Now
                         </button>
                       ) : t.status === 'Coming Soon' ? (
                         <button className="w-full lg:w-auto bg-slate-700 text-slate-400 font-bold px-6 py-3 rounded-xl text-sm cursor-not-allowed" disabled>Coming Soon</button>
@@ -3619,7 +3619,7 @@ function TournamentsPage({ navigateTo }) {
                 <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
                   <div className="flex-1">
                     <div className="flex flex-wrap items-center gap-2 mb-3">
-                      <span className="text-xs font-bold px-3 py-1 rounded-full bg-blue-500/15 text-blue-400">👁️ Pro / Invitational</span>
+                      <span className="text-xs font-bold px-3 py-1 rounded-full bg-blue-500/15 text-blue-400">๐‘๏ธ Pro / Invitational</span>
                       <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-700 text-slate-300">{t.game}</span>
                       <span className={`text-xs font-bold px-3 py-1 rounded-full ${statusColor(t.status)}`}>{t.status}</span>
                     </div>
@@ -3628,7 +3628,7 @@ function TournamentsPage({ navigateTo }) {
                     <div className="flex flex-wrap gap-4 text-sm mb-4">
                       <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4 text-blue-400"/>{t.date}</span>
                       <span className="flex items-center gap-1.5"><Globe className="w-4 h-4 text-purple-400"/>{t.type}</span>
-                      <span className="flex items-center gap-1.5 text-slate-400">🌏 {t.region}</span>
+                      <span className="flex items-center gap-1.5 text-slate-400">๐ {t.region}</span>
                     </div>
                   </div>
                   <div className="flex flex-col items-start lg:items-end gap-3 lg:min-w-[160px]">
@@ -3640,7 +3640,7 @@ function TournamentsPage({ navigateTo }) {
                       {t.watchUrl && (
                         <a href={t.watchUrl} target="_blank" rel="noopener noreferrer"
                           className="flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white font-bold px-6 py-3 rounded-xl transition-all hover:scale-105 text-sm">
-                          📺 Watch Live
+                          ๐“บ Watch Live
                         </a>
                       )}
                     </div>
@@ -3659,12 +3659,12 @@ function TournamentsPage({ navigateTo }) {
             {submitDone ? (
               /* Success state */
               <div className="p-8 text-center">
-                <div className="text-5xl mb-4">🎉</div>
+                <div className="text-5xl mb-4">๐</div>
                 <h3 className="text-xl font-black mb-2 text-green-400">{editRegId ? 'Registration Updated!' : 'Registration Submitted!'}</h3>
                 <p className="text-slate-400 text-sm mb-2">Your team <span className="text-white font-bold">"{form.teamName}"</span> has been {editRegId ? 'updated for' : 'registered for'}</p>
                 <p className="text-yellow-400 font-bold mb-6">{registerModal.name}</p>
                 <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 mb-6 text-sm text-slate-300">
-                  ⏳ Your registration is <span className="text-yellow-400 font-bold">pending approval</span>. The admin will review and confirm within 24 hours.
+                  โณ Your registration is <span className="text-yellow-400 font-bold">pending approval</span>. The admin will review and confirm within 24 hours.
                 </div>
                 <button onClick={() => setRegisterModal(null)}
                   className="bg-yellow-500 hover:bg-yellow-400 text-black font-black px-8 py-3 rounded-xl transition-all">
@@ -3677,7 +3677,7 @@ function TournamentsPage({ navigateTo }) {
                 <div className="p-5 pb-0 flex-shrink-0">
                   <div className="flex items-center justify-between mb-1">
                     <h3 className="text-lg font-black">{editRegId ? 'Edit Registration' : 'Team Registration'}</h3>
-                    <button onClick={() => setRegisterModal(null)} className="text-slate-500 hover:text-white text-xl leading-none">✕</button>
+                    <button onClick={() => setRegisterModal(null)} className="text-slate-500 hover:text-white text-xl leading-none">โ•</button>
                   </div>
                   <p className="text-yellow-400 font-bold text-sm mb-4">{registerModal.name}</p>
 
@@ -3687,7 +3687,7 @@ function TournamentsPage({ navigateTo }) {
                       <React.Fragment key={s}>
                         <div className={`flex items-center gap-1.5 text-xs font-bold ${formStep === s ? 'text-yellow-400' : formStep > s ? 'text-green-400' : 'text-slate-600'}`}>
                           <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${formStep === s ? 'bg-yellow-500 text-black' : formStep > s ? 'bg-green-500 text-white' : 'bg-slate-700 text-slate-500'}`}>
-                            {formStep > s ? '✓' : s}
+                            {formStep > s ? 'โ“' : s}
                           </div>
                           {s === 1 ? 'Team Info' : 'Players'}
                         </div>
@@ -3715,7 +3715,7 @@ function TournamentsPage({ navigateTo }) {
                       <p className="text-xs text-slate-500">Enter real name and in-game name for each player</p>
                       {form.players.map((p, i) => (
                         <div key={i} className="bg-slate-800/60 rounded-xl p-3 space-y-2">
-                          <p className="text-xs text-yellow-400 font-bold">Player {i + 1}{i === 0 ? ' — Captain' : ''}</p>
+                          <p className="text-xs text-yellow-400 font-bold">Player {i + 1}{i === 0 ? ' โ€” Captain' : ''}</p>
                           <div className="flex gap-2">
                             <input value={p.realName} onChange={e => {
                               const updated = [...form.players];
@@ -3744,18 +3744,18 @@ function TournamentsPage({ navigateTo }) {
                       </button>
                       <button onClick={() => setFormStep(2)} disabled={!form.teamName.trim() || !form.phone.trim() || !form.email.trim()}
                         className="flex-1 py-3 rounded-xl bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 text-black font-black transition-all text-sm">
-                        Next → Players
+                        Next โ’ Players
                       </button>
                     </>
                   ) : (
                     <>
                       <button onClick={() => setFormStep(1)}
                         className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-400 font-bold hover:bg-slate-700 transition-colors text-sm">
-                        ← Back
+                        โ Back
                       </button>
                       <button onClick={handleSubmit} disabled={submitting || form.players.some(p => !p.realName.trim() || !p.ign.trim())}
                         className="flex-1 py-3 rounded-xl bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 text-black font-black transition-all text-sm">
-                        {submitting ? 'Submitting...' : '✍️ Submit'}
+                        {submitting ? 'Submitting...' : 'โ๏ธ Submit'}
                       </button>
                     </>
                   )}
@@ -3770,9 +3770,9 @@ function TournamentsPage({ navigateTo }) {
 }
 
 
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 // COMMUNITY PAGE
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 
 function CommunityPage({ navigateTo, tagGame }) {
   const { user, isAdmin } = useAuth();
@@ -3831,7 +3831,7 @@ function CommunityPage({ navigateTo, tagGame }) {
   const uploadCropped = () => {
     const img = cropImgRef.current;
     if (!img) return;
-    // Convert display pixels → natural pixels
+    // Convert display pixels โ’ natural pixels
     const scaleX = img.naturalWidth / img.offsetWidth;
     const scaleY = img.naturalHeight / img.offsetHeight;
     const nx = Math.round(cropBox.x * scaleX);
@@ -3953,14 +3953,14 @@ function CommunityPage({ navigateTo, tagGame }) {
       {cropSrc && (
         <div className="fixed inset-0 bg-black/80 z-50 flex flex-col items-center justify-center p-4">
           <div className="bg-slate-900 rounded-2xl border border-slate-700 w-full max-w-lg flex flex-col" style={{ maxHeight: '90vh' }}>
-            {/* Header — fixed */}
+            {/* Header โ€” fixed */}
             <div className="p-4 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
               <p className="font-bold text-sm">Crop Image (16:9)</p>
               <button onClick={() => { setCropSrc(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                className="text-slate-500 hover:text-white text-lg leading-none">✕</button>
+                className="text-slate-500 hover:text-white text-lg leading-none">โ•</button>
             </div>
 
-            {/* Image area — scrollable */}
+            {/* Image area โ€” scrollable */}
             <div className="overflow-y-auto flex-1 relative bg-black select-none"
               onMouseMove={e => {
                 if (!cropDrag) return;
@@ -3997,7 +3997,7 @@ function CommunityPage({ navigateTo, tagGame }) {
               </div>
             </div>
 
-            {/* Buttons — fixed at bottom */}
+            {/* Buttons โ€” fixed at bottom */}
             <div className="p-4 border-t border-slate-800 flex gap-3 flex-shrink-0 bg-slate-900">
               <p className="text-xs text-slate-500 flex items-center flex-1">Drag box to reposition</p>
               <button onClick={() => { setCropSrc(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
@@ -4006,7 +4006,7 @@ function CommunityPage({ navigateTo, tagGame }) {
               </button>
               <button onClick={uploadCropped}
                 className="py-2.5 px-5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm transition-colors">
-                ✂️ Crop
+                โ๏ธ Crop
               </button>
             </div>
           </div>
@@ -4037,7 +4037,7 @@ function CommunityPage({ navigateTo, tagGame }) {
         <h2 className="text-4xl font-black mb-2" style={{ fontFamily: "'Orbitron', sans-serif" }}>
           <span className="text-purple-400">COMMUNITY</span>
         </h2>
-        <p className="text-slate-400">A space for all gamers — share thoughts, ask questions, and talk games</p>
+        <p className="text-slate-400">A space for all gamers โ€” share thoughts, ask questions, and talk games</p>
       </div>
 
       {/* Create Post */}
@@ -4067,7 +4067,7 @@ function CommunityPage({ navigateTo, tagGame }) {
                 {!uploading && (
                   <button onClick={removeImage}
                     className="absolute top-2 right-2 w-7 h-7 bg-black/60 hover:bg-black/80 rounded-full text-white text-xs flex items-center justify-center transition-colors">
-                    ✕
+                    โ•
                   </button>
                 )}
               </div>
@@ -4077,15 +4077,15 @@ function CommunityPage({ navigateTo, tagGame }) {
               <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden"/>
               <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
                 className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-purple-400 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 px-3 py-2 rounded-lg transition-all border border-slate-700">
-                🖼️ {imagePreview ? 'Change' : 'Add Image'}
+                ๐–ผ๏ธ {imagePreview ? 'Change' : 'Add Image'}
               </button>
 
               {/* Game Tag Picker */}
               <div className="relative">
                 <button onClick={() => setShowTagPicker(!showTagPicker)}
                   className={`flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg transition-all border ${selectedTag ? 'text-blue-400 bg-blue-500/10 border-blue-500/40' : 'text-slate-400 bg-slate-800 border-slate-700 hover:text-blue-400'}`}>
-                  🎮 {selectedTag ? selectedTag.title : 'Tag Game'}
-                  {selectedTag && <span onClick={e => { e.stopPropagation(); setSelectedTag(null); }} className="ml-1 hover:text-red-400">✕</span>}
+                  ๐ฎ {selectedTag ? selectedTag.title : 'Tag Game'}
+                  {selectedTag && <span onClick={e => { e.stopPropagation(); setSelectedTag(null); }} className="ml-1 hover:text-red-400">โ•</span>}
                 </button>
                 {showTagPicker && (
                   <div className="absolute bottom-10 left-0 w-56 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl z-20 overflow-hidden">
@@ -4114,7 +4114,7 @@ function CommunityPage({ navigateTo, tagGame }) {
             <p className="text-slate-400 mb-3 text-sm">Sign in to post and participate in the community</p>
             <button onClick={requireLogin}
               className="bg-purple-600 hover:bg-purple-500 text-white font-bold px-6 py-2.5 rounded-xl text-sm transition-all">
-              🔐 Sign In
+              ๐” Sign In
             </button>
           </div>
         )}
@@ -4124,8 +4124,8 @@ function CommunityPage({ navigateTo, tagGame }) {
       {tagFilter && (
         <div className="flex items-center gap-2 mb-4 px-1">
           <span className="text-xs text-slate-400">Showing posts tagged:</span>
-          <span className="text-xs font-bold text-blue-400 bg-blue-500/10 border border-blue-500/30 px-2 py-1 rounded-full">🎮 {tagFilter.title}</span>
-          <button onClick={() => setTagFilter(null)} className="text-xs text-slate-600 hover:text-slate-400 ml-auto">✕ Clear filter</button>
+          <span className="text-xs font-bold text-blue-400 bg-blue-500/10 border border-blue-500/30 px-2 py-1 rounded-full">๐ฎ {tagFilter.title}</span>
+          <button onClick={() => setTagFilter(null)} className="text-xs text-slate-600 hover:text-slate-400 ml-auto">โ• Clear filter</button>
         </div>
       )}
 
@@ -4136,7 +4136,7 @@ function CommunityPage({ navigateTo, tagGame }) {
         </div>
       ) : posts.filter(p => !tagFilter || p.gameTag?.id === tagFilter.id).length === 0 ? (
         <div className="text-center py-20 text-slate-500">
-          <p className="text-4xl mb-3">💬</p>
+          <p className="text-4xl mb-3">๐’ฌ</p>
           <p className="font-bold">{tagFilter ? `No posts about ${tagFilter.title} yet` : 'No posts yet'}</p>
           <p className="text-sm">Be the first to post in the community!</p>
         </div>
@@ -4290,13 +4290,13 @@ function PostCard({ post, user, isAdmin, openComments, commentText, setCommentTe
               {canEdit && (
                 <button onClick={() => { setEditing(true); setEditText(post.text); }}
                   className="text-slate-600 hover:text-blue-400 text-sm transition-colors px-1 py-1 rounded">
-                  ✏️
+                  โ๏ธ
                 </button>
               )}
               {canDelete && (
                 <button onClick={() => onDelete(post.id, post.authorId)}
                   className="text-slate-600 hover:text-red-400 text-sm transition-colors px-1 py-1 rounded">
-                  🗑️
+                  ๐—‘๏ธ
                 </button>
               )}
             </div>
@@ -4307,7 +4307,7 @@ function PostCard({ post, user, isAdmin, openComments, commentText, setCommentTe
         {post.gameTag && (
           <button onClick={() => onTagClick ? onTagClick(post.gameTag) : null}
             className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 px-2.5 py-1 rounded-full mb-3 transition-colors">
-            🎮 {post.gameTag.title}
+            ๐ฎ {post.gameTag.title}
           </button>
         )}
         {editing ? (
@@ -4321,12 +4321,12 @@ function PostCard({ post, user, isAdmin, openComments, commentText, setCommentTe
                 <img src={editImagePreview} alt="preview" className="w-full max-h-48 object-cover"/>
                 {editUploading && <div className="absolute inset-0 bg-black/50 flex items-center justify-center"><span className="text-white text-xs animate-pulse">Uploading...</span></div>}
                 <button onClick={() => { setEditImagePreview(null); setEditImageUrl(''); }}
-                  className="absolute top-2 right-2 w-6 h-6 bg-black/60 rounded-full text-white text-xs flex items-center justify-center">✕</button>
+                  className="absolute top-2 right-2 w-6 h-6 bg-black/60 rounded-full text-white text-xs flex items-center justify-center">โ•</button>
               </div>
             ) : (
               <button onClick={() => editFileRef.current?.click()}
                 className="text-xs text-slate-500 hover:text-purple-400 flex items-center gap-1 mb-2 transition-colors">
-                🖼️ Add / Change image
+                ๐–ผ๏ธ Add / Change image
               </button>
             )}
             <div className="flex gap-2">
@@ -4352,11 +4352,11 @@ function PostCard({ post, user, isAdmin, openComments, commentText, setCommentTe
         <div className="flex items-center gap-5 pt-2 border-t border-slate-800">
           <button onClick={() => onLike(post)}
             className={`flex items-center gap-1.5 text-sm font-bold transition-all hover:scale-110 ${liked ? 'text-red-400' : 'text-slate-500 hover:text-red-400'}`}>
-            {liked ? '❤️' : '🤍'} <span>{likeCount > 0 ? likeCount : ''}</span>
+            {liked ? 'โค๏ธ' : '๐ค'} <span>{likeCount > 0 ? likeCount : ''}</span>
           </button>
           <button onClick={() => onToggleComments(post.id)}
             className={`flex items-center gap-1.5 text-sm font-bold transition-colors ${openComments[post.id] ? 'text-blue-400' : 'text-slate-500 hover:text-blue-400'}`}>
-            💬 <span>{commentCount > 0 ? commentCount : 'Comments'}</span>
+            ๐’ฌ <span>{commentCount > 0 ? commentCount : 'Comments'}</span>
           </button>
         </div>
       </div>
@@ -4365,7 +4365,7 @@ function PostCard({ post, user, isAdmin, openComments, commentText, setCommentTe
       {openComments[post.id] && (
         <div className="border-t border-slate-800 bg-slate-950/50 px-5 py-4">
           {comments.length === 0 ? (
-            <p className="text-xs text-slate-600 mb-3">No comments yet — be the first!</p>
+            <p className="text-xs text-slate-600 mb-3">No comments yet โ€” be the first!</p>
           ) : (
             <div className="space-y-3 mb-4">
               {comments.filter(c => !c.replyToId || c.replyToId === null || c.replyToId === undefined).map(c => {
@@ -4384,7 +4384,7 @@ function PostCard({ post, user, isAdmin, openComments, commentText, setCommentTe
                             {user && (user.uid === c.authorId || isAdmin) && (
                               <button onClick={() => setConfirmDelete(c.id)}
                                 className="text-slate-600 hover:text-red-400 text-xs transition-colors flex-shrink-0 leading-none">
-                                🗑️
+                                ๐—‘๏ธ
                               </button>
                             )}
                           </div>
@@ -4393,7 +4393,7 @@ function PostCard({ post, user, isAdmin, openComments, commentText, setCommentTe
                         <div className="flex items-center gap-3 mt-1 ml-1">
                           <button onClick={() => handleLikeComment(c)}
                             className={`text-xs font-bold transition-colors ${cLiked ? 'text-red-400' : 'text-slate-600 hover:text-red-400'}`}>
-                            {cLiked ? '❤️' : '♡'} {cLikeCount > 0 ? cLikeCount : ''}
+                            {cLiked ? 'โค๏ธ' : 'โก'} {cLikeCount > 0 ? cLikeCount : ''}
                           </button>
                           {user && (
                             <button onClick={() => {
@@ -4424,7 +4424,7 @@ function PostCard({ post, user, isAdmin, openComments, commentText, setCommentTe
                                     {user && (user.uid === r.authorId || isAdmin) && (
                                       <button onClick={() => setConfirmDelete(r.id)}
                                         className="text-slate-600 hover:text-red-400 text-xs transition-colors flex-shrink-0 leading-none">
-                                        🗑️
+                                        ๐—‘๏ธ
                                       </button>
                                     )}
                                   </div>
@@ -4433,7 +4433,7 @@ function PostCard({ post, user, isAdmin, openComments, commentText, setCommentTe
                                 <div className="flex items-center gap-3 mt-1 ml-1">
                                   <button onClick={() => handleLikeComment(r)}
                                     className={`text-xs font-bold transition-colors ${rLiked ? 'text-red-400' : 'text-slate-600 hover:text-red-400'}`}>
-                                    {rLiked ? '❤️' : '♡'} {rLikeCount > 0 ? rLikeCount : ''}
+                                    {rLiked ? 'โค๏ธ' : 'โก'} {rLikeCount > 0 ? rLikeCount : ''}
                                   </button>
                                   {user && (
                                     <button onClick={() => {
@@ -4480,9 +4480,9 @@ function PostCard({ post, user, isAdmin, openComments, commentText, setCommentTe
           {/* Reply indicator */}
           {replyTo && (
             <div className="flex items-center gap-2 bg-slate-800/60 rounded-lg px-3 py-1.5 mb-2 text-xs text-slate-400">
-              <span>↩️ Replying to <span className="text-blue-400 font-bold">@{replyTo.name}</span></span>
+              <span>โฉ๏ธ Replying to <span className="text-blue-400 font-bold">@{replyTo.name}</span></span>
               <button onClick={() => { setReplyTo(null); setCommentText(p => ({ ...p, [post.id]: '' })); }}
-                className="ml-auto text-slate-600 hover:text-slate-400">✕</button>
+                className="ml-auto text-slate-600 hover:text-slate-400">โ•</button>
             </div>
           )}
 
@@ -4512,13 +4512,13 @@ function PostCard({ post, user, isAdmin, openComments, commentText, setCommentTe
   );
 }
 
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 // NEWS PAGE
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 // ADMIN PAGE
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 
 function AdminPage({ navigateTo }) {
   const { user, isAdmin } = useAuth();
@@ -4612,7 +4612,7 @@ function AdminPage({ navigateTo }) {
   };
 
   if (!user) return <div className="container mx-auto px-6 py-20 text-center"><p className="text-slate-400">Please sign in.</p></div>;
-  if (!isAdmin) return <div className="container mx-auto px-6 py-20 text-center"><p className="text-4xl mb-4">🚫</p><p className="text-slate-400">No permission.</p></div>;
+  if (!isAdmin) return <div className="container mx-auto px-6 py-20 text-center"><p className="text-4xl mb-4">๐ซ</p><p className="text-slate-400">No permission.</p></div>;
 
   const filtered = registrations.filter(r => filter === 'all' || r.status === filter);
 
@@ -4628,19 +4628,19 @@ function AdminPage({ navigateTo }) {
       <div className="flex gap-2 mb-8 bg-slate-900 p-1 rounded-xl w-fit">
         <button onClick={() => setActiveTab('registrations')}
           className={`px-5 py-2.5 rounded-lg font-bold text-sm transition-all ${activeTab === 'registrations' ? 'bg-yellow-500 text-black' : 'text-slate-400 hover:text-white'}`}>
-          📋 Registrations
+          ๐“ Registrations
         </button>
         <button onClick={() => setActiveTab('tournaments')}
           className={`px-5 py-2.5 rounded-lg font-bold text-sm transition-all ${activeTab === 'tournaments' ? 'bg-yellow-500 text-black' : 'text-slate-400 hover:text-white'}`}>
-          🏆 Tournaments
+          ๐ Tournaments
         </button>
       </div>
 
-      {/* ── REGISTRATIONS TAB ── */}
+      {/* โ”€โ”€ REGISTRATIONS TAB โ”€โ”€ */}
       {activeTab === 'registrations' && (
         <>
           <div className="flex gap-2 mb-6 bg-slate-900 p-1 rounded-xl w-fit">
-            {[{ key: 'pending', label: '⏳ Pending' }, { key: 'approved', label: '✅ Approved' }, { key: 'rejected', label: '❌ Rejected' }, { key: 'all', label: 'All' }].map(f => (
+            {[{ key: 'pending', label: 'โณ Pending' }, { key: 'approved', label: 'โ… Approved' }, { key: 'rejected', label: 'โ Rejected' }, { key: 'all', label: 'All' }].map(f => (
               <button key={f.key} onClick={() => setFilter(f.key)}
                 className={`px-4 py-2 rounded-lg font-bold text-xs transition-all ${filter === f.key ? 'bg-yellow-500 text-black' : 'text-slate-400 hover:text-white'}`}>
                 {f.label} <span className="ml-1 opacity-60">({registrations.filter(r => f.key === 'all' || r.status === f.key).length})</span>
@@ -4650,7 +4650,7 @@ function AdminPage({ navigateTo }) {
           {regLoading ? (
             <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="skeleton h-32 rounded-xl"/>)}</div>
           ) : filtered.length === 0 ? (
-            <div className="text-center py-16 text-slate-500"><p className="text-3xl mb-3">📋</p><p>No {filter} registrations</p></div>
+            <div className="text-center py-16 text-slate-500"><p className="text-3xl mb-3">๐“</p><p>No {filter} registrations</p></div>
           ) : (
             <div className="space-y-4">
               {filtered.map(reg => (
@@ -4659,15 +4659,15 @@ function AdminPage({ navigateTo }) {
                     <div className="flex-1">
                       <div className="flex flex-wrap items-center gap-2 mb-2">
                         <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${reg.status === 'approved' ? 'bg-green-500/20 text-green-400' : reg.status === 'rejected' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-                          {reg.status === 'approved' ? '✅ Approved' : reg.status === 'rejected' ? '❌ Rejected' : '⏳ Pending'}
+                          {reg.status === 'approved' ? 'โ… Approved' : reg.status === 'rejected' ? 'โ Rejected' : 'โณ Pending'}
                         </span>
                         <span className="text-xs text-slate-500">{reg.tournamentName}</span>
                       </div>
-                      <p className="font-black text-lg mb-1">🏆 {reg.teamName}</p>
+                      <p className="font-black text-lg mb-1">๐ {reg.teamName}</p>
                       <div className="flex flex-wrap gap-3 text-xs text-slate-400 mb-3">
-                        <span>📧 {reg.contactEmail}</span>
-                        <span>📞 {reg.phone}</span>
-                        <span>👤 {reg.userEmail}</span>
+                        <span>๐“ง {reg.contactEmail}</span>
+                        <span>๐“ {reg.phone}</span>
+                        <span>๐‘ค {reg.userEmail}</span>
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                         {(reg.players || []).map((p, i) => (
@@ -4681,8 +4681,8 @@ function AdminPage({ navigateTo }) {
                     </div>
                     {reg.status === 'pending' && (
                       <div className="flex gap-2 flex-shrink-0">
-                        <button onClick={() => handleAction(reg.id, 'rejected')} className="px-4 py-2 rounded-xl bg-red-600/20 hover:bg-red-600/40 text-red-400 font-bold text-sm transition-colors border border-red-600/30">❌ Reject</button>
-                        <button onClick={() => handleAction(reg.id, 'approved')} className="px-4 py-2 rounded-xl bg-green-600/20 hover:bg-green-600/40 text-green-400 font-bold text-sm transition-colors border border-green-600/30">✅ Approve</button>
+                        <button onClick={() => handleAction(reg.id, 'rejected')} className="px-4 py-2 rounded-xl bg-red-600/20 hover:bg-red-600/40 text-red-400 font-bold text-sm transition-colors border border-red-600/30">โ Reject</button>
+                        <button onClick={() => handleAction(reg.id, 'approved')} className="px-4 py-2 rounded-xl bg-green-600/20 hover:bg-green-600/40 text-green-400 font-bold text-sm transition-colors border border-green-600/30">โ… Approve</button>
                       </div>
                     )}
                     {reg.status === 'approved' && (
@@ -4696,7 +4696,7 @@ function AdminPage({ navigateTo }) {
         </>
       )}
 
-      {/* ── TOURNAMENTS TAB ── */}
+      {/* โ”€โ”€ TOURNAMENTS TAB โ”€โ”€ */}
       {activeTab === 'tournaments' && (
         <>
           <div className="flex items-center justify-between mb-6">
@@ -4710,7 +4710,7 @@ function AdminPage({ navigateTo }) {
           {/* Create/Edit Form */}
           {showTForm && (
             <div className="bg-slate-900 border border-yellow-500/40 rounded-2xl p-6 mb-6">
-              <h3 className="font-black text-lg mb-5">{editTId ? '✏️ Edit Tournament' : '+ New Tournament'}</h3>
+              <h3 className="font-black text-lg mb-5">{editTId ? 'โ๏ธ Edit Tournament' : '+ New Tournament'}</h3>
 
               {/* Style shared across all inputs */}
               <style>{`.tf-input { width:100%; background:#1e293b; border:1px solid #334155; border-radius:10px; padding:10px 14px; font-size:14px; color:#f1f5f9; outline:none; transition:border-color .2s; }
@@ -4730,7 +4730,7 @@ function AdminPage({ navigateTo }) {
                 <div>
                   <label className="tf-label">Game *</label>
                   <select value={tForm.game} onChange={e => setTForm(p=>({...p,game:e.target.value}))} className="tf-input">
-                    <option value="">— Select game —</option>
+                    <option value="">โ€” Select game โ€”</option>
                     {GAMES_DATA.map(g => <option key={g.id} value={g.title}>{g.title}</option>)}
                   </select>
                 </div>
@@ -4739,7 +4739,7 @@ function AdminPage({ navigateTo }) {
                 <div>
                   <label className="tf-label">Platform</label>
                   <select value={tForm.platform || ''} onChange={e => setTForm(p=>({...p,platform:e.target.value}))} className="tf-input">
-                    <option value="">— Select platform —</option>
+                    <option value="">โ€” Select platform โ€”</option>
                     <option>PC</option>
                     <option>Mobile</option>
                     <option>PC / Mobile</option>
@@ -4771,7 +4771,7 @@ function AdminPage({ navigateTo }) {
                 <div>
                   <label className="tf-label">Prize Pool</label>
                   <input value={tForm.prize} onChange={e => setTForm(p=>({...p,prize:e.target.value}))}
-                    placeholder="e.g. $500 or ฿5,000" className="tf-input"/>
+                    placeholder="e.g. $500 or เธฟ5,000" className="tf-input"/>
                 </div>
 
                 {/* Max Teams */}
@@ -4826,7 +4826,7 @@ function AdminPage({ navigateTo }) {
                     </div>
                     <div>
                       <p className="text-sm font-bold text-white">{tForm.joinable ? 'Open for Registration' : 'Watch Only'}</p>
-                      <p className="text-xs text-slate-400">{tForm.joinable ? 'Users can join and register their team' : 'Spectator/pro tournament — no public registration'}</p>
+                      <p className="text-xs text-slate-400">{tForm.joinable ? 'Users can join and register their team' : 'Spectator/pro tournament โ€” no public registration'}</p>
                     </div>
                   </label>
                 </div>
@@ -4844,7 +4844,7 @@ function AdminPage({ navigateTo }) {
                 <div className="sm:col-span-2">
                   <label className="tf-label">Requirements</label>
                   <input value={tForm.requirements} onChange={e => setTForm(p=>({...p,requirements:e.target.value}))}
-                    placeholder="e.g. 5-player team • Gold+ rank • PC only" className="tf-input"/>
+                    placeholder="e.g. 5-player team โ€ข Gold+ rank โ€ข PC only" className="tf-input"/>
                 </div>
 
                 {/* Description */}
@@ -4860,7 +4860,7 @@ function AdminPage({ navigateTo }) {
                 <button onClick={resetTForm} className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-400 font-bold text-sm hover:bg-slate-700 transition-colors">Cancel</button>
                 <button onClick={handleSaveTournament} disabled={tSaving || !tForm.name.trim() || !tForm.game.trim() || !tForm.date.trim()}
                   className="flex-1 py-3 rounded-xl bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 text-black font-black text-sm transition-all">
-                  {tSaving ? 'Saving...' : editTId ? 'Save Changes' : '🏆 Create Tournament'}
+                  {tSaving ? 'Saving...' : editTId ? 'Save Changes' : '๐ Create Tournament'}
                 </button>
               </div>
             </div>
@@ -4871,8 +4871,8 @@ function AdminPage({ navigateTo }) {
             <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="skeleton h-20 rounded-xl"/>)}</div>
           ) : tournaments.length === 0 ? (
             <div className="text-center py-16 text-slate-500">
-              <p className="text-3xl mb-3">🏆</p>
-              <p>No tournaments yet — create your first one!</p>
+              <p className="text-3xl mb-3">๐</p>
+              <p>No tournaments yet โ€” create your first one!</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -4881,21 +4881,21 @@ function AdminPage({ navigateTo }) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${t.joinable ? 'bg-yellow-500/20 text-yellow-400' : 'bg-blue-500/20 text-blue-400'}`}>
-                        {t.joinable ? '🎮 Joinable' : '👁️ Watch Only'}
+                        {t.joinable ? '๐ฎ Joinable' : '๐‘๏ธ Watch Only'}
                       </span>
                       <span className="text-xs text-slate-500">{t.status}</span>
                     </div>
                     <p className="font-black truncate">{t.name}</p>
-                    <p className="text-xs text-slate-500">{t.game} · {t.date} · Prize: {t.prize}</p>
+                    <p className="text-xs text-slate-500">{t.game} ยท {t.date} ยท Prize: {t.prize}</p>
                   </div>
                   <div className="flex gap-2 flex-shrink-0">
                     <button onClick={() => handleEditTournament(t)}
                       className="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold transition-colors">
-                      ✏️ Edit
+                      โ๏ธ Edit
                     </button>
                     <button onClick={() => handleDeleteTournament(t.id)}
                       className="px-3 py-1.5 rounded-lg bg-red-600/20 hover:bg-red-600/40 text-red-400 text-xs font-bold transition-colors border border-red-600/30">
-                      🗑️ Delete
+                      ๐—‘๏ธ Delete
                     </button>
                   </div>
                 </div>
@@ -4908,9 +4908,9 @@ function AdminPage({ navigateTo }) {
   );
 }
 
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 // NEWS PAGE
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 
 function NewsPage({ navigateTo }) {
   return (
@@ -4929,7 +4929,7 @@ function NewsPage({ navigateTo }) {
               <div className="flex items-center gap-3 mb-4">
                 <span className="bg-purple-500/20 text-purple-400 text-xs font-bold px-4 py-2 rounded-full">{news.category}</span>
                 <span className="text-sm text-slate-500">{news.date}</span>
-                <span className="text-sm text-slate-600">•</span>
+                <span className="text-sm text-slate-600">โ€ข</span>
                 <span className="text-sm text-blue-400 font-semibold">{news.game}</span>
               </div>
               <h3 className="text-2xl font-bold mb-3 hover:text-purple-400 transition-colors">{news.title}</h3>
@@ -4942,9 +4942,9 @@ function NewsPage({ navigateTo }) {
   );
 }
 
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 // ABOUT PAGE
-// ─────────────────────────────────────────────
+// โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 
 function AboutPage() {
   return (
@@ -4988,9 +4988,9 @@ function AboutPage() {
             <p className="text-slate-300 mb-6">Need help? We're here for you. Reach out through any of the channels below.</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
-                { icon: '💬', title: 'Discord Community', desc: 'Join our Discord for live support and community discussion.', link: 'https://discord.gg/gamehub', label: 'Join Discord' },
-                { icon: '📧', title: 'Email Support', desc: 'Send us an email for tournament or account help.', link: 'mailto:support@gamehub.gg', label: 'Email Us' },
-                { icon: '📋', title: 'FAQ', desc: 'Find answers to the most common questions about GameHub.', link: '#', label: 'View FAQ' },
+                { icon: '๐’ฌ', title: 'Discord Community', desc: 'Join our Discord for live support and community discussion.', link: 'https://discord.gg/gamehub', label: 'Join Discord' },
+                { icon: '๐“ง', title: 'Email Support', desc: 'Send us an email for tournament or account help.', link: 'mailto:support@gamehub.gg', label: 'Email Us' },
+                { icon: '๐“', title: 'FAQ', desc: 'Find answers to the most common questions about GameHub.', link: '#', label: 'View FAQ' },
               ].map(item => (
                 <div key={item.title} className="bg-slate-800 rounded-xl p-5 flex flex-col gap-3">
                   <span className="text-2xl">{item.icon}</span>
@@ -5000,7 +5000,7 @@ function AboutPage() {
                   </div>
                   <a href={item.link} target="_blank" rel="noopener noreferrer"
                     className="text-xs font-bold text-blue-400 hover:text-blue-300 transition-colors mt-auto">
-                    {item.label} →
+                    {item.label} โ’
                   </a>
                 </div>
               ))}
