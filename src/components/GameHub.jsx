@@ -1603,9 +1603,7 @@ export default function GameHub() {
             <div>
               <h4 className="font-bold mb-4 text-blue-400">Community</h4>
               <ul className="space-y-2 text-sm text-slate-400">
-                <li><a href="#" className="hover:text-blue-400 transition-colors">Discord</a></li>
-                <li><a href="#" className="hover:text-blue-400 transition-colors">Twitter</a></li>
-                <li><a href="#" className="hover:text-blue-400 transition-colors">Reddit</a></li>
+                <li><a href="https://discord.gg/95r85Mmww8" target="_blank" rel="noreferrer" className="hover:text-blue-400 transition-colors">Discord</a></li>
               </ul>
             </div>
             <div>
@@ -5356,8 +5354,8 @@ function AboutPage() {
             <p className="text-slate-300 mb-6">Need help? We're here for you. Reach out through any of the channels below.</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
-                { icon: '💬', title: 'Discord Community', desc: 'Join our Discord for live support and community discussion.', link: 'https://discord.gg/gamehub', label: 'Join Discord' },
-                { icon: '📧', title: 'Email Support', desc: 'Send us an email for tournament or account help.', link: 'mailto:support@gamehub.gg', label: 'Email Us' },
+                { icon: '💬', title: 'Discord Community', desc: 'Join our Discord for live support and community discussion.', link: 'https://discord.gg/95r85Mmww8', label: 'Join Discord' },
+                { icon: '📧', title: 'Email Support', desc: 'Send us an email for tournament or account help.', link: 'mailto:gamehubnnp@gmail.com', label: 'Email Us' },
                 { icon: '📋', title: 'FAQ', desc: 'Find answers to the most common questions about GameHub.', link: '#', label: 'View FAQ' },
               ].map(item => (
                 <div key={item.title} className="bg-slate-800 rounded-xl p-5 flex flex-col gap-3">
