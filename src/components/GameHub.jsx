@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronRight, ChevronLeft, Trophy, Calendar, Zap, Gamepad2, Newspaper, Info, Target, Swords, Users, Laugh, Crown, Brain, Car, Shield, Globe, HelpCircle, Home, Joystick, Search, X, MapPin } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Trophy, Calendar, Zap, Gamepad2, Newspaper, Info, Target, Swords, Users, Laugh, Crown, Brain, Car, Shield, Globe, HelpCircle, Home, Joystick, Search, X, MapPin, User, Heart, Settings, LogOut } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs, onSnapshot, orderBy, query, where, writeBatch, updateDoc, arrayUnion, arrayRemove, deleteDoc, serverTimestamp } from 'firebase/firestore';
@@ -833,6 +833,31 @@ function normalizeNewsItem(news, index = 0) {
   };
 }
 
+function useNewsFeed(limit = null) {
+  const fallbackItems = React.useMemo(() => NEWS_DATA.map(normalizeNewsItem), []);
+  const [items, setItems] = useState(limit ? fallbackItems.slice(0, limit) : fallbackItems);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const newsQuery = query(collection(db, 'news'), orderBy('publishedAt', 'desc'));
+    const unsub = onSnapshot(newsQuery, (snap) => {
+      const nextItems = snap.empty
+        ? fallbackItems
+        : snap.docs.map((docSnap, index) => normalizeNewsItem({ id: docSnap.id, ...docSnap.data() }, index));
+
+      setItems(limit ? nextItems.slice(0, limit) : nextItems);
+      setLoading(false);
+    }, () => {
+      setItems(limit ? fallbackItems.slice(0, limit) : fallbackItems);
+      setLoading(false);
+    });
+
+    return () => unsub();
+  }, [fallbackItems, limit]);
+
+  return { items, loading };
+}
+
 const TOURNAMENTS_DATA = [
   // WATCHABLE ONLY
   { id: 1, joinable: false, name: 'Valorant Champions Tour 2026', game: 'Valorant', date: 'March 10-30, 2026', prize: '$1,000,000', status: 'Live Now', type: 'LAN Finals', description: 'The premier Valorant global event. Only top VCT regional teams qualify. Open for spectators worldwide.', watchUrl: 'https://www.twitch.tv/valorant', teams: 16, region: 'International' },
@@ -882,7 +907,7 @@ function WishlistNavButton({ navigateTo, currentPage }) {
 }
 
 // Auth button - shows login/register or user avatar+dropdown
-function AuthNavButton({ navigateTo, currentPage, user, authLoading }) {
+function AuthNavButton({ navigateTo, currentPage, user, authLoading, isAdmin }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [avatarEmoji, setAvatarEmoji] = useState(null);
   const [avatarColor, setAvatarColor] = useState(0);
@@ -966,22 +991,29 @@ function AuthNavButton({ navigateTo, currentPage, user, authLoading }) {
           </div>
           <div className="py-1">
             {[
-              { label: '👤 My Profile', page: 'profile' },
-              { label: '♥ Wishlist', page: 'wishlist' },
-              { label: '🏆 Leaderboard', page: 'leaderboard' },
+              { label: 'My Profile', page: 'profile', Icon: User },
+              { label: 'Wishlist', page: 'wishlist', Icon: Heart },
+              { label: 'Leaderboard', page: 'leaderboard', Icon: Trophy },
+              ...(isAdmin ? [{ label: 'Admin Panel', page: 'admin', Icon: Settings }] : []),
             ].map(item => (
               <button
                 key={item.page}
                 onClick={() => { navigateTo(item.page); setDropdownOpen(false); }}
-                className="w-full text-left px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
-              >{item.label}</button>
+                className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
+              >
+                <item.Icon className="h-4 w-4 flex-shrink-0 text-slate-400" />
+                <span>{item.label}</span>
+              </button>
             ))}
           </div>
           <div className="border-t border-slate-800 py-1">
             <button
               onClick={async () => { await signOut(auth); setDropdownOpen(false); navigateTo('home'); }}
-              className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-slate-800 transition-colors"
-            >🚪 Sign Out</button>
+              className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-red-400 hover:bg-slate-800 transition-colors"
+            >
+              <LogOut className="h-4 w-4 flex-shrink-0" />
+              <span>Sign Out</span>
+            </button>
           </div>
         </div>
       )}
@@ -1440,18 +1472,7 @@ export default function GameHub() {
 
             {/* Desktop Auth */}
             <div className="hidden md:flex items-center gap-3">
-              {isAdmin && (
-                <button onClick={() => navigateTo('admin')}
-                  className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${currentPage === 'admin' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/40' : 'text-slate-400 hover:text-yellow-400 border border-slate-700 hover:border-yellow-500/40'}`}>
-                  ⚙️ Admin
-                </button>
-              )}
-              <button onClick={() => navigateTo('about')}
-                title="Help & Support"
-                className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all border ${currentPage === 'about' ? 'bg-green-500/20 text-green-400 border-green-500/40' : 'text-slate-400 hover:text-green-400 border-slate-700 hover:border-green-500/40'}`}>
-                <HelpCircle className="w-4 h-4"/> Help
-              </button>
-              <AuthNavButton navigateTo={navigateTo} currentPage={currentPage} user={user} authLoading={authLoading} />
+              <AuthNavButton navigateTo={navigateTo} currentPage={currentPage} user={user} authLoading={authLoading} isAdmin={isAdmin} />
             </div>
 
             {/* Mobile Right: Avatar (if logged in) + Hamburger */}
@@ -1518,16 +1539,6 @@ export default function GameHub() {
                 <span className="text-base">♥</span>
                 Wishlist
               </button>
-              {/* Admin Panel in mobile menu */}
-              {isAdmin && (
-                <button onClick={() => navigateTo('admin')}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all text-left ${
-                    currentPage === 'admin' ? 'bg-yellow-500/15 text-yellow-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-                  }`}>
-                  <span className="text-base">⚙️</span>
-                  Admin Panel
-                </button>
-              )}
               {/* Auth actions in mobile menu */}
               {!user ? (
                 <div className="flex gap-3 mt-3 pt-3 border-t border-slate-800">
@@ -1542,22 +1553,40 @@ export default function GameHub() {
                   >Sign Up</button>
                 </div>
               ) : (
-                <div className="mt-3 pt-3 border-t border-slate-800 flex items-center justify-between px-2">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center font-black text-xs"
-                      style={mobileAvatarPhoto ? {
-                        backgroundImage: `url(${mobileAvatarPhoto})`,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                      } : { background: `linear-gradient(135deg, ${AVATAR_COLORS[mobileAvatarColor % AVATAR_COLORS.length].from}, ${AVATAR_COLORS[mobileAvatarColor % AVATAR_COLORS.length].to})` }}>
-                      {!mobileAvatarPhoto && (mobileAvatarEmoji || (user.displayName ? user.displayName[0].toUpperCase() : user.email[0].toUpperCase()))}
+                <div className="mt-3 pt-3 border-t border-slate-800 space-y-2">
+                  {[
+                    { label: 'My Profile', page: 'profile' },
+                    { label: 'Wishlist', page: 'wishlist' },
+                    { label: 'Leaderboard', page: 'leaderboard' },
+                    ...(isAdmin ? [{ label: 'Admin Panel', page: 'admin' }] : []),
+                  ].map((item) => (
+                    <button
+                      key={item.page}
+                      onClick={() => navigateTo(item.page)}
+                      className={`w-full rounded-xl px-4 py-3 text-left text-sm font-semibold transition-all ${
+                        currentPage === item.page ? 'bg-blue-500/15 text-blue-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                  <div className="flex items-center justify-between px-2 pt-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center font-black text-xs"
+                        style={mobileAvatarPhoto ? {
+                          backgroundImage: `url(${mobileAvatarPhoto})`,
+                          backgroundSize: 'cover',
+                          backgroundPosition: 'center',
+                        } : { background: `linear-gradient(135deg, ${AVATAR_COLORS[mobileAvatarColor % AVATAR_COLORS.length].from}, ${AVATAR_COLORS[mobileAvatarColor % AVATAR_COLORS.length].to})` }}>
+                        {!mobileAvatarPhoto && (mobileAvatarEmoji || (user.displayName ? user.displayName[0].toUpperCase() : user.email[0].toUpperCase()))}
+                      </div>
+                      <span className="text-sm font-bold text-white">{user.displayName || user.email.split('@')[0]}</span>
                     </div>
-                    <span className="text-sm font-bold text-white">{user.displayName || user.email.split('@')[0]}</span>
+                    <button
+                      onClick={() => { signOut(auth); navigateTo('home'); }}
+                      className="text-sm text-red-400 font-bold hover:text-red-300 transition-colors"
+                    >Sign Out</button>
                   </div>
-                  <button
-                    onClick={() => { signOut(auth); navigateTo('home'); }}
-                    className="text-sm text-red-400 font-bold hover:text-red-300 transition-colors"
-                  >Sign Out</button>
                 </div>
               )}
             </div>
@@ -1595,9 +1624,9 @@ export default function GameHub() {
             <div>
               <h4 className="font-bold mb-4 text-blue-400">Quick Links</h4>
               <ul className="space-y-2 text-sm text-slate-400">
-                <li><a href="#" className="hover:text-blue-400 transition-colors">Games</a></li>
-                <li><a href="#" className="hover:text-blue-400 transition-colors">Tournaments</a></li>
-                <li><a href="#" className="hover:text-blue-400 transition-colors">News</a></li>
+                <li><button onClick={() => navigateTo('games')} className="hover:text-blue-400 transition-colors">Games</button></li>
+                <li><button onClick={() => navigateTo('tournaments')} className="hover:text-blue-400 transition-colors">Tournaments</button></li>
+                <li><button onClick={() => navigateTo('news')} className="hover:text-blue-400 transition-colors">News</button></li>
               </ul>
             </div>
             <div>
@@ -1609,9 +1638,8 @@ export default function GameHub() {
             <div>
               <h4 className="font-bold mb-4 text-blue-400">Support</h4>
               <ul className="space-y-2 text-sm text-slate-400">
-                <li><a href="#" className="hover:text-blue-400 transition-colors">FAQ</a></li>
-                <li><a href="#" className="hover:text-blue-400 transition-colors">Contact</a></li>
-                <li><a href="#" className="hover:text-blue-400 transition-colors">Privacy</a></li>
+                <li className="break-all text-slate-300">gamehubnnp@gmail.com</li>
+                <li><span className="text-slate-500">Privacy</span></li>
               </ul>
             </div>
           </div>
@@ -1638,6 +1666,7 @@ function HomePage({ navigateTo }) {
   const [transitioning, setTransitioning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const rawgImages = React.useContext(RawgImagesContext);
+  const { items: homeNews } = useNewsFeed(4);
 
   const switchHero = (idx) => {
     if (idx === heroIndex || transitioning) return;
@@ -1663,6 +1692,7 @@ function HomePage({ navigateTo }) {
   const hero = FEATURED_GAMES[heroIndex];
   const heroCat = CATEGORIES.find(c => c.id === hero.category);
   const heroImage = rawgImages[hero.title] || hero.image;
+  const leadStory = homeNews[0];
 
   return (
     <div>
@@ -1951,52 +1981,48 @@ function HomePage({ navigateTo }) {
         {/* Big + small layout */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
           {/* Lead story */}
-          <div
-            className="lg:col-span-3 bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 hover:border-purple-500/40 transition-all cursor-pointer group fade-in-up"
-            onClick={() => {
-              const g = GAMES_DATA.find(gm => gm.title === NEWS_DATA[0].game);
-              if (g) navigateTo('game-detail', g);
-            }}
-          >
-            <div className="relative h-52 overflow-hidden">
-              <img
-                src={rawgImages[NEWS_DATA[0].game] || GAMES_DATA.find(g => g.title === NEWS_DATA[0].game)?.image}
-                alt={NEWS_DATA[0].title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent" />
-              <span className="absolute top-4 left-4 bg-purple-500/90 text-white text-xs font-bold px-3 py-1.5 rounded-full">
-                {NEWS_DATA[0].category}
-              </span>
-            </div>
-            <div className="p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <span className="text-xs text-slate-500">{NEWS_DATA[0].date}</span>
-                <span className="text-xs text-blue-400 font-bold">{NEWS_DATA[0].game}</span>
+          {leadStory && (
+            <div
+              className="lg:col-span-3 bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 hover:border-purple-500/40 transition-all cursor-pointer group fade-in-up"
+              onClick={() => navigateTo('news-detail', leadStory)}
+            >
+              <div className="relative h-52 overflow-hidden">
+                <img
+                  src={leadStory.imageUrl || rawgImages[leadStory.game] || GAMES_DATA.find(g => g.title === leadStory.game)?.image}
+                  alt={leadStory.title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent" />
+                <span className="absolute top-4 left-4 bg-purple-500/90 text-white text-xs font-bold px-3 py-1.5 rounded-full">
+                  {leadStory.category}
+                </span>
               </div>
-              <h4 className="text-xl font-black mb-2 group-hover:text-purple-400 transition-colors">{NEWS_DATA[0].title}</h4>
-              <p className="text-sm text-slate-400 leading-relaxed">{NEWS_DATA[0].content}</p>
+              <div className="p-6">
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="text-xs text-slate-500">{leadStory.dateLabel}</span>
+                  <span className="text-xs text-blue-400 font-bold">{leadStory.game}</span>
+                </div>
+                <h4 className="text-xl font-black mb-2 group-hover:text-purple-400 transition-colors">{leadStory.title}</h4>
+                <p className="text-sm text-slate-400 leading-relaxed">{leadStory.summary || leadStory.content}</p>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Side stories */}
           <div className="lg:col-span-2 flex flex-col gap-4">
-            {NEWS_DATA.slice(1, 4).map((news, i) => (
+            {homeNews.slice(1, 4).map((news, i) => (
               <div
                 key={news.id}
                 className="flex-1 bg-slate-900 rounded-xl p-5 border border-slate-800 hover:border-purple-500/40 transition-all cursor-pointer slide-in-right"
                 style={{ animationDelay: `${i * 0.08}s` }}
-                onClick={() => {
-                  const g = GAMES_DATA.find(gm => gm.title === news.game);
-                  if (g) navigateTo('game-detail', g);
-                }}
+                onClick={() => navigateTo('news-detail', news)}
               >
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-purple-500/15 text-purple-400">{news.category}</span>
-                  <span className="text-xs text-slate-600">{news.date}</span>
+                  <span className="text-xs text-slate-600">{news.dateLabel}</span>
                 </div>
                 <h4 className="font-bold text-sm mb-1.5 hover:text-purple-400 transition-colors leading-snug">{news.title}</h4>
-                <p className="text-xs text-slate-500 line-clamp-2">{news.content}</p>
+                <p className="text-xs text-slate-500 line-clamp-2">{news.summary || news.content}</p>
               </div>
             ))}
           </div>
@@ -2912,7 +2938,7 @@ function RegisterPage({ navigateTo }) {
         <div className="text-center mb-10">
           <img src="/images/games/logo.png" alt="GameHub Logo" className="h-16 w-auto object-contain mx-auto mb-4"/>
           <h2 className="text-3xl font-black" style={{ fontFamily: "'Orbitron', sans-serif" }}>
-            <span className="text-purple-400">JOIN</span> GAMEHUB
+            <span className="text-blue-400">JOIN</span> GAMEHUB
           </h2>
           <p className="text-slate-400 mt-2">Create your free account</p>
         </div>
@@ -2933,7 +2959,7 @@ function RegisterPage({ navigateTo }) {
                   onChange={e => field.setter(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleRegister()}
                   placeholder={field.placeholder}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
                 />
               </div>
             ))}
@@ -2948,7 +2974,7 @@ function RegisterPage({ navigateTo }) {
               onClick={handleRegister}
               disabled={loading}
               className="w-full py-3.5 rounded-xl font-black text-white transition-all disabled:opacity-50 text-sm tracking-wider"
-              style={{ background: 'linear-gradient(135deg, #8b5cf6, #ec4899)' }}
+              style={{ background: 'linear-gradient(135deg, #3b82f6, #2563eb)' }}
             >
               {loading ? 'Creating account...' : 'CREATE ACCOUNT'}
             </button>
@@ -2956,7 +2982,7 @@ function RegisterPage({ navigateTo }) {
 
           <div className="mt-6 text-center text-sm text-slate-500">
             Already have an account?{' '}
-            <button onClick={() => navigateTo('login')} className="text-purple-400 font-bold hover:underline">
+            <button onClick={() => navigateTo('login')} className="text-blue-400 font-bold hover:underline">
               Sign In
             </button>
           </div>
@@ -3820,7 +3846,7 @@ function TournamentsPage({ navigateTo }) {
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            placeholder="SEARCH TOURNAMENTS, GAMES, OR TEAMS..."
+            placeholder="Search tournaments..."
             className="w-full rounded-2xl border border-slate-700 bg-slate-800 pl-14 pr-12 py-4 text-sm font-semibold tracking-[0.08em] text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all"
           />
           {searchQuery && (
@@ -5675,24 +5701,7 @@ function AdminPage({ navigateTo }) {
 // ─────────────────────────────────────────────
 
 function NewsPage({ navigateTo }) {
-  const [items, setItems] = useState(NEWS_DATA.map(normalizeNewsItem));
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const newsQuery = query(collection(db, 'news'), orderBy('publishedAt', 'desc'));
-    const unsub = onSnapshot(newsQuery, (snap) => {
-      if (snap.empty) {
-        setItems(NEWS_DATA.map(normalizeNewsItem));
-      } else {
-        setItems(snap.docs.map((docSnap, index) => normalizeNewsItem({ id: docSnap.id, ...docSnap.data() }, index)));
-      }
-      setLoading(false);
-    }, () => {
-      setItems(NEWS_DATA.map(normalizeNewsItem));
-      setLoading(false);
-    });
-    return () => unsub();
-  }, []);
+  const { items, loading } = useNewsFeed();
 
   return (
     <div className="container mx-auto px-6 py-20">
@@ -5857,11 +5866,10 @@ function AboutPage() {
               <HelpCircle className="w-6 h-6"/> Help & Support
             </h3>
             <p className="text-slate-300 mb-6">Need help? We're here for you. Reach out through any of the channels below.</p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
-                { icon: '💬', title: 'Discord Community', desc: 'Join our Discord for live support and community discussion.', link: 'https://discord.gg/95r85Mmww8', label: 'Join Discord' },
-                { icon: '📧', title: 'Email Support', desc: 'Send us an email for tournament or account help.', link: 'mailto:gamehubnnp@gmail.com', label: 'Email Us' },
-                { icon: '📋', title: 'FAQ', desc: 'Find answers to the most common questions about GameHub.', link: '#', label: 'View FAQ' },
+                { icon: '💬', title: 'Discord Community', desc: 'Join our Discord for live support and community discussion.', link: 'https://discord.gg/95r85Mmww8', label: 'Join Discord', external: true },
+                { icon: '📧', title: 'Email Support', desc: 'Send us an email for tournament or account help.', value: 'gamehubnnp@gmail.com' },
               ].map(item => (
                 <div key={item.title} className="bg-slate-800 rounded-xl p-5 flex flex-col gap-3">
                   <span className="text-2xl">{item.icon}</span>
@@ -5869,10 +5877,16 @@ function AboutPage() {
                     <h4 className="font-bold mb-1">{item.title}</h4>
                     <p className="text-slate-400 text-sm">{item.desc}</p>
                   </div>
-                  <a href={item.link} target="_blank" rel="noopener noreferrer"
-                    className="text-xs font-bold text-blue-400 hover:text-blue-300 transition-colors mt-auto">
-                    {item.label} →
-                  </a>
+                  {item.link ? (
+                    <a href={item.link} target="_blank" rel="noopener noreferrer"
+                      className="text-xs font-bold text-blue-400 hover:text-blue-300 transition-colors mt-auto">
+                      {item.label} →
+                    </a>
+                  ) : (
+                    <p className="mt-auto break-all text-xs font-bold text-blue-400">
+                      {item.value}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
