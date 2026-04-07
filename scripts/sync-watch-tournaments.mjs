@@ -1,7 +1,10 @@
 const PANDASCORE_BASE_URL = 'https://api.pandascore.co';
 const UPCOMING_LIMIT = 30;
 const RUNNING_LIMIT = 15;
+const PAST_LIMIT = 20;
 const AUTO_SOURCE_TYPE = 'pandascore-match';
+const MATCH_STALE_AFTER_MS = 3 * 60 * 60 * 1000;
+const COMPLETED_RETENTION_MS = 6 * 60 * 60 * 1000;
 
 const GAME_MAPPINGS = [
   { title: 'Valorant', keywords: ['valorant'] },
@@ -29,6 +32,44 @@ function formatTournamentDate(value) {
 
 function normalizeText(value) {
   return String(value || '').trim().toLowerCase();
+}
+
+function parseDateValue(value) {
+  if (!value) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function getMatchStartTime(match) {
+  return parseDateValue(match?.begin_at || match?.scheduled_at);
+}
+
+function getMatchReferenceEndTime(match) {
+  const explicitEnd = parseDateValue(match?.end_at || match?.end_time);
+  if (explicitEnd) return explicitEnd;
+
+  const startAt = getMatchStartTime(match);
+  if (!startAt) return null;
+
+  if (match?.status === 'running') {
+    return new Date(startAt.getTime() + MATCH_STALE_AFTER_MS);
+  }
+
+  if (match?.status === 'finished' || match?.status === 'canceled') {
+    return startAt;
+  }
+
+  return null;
+}
+
+function isPastRetentionWindow(date) {
+  return Boolean(date && date.getTime() <= Date.now() - COMPLETED_RETENTION_MS);
+}
+
+function shouldKeepCompletedDoc(data) {
+  if (data?.status !== 'Completed') return false;
+  const completedAt = parseDateValue(data?.endAtRaw || data?.dateRaw);
+  return Boolean(completedAt && !isPastRetentionWindow(completedAt));
 }
 
 function detectGame(match) {
@@ -62,6 +103,18 @@ function detectRegion(match) {
 }
 
 function detectStatus(match) {
+  const now = Date.now();
+  const startAt = getMatchStartTime(match);
+  const endAt = parseDateValue(match?.end_at || match?.end_time);
+
+  if (endAt && endAt.getTime() <= now) {
+    return 'Completed';
+  }
+
+  if (startAt && startAt.getTime() <= now - MATCH_STALE_AFTER_MS) {
+    return 'Completed';
+  }
+
   switch (match?.status) {
     case 'running':
       return 'Live Now';
@@ -70,11 +123,11 @@ function detectStatus(match) {
     case 'postponed':
       return 'Coming Soon';
     case 'canceled':
-      return 'Ended';
+      return 'Completed';
     case 'finished':
-      return 'Ended';
+      return 'Completed';
     default:
-      return 'Upcoming';
+      return startAt && startAt.getTime() > now ? 'Upcoming' : 'Completed';
   }
 }
 
@@ -128,6 +181,7 @@ function buildTournamentName(match, gameTitle) {
 }
 
 function buildDescription(match, gameTitle) {
+  const normalizedStatus = detectStatus(match);
   const league = match?.league?.name || match?.tournament?.name || gameTitle || 'esports event';
   const serie = match?.serie?.full_name ? ` in ${match.serie.full_name}` : '';
   const opponents = Array.isArray(match?.opponents)
@@ -138,8 +192,12 @@ function buildDescription(match, gameTitle) {
     : '';
   const intro = opponents ? `${opponents} in ${league}${serie}.` : `${league}${serie}.`;
 
-  if (match?.status === 'running') {
+  if (normalizedStatus === 'Live Now') {
     return `${intro} Live watch link is synced automatically when PandaScore provides an official stream.`;
+  }
+
+  if (normalizedStatus === 'Completed') {
+    return `${intro} Completed match imported automatically from PandaScore. This listing stays available for 6 hours after the match ends.`;
   }
 
   return `${intro} Upcoming pro match imported automatically from PandaScore.`;
@@ -151,12 +209,14 @@ function buildTournamentPayload(match, Timestamp) {
 
   const watchUrl = pickWatchUrl(match);
   const scheduledAt = match?.scheduled_at || match?.begin_at || null;
+  const referenceEndAt = getMatchReferenceEndTime(match);
 
   return {
     name: buildTournamentName(match, gameTitle),
     game: gameTitle,
     date: formatTournamentDate(scheduledAt),
     dateRaw: scheduledAt || '',
+    endAtRaw: referenceEndAt ? referenceEndAt.toISOString() : '',
     prize: match?.tournament?.prizepool || match?.league?.prizepool || 'TBA',
     type: match?.live_supported ? 'LAN Finals' : 'Online',
     region: detectRegion(match),
@@ -214,15 +274,21 @@ async function fetchJson(path, token) {
 }
 
 async function fetchMatches(token) {
-  const [running, upcoming] = await Promise.all([
+  const [running, upcoming, past] = await Promise.all([
     fetchJson('/matches/running', token),
     fetchJson('/matches/upcoming', token),
+    fetchJson('/matches/past', token),
   ]);
 
-  return [
+  const recentPast = past
+    .filter((match) => !isPastRetentionWindow(getMatchReferenceEndTime(match)))
+    .slice(0, PAST_LIMIT);
+
+  return Array.from(new Map([
     ...running.slice(0, RUNNING_LIMIT),
     ...upcoming.slice(0, UPCOMING_LIMIT),
-  ];
+    ...recentPast,
+  ].map((match) => [String(match.id), match])).values());
 }
 
 async function loadExistingAutoDocs(db) {
@@ -265,8 +331,9 @@ async function syncTournaments(db, Timestamp, matches) {
   }
 
   for (const [externalId, existing] of existingDocs.entries()) {
-    if (liveIds.has(externalId)) continue;
     if (existing.manualOverride) continue;
+    if (liveIds.has(externalId)) continue;
+    if (shouldKeepCompletedDoc(existing)) continue;
 
     await db.collection('tournaments').doc(existing.id).delete();
   }

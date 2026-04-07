@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronRight, ChevronLeft, Trophy, Calendar, Zap, Gamepad2, Newspaper, Info, Target, Swords, Users, Laugh, Crown, Brain, Car, Shield, Globe, HelpCircle, Home, Joystick } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Trophy, Calendar, Zap, Gamepad2, Newspaper, Info, Target, Swords, Users, Laugh, Crown, Brain, Car, Shield, Globe, HelpCircle, Home, Joystick, Search, X, MapPin } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs, onSnapshot, orderBy, query, where, writeBatch, updateDoc, arrayUnion, arrayRemove, deleteDoc, serverTimestamp } from 'firebase/firestore';
@@ -2052,7 +2052,8 @@ function GamesPage({ navigateTo }) {
             className="flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-sm transition-all duration-200"
             style={{ background: showSearch ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.05)', color: showSearch ? '#60a5fa' : '#94a3b8', border: '1px solid', borderColor: showSearch ? 'rgba(59,130,246,0.4)' : 'rgba(255,255,255,0.1)' }}
           >
-            🔍 Search & Filter
+            <Search className="w-4 h-4" />
+            Search & Filter
           </button>
         </div>
 
@@ -2061,6 +2062,21 @@ function GamesPage({ navigateTo }) {
           <div className="bg-slate-900 rounded-2xl p-5 border border-slate-800 fade-in-up space-y-4">
             {/* Search input */}
             <div className="relative">
+              <Search className="absolute left-5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+              <input
+                type="text"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="SEARCH GAMES BY TITLE OR TAG..."
+                className="w-full rounded-2xl border border-slate-700/80 bg-[#232329] pl-14 pr-12 py-4 text-sm font-semibold tracking-[0.08em] text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all"
+              />
+              {search && (
+                <button onClick={() => setSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors" aria-label="Clear search">
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            <div className="relative hidden">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
               <input
                 type="text"
@@ -3541,6 +3557,7 @@ function WishlistPage({ navigateTo }) {
 
 function TournamentsPage({ navigateTo }) {
   const [tab, setTab] = useState('join');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [registerModal, setRegisterModal] = useState(null);
   const [myRegistrations, setMyRegistrations] = useState({});
   const [firestoreTournaments, setFirestoreTournaments] = useState([]);
@@ -3660,6 +3677,10 @@ function TournamentsPage({ navigateTo }) {
   const watchable = allTournaments.filter(t => !t.joinable);
   const joinable  = allTournaments.filter(t => t.joinable);
 
+  useEffect(() => {
+    setStatusFilter('all');
+  }, [tab]);
+
   const matchesTournamentSearch = (tournament) => {
     const queryText = searchQuery.trim().toLowerCase();
     if (!queryText) return true;
@@ -3677,8 +3698,38 @@ function TournamentsPage({ navigateTo }) {
     return searchableText.includes(queryText);
   };
 
-  const filteredJoinable = joinable.filter(matchesTournamentSearch);
-  const filteredWatchable = watchable.filter(matchesTournamentSearch);
+  const matchesStatusFilter = (tournament) => {
+    if (statusFilter === 'all') return true;
+
+    if (statusFilter === 'full') {
+      return Boolean(tournament.joinable && tournament.maxTeams && tournament.registered >= tournament.maxTeams);
+    }
+
+    if (statusFilter === 'registration-open') {
+      return tournament.status === 'Registration Open';
+    }
+
+    if (statusFilter === 'coming-soon') {
+      return tournament.status === 'Coming Soon';
+    }
+
+    if (statusFilter === 'live-now') {
+      return tournament.status === 'Live Now';
+    }
+
+    if (statusFilter === 'upcoming') {
+      return tournament.status === 'Upcoming' || tournament.status === 'Coming Soon';
+    }
+
+    if (statusFilter === 'completed') {
+      return tournament.status === 'Completed';
+    }
+
+    return true;
+  };
+
+  const filteredJoinable = joinable.filter((tournament) => matchesTournamentSearch(tournament) && matchesStatusFilter(tournament));
+  const filteredWatchable = watchable.filter((tournament) => matchesTournamentSearch(tournament) && matchesStatusFilter(tournament));
 
   const statusColor = (s) => {
     if (s === 'Registration Open') return 'bg-green-700 text-green-100';
@@ -3686,6 +3737,460 @@ function TournamentsPage({ navigateTo }) {
     if (s === 'Coming Soon')       return 'bg-slate-500/20 text-slate-400';
     return 'bg-blue-500/20 text-blue-400';
   };
+
+  const tournamentStatusChipClass = (status) => {
+    if (status === 'Registration Open') return 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300';
+    if (status === 'Live Now') return 'border-red-500/30 bg-red-500/10 text-red-300';
+    if (status === 'Coming Soon') return 'border-slate-600 bg-slate-800/80 text-slate-300';
+    return 'border-blue-500/30 bg-blue-500/10 text-blue-300';
+  };
+
+  const tournamentActionBase = 'inline-flex min-h-[60px] w-full items-center justify-center rounded-2xl px-8 text-sm font-black uppercase tracking-[0.28em] transition-all duration-200 sm:w-[210px]';
+  const neutralTournamentAction = `${tournamentActionBase} border border-slate-700 bg-slate-800 text-slate-100 hover:border-slate-500 hover:bg-slate-700`;
+  const joinTournamentAction = `${tournamentActionBase} bg-yellow-500 text-black hover:bg-yellow-400`;
+  const watchTournamentAction = `${tournamentActionBase} bg-red-600 text-white hover:bg-red-500`;
+  const disabledTournamentAction = `${tournamentActionBase} border border-slate-700 bg-slate-800/70 text-slate-500 cursor-not-allowed`;
+
+  const tournamentMeta = (tournament) => ([
+    { label: 'Prize Pool', value: tournament.prize || 'TBA', icon: Trophy, iconClass: 'text-yellow-400' },
+    { label: 'Region', value: tournament.region || 'Global', icon: MapPin, iconClass: 'text-blue-300' },
+    { label: 'Schedule', value: tournament.date || 'TBA', icon: Calendar, iconClass: 'text-slate-200' },
+  ]);
+
+  const registrationSummary = (tournament, myReg, full) => {
+    if (myReg?.status === 'approved') return { label: 'Status', value: 'Registered', valueClass: 'text-green-400' };
+    if (myReg?.status === 'pending') return { label: 'Registration', value: 'Pending Approval', valueClass: 'text-yellow-400' };
+    if (myReg?.status === 'rejected') return { label: 'Registration', value: `Rejected ${myReg.rejectCount || 0}/3`, valueClass: 'text-red-400' };
+    if (full) return { label: 'Registration', value: 'Full', valueClass: 'text-red-400' };
+    if (tournament.status === 'Coming Soon') return { label: 'Registration', value: 'Coming Soon', valueClass: 'text-amber-400' };
+    return { label: 'Registration', value: 'Open Enrollment', valueClass: 'text-green-400' };
+  };
+
+  const watchSummary = (tournament) => {
+    if (tournament.status === 'Live Now') return { label: 'Broadcast', value: 'Live Now', valueClass: 'text-red-400' };
+    if (tournament.status === 'Completed') return { label: 'Broadcast', value: 'Completed', valueClass: 'text-slate-300' };
+    if (tournament.watchUrl) return { label: 'Broadcast', value: 'Stream Ready', valueClass: 'text-blue-400' };
+    return { label: 'Broadcast', value: 'Stream Soon', valueClass: 'text-amber-400' };
+  };
+
+  const joinFilterOptions = [
+    { id: 'all', label: 'All' },
+    { id: 'registration-open', label: 'Open' },
+    { id: 'coming-soon', label: 'Upcoming' },
+    { id: 'full', label: 'Full' },
+  ];
+
+  const watchFilterOptions = [
+    { id: 'all', label: 'All' },
+    { id: 'live-now', label: 'Live Now' },
+    { id: 'upcoming', label: 'Upcoming' },
+    { id: 'completed', label: 'Completed' },
+  ];
+
+  const activeFilterOptions = tab === 'watch' ? watchFilterOptions : joinFilterOptions;
+
+  return (
+    <div className="container mx-auto px-6 py-16">
+      <div className="mb-10 fade-in-up">
+        <h2 className="text-4xl font-black mb-3" style={{ fontFamily: "'Orbitron', sans-serif" }}>
+          <span className="text-yellow-400">TOURNAMENTS</span> & COMPETITIONS
+        </h2>
+        <p className="text-slate-400">Watch pro-level tournaments or join open competitions</p>
+      </div>
+
+      <div className="flex gap-2 mb-8 bg-slate-900 p-1 rounded-xl w-fit">
+        <button
+          onClick={() => setTab('join')}
+          className={`px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${tab === 'join' ? 'bg-yellow-500 text-black' : 'text-slate-400 hover:text-white'}`}
+        >
+          Joinable
+        </button>
+        <button
+          onClick={() => setTab('watch')}
+          className={`px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${tab === 'watch' ? 'bg-blue-500 text-white' : 'text-slate-400 hover:text-white'}`}
+        >
+          Watch
+        </button>
+      </div>
+
+      <div className="mb-8 rounded-2xl border border-slate-800 bg-slate-900 p-4 fade-in-up">
+        <div className="relative">
+          <Search className="absolute left-5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="SEARCH TOURNAMENTS, GAMES, OR TEAMS..."
+            className="w-full rounded-2xl border border-slate-700 bg-slate-800 pl-14 pr-12 py-4 text-sm font-semibold tracking-[0.08em] text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+              aria-label="Clear search"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-3">
+          {activeFilterOptions.map((option) => (
+            <button
+              key={option.id}
+              onClick={() => setStatusFilter(option.id)}
+              className={`min-w-[120px] rounded-xl border px-5 py-3 text-xs font-black uppercase tracking-[0.22em] transition-all ${
+                statusFilter === option.id
+                  ? (tab === 'join'
+                    ? 'border-yellow-500/40 bg-slate-800 text-slate-100 shadow-[inset_0_-3px_0_0_#eab308]'
+                    : 'border-blue-500/40 bg-slate-800 text-slate-100 shadow-[inset_0_-3px_0_0_#3b82f6]')
+                  : 'border-slate-800 bg-[#151922] text-slate-400 hover:border-slate-700 hover:text-slate-200'
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {tab === 'join' && (
+        <div className="space-y-5">
+          {tLoading ? (
+            <div className="rounded-[24px] border border-slate-800 bg-[#171b22] px-6 py-10 text-center text-slate-500">
+              Loading tournaments...
+            </div>
+          ) : filteredJoinable.length === 0 ? (
+            <div className="rounded-[24px] border border-slate-800 bg-[#171b22] px-6 py-12 text-center text-slate-500">
+              <Search className="mx-auto mb-4 h-8 w-8 text-slate-600" />
+              <p>No joinable tournaments match your search.</p>
+            </div>
+          ) : filteredJoinable.map((t, i) => {
+            const full = t.maxTeams ? t.registered >= t.maxTeams : false;
+            const myReg = myRegistrations[t.firestoreId || t.id];
+            const summary = registrationSummary(t, myReg, full);
+
+            return (
+              <div
+                key={t.firestoreId || t.id}
+                className="relative overflow-hidden rounded-2xl border border-slate-800 bg-[#0f172a] px-8 py-8 transition-all hover:border-blue-500/30 fade-in-up"
+                style={{ animationDelay: `${i * 0.08}s` }}
+              >
+                <div className="absolute left-0 top-4 h-[calc(100%-2rem)] w-[3px] rounded-r-full bg-yellow-500" />
+                <div className="flex flex-col gap-8 xl:flex-row xl:items-center xl:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-5 flex flex-wrap items-center gap-4 text-[10px] font-black uppercase tracking-[0.24em]">
+                      <span className="border border-yellow-500/30 bg-yellow-500/5 px-4 py-2 text-yellow-400">
+                        {t.game}
+                      </span>
+                      <span className="text-slate-300">{t.registered || 0} / {t.maxTeams || 0} Teams</span>
+                      <span className={summary.valueClass}>{summary.value}</span>
+                    </div>
+
+                    <h3 className="mb-7 text-[2.3rem] font-black uppercase leading-[0.95] tracking-[-0.03em] text-slate-100 sm:text-[3rem]">
+                      {t.name}
+                    </h3>
+
+                    <div className="flex flex-wrap gap-x-10 gap-y-5">
+                      {tournamentMeta(t).map((item) => {
+                        const Icon = item.icon;
+                        return (
+                          <div key={`${t.firestoreId || t.id}-${item.label}`} className="flex items-center gap-3 text-sm uppercase tracking-[0.08em]">
+                            <Icon className={`h-4 w-4 ${item.iconClass}`} />
+                            <span className="text-slate-400">{item.label}:</span>
+                            <span className="font-semibold text-slate-100">{item.value}</span>
+                          </div>
+                        );
+                      })}
+
+                      {t.requirements && (
+                        <div className="flex items-center gap-3 text-sm uppercase tracking-[0.08em]">
+                          <Users className="h-4 w-4 text-slate-300" />
+                          <span className="text-slate-400">Req:</span>
+                          <span className="font-semibold text-slate-100">{t.requirements}</span>
+                        </div>
+                      )}
+
+                      {myReg && (
+                        <div className="flex items-center gap-3 text-sm uppercase tracking-[0.08em]">
+                          <Shield className={`h-4 w-4 ${summary.valueClass}`} />
+                          <span className="text-slate-400">Status:</span>
+                          <span className={`font-semibold ${summary.valueClass}`}>{summary.value}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {t.description && (
+                      <p className="mt-5 max-w-4xl text-sm leading-relaxed text-slate-400">
+                        {t.description}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex w-full flex-col gap-5 sm:flex-row sm:items-center sm:justify-between xl:w-auto xl:min-w-[360px] xl:justify-end">
+                    <div className="sm:text-right">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">{summary.label}</p>
+                      <p className={`mt-2 text-2xl font-black uppercase leading-none ${summary.valueClass}`}>
+                        {summary.value}
+                      </p>
+                    </div>
+
+                    {myReg ? (
+                      <>
+                        {myReg.status === 'pending' && (
+                          <button onClick={() => handleEdit(t, myReg)} className={neutralTournamentAction}>
+                            Edit
+                          </button>
+                        )}
+
+                        {myReg.status === 'rejected' && (
+                          myReg.rejectCount >= 3 ? (
+                            <button className={`${disabledTournamentAction} border-red-500/20 text-red-300`} disabled>
+                              Locked
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                const size = teamSize(t.game);
+                                setForm({
+                                  teamName: myReg.teamName || '',
+                                  phone: myReg.phone || '',
+                                  email: myReg.contactEmail || user?.email || '',
+                                  players: myReg.players || Array.from({ length: size }, () => ({ realName: '', ign: '' })),
+                                  _isResubmit: true,
+                                });
+                                setEditRegId(null);
+                                setSubmitDone(false);
+                                setRegisterModal(t);
+                              }}
+                              className={joinTournamentAction}
+                            >
+                              Rejoin
+                            </button>
+                          )
+                        )}
+
+                        {myReg.status === 'approved' && (
+                          <button className={`${disabledTournamentAction} border-green-500/20 text-green-300`} disabled>
+                            Joined
+                          </button>
+                        )}
+                      </>
+                    ) : t.status === 'Registration Open' && !full ? (
+                      <button onClick={() => handleRegister(t)} className={joinTournamentAction}>
+                        Join Now
+                      </button>
+                    ) : t.status === 'Coming Soon' ? (
+                      <button className={disabledTournamentAction} disabled>
+                        Coming Soon
+                      </button>
+                    ) : full ? (
+                      <button className={`${disabledTournamentAction} border-red-500/20 text-red-300`} disabled>
+                        Full
+                      </button>
+                    ) : (
+                      <button className={disabledTournamentAction} disabled>
+                        Closed
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {tab === 'watch' && (
+        <div className="space-y-5">
+          {tLoading ? (
+            <div className="rounded-[24px] border border-slate-800 bg-[#171b22] px-6 py-10 text-center text-slate-500">
+              Loading tournaments...
+            </div>
+          ) : filteredWatchable.length === 0 ? (
+            <div className="rounded-[24px] border border-slate-800 bg-[#171b22] px-6 py-12 text-center text-slate-500">
+              <Search className="mx-auto mb-4 h-8 w-8 text-slate-600" />
+              <p>No watch-only tournaments match your search.</p>
+            </div>
+          ) : filteredWatchable.map((t, i) => {
+            const summary = watchSummary(t);
+
+            return (
+              <div
+                key={t.firestoreId || t.id}
+                className="relative overflow-hidden rounded-2xl border border-slate-800 bg-[#0f172a] px-8 py-8 transition-all hover:border-blue-500/30 fade-in-up"
+                style={{ animationDelay: `${i * 0.08}s` }}
+              >
+                <div className="absolute left-0 top-4 h-[calc(100%-2rem)] w-[3px] rounded-r-full bg-blue-500" />
+                <div className="flex flex-col gap-8 xl:flex-row xl:items-center xl:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-5 flex flex-wrap items-center gap-4 text-[10px] font-black uppercase tracking-[0.24em]">
+                      <span className="border border-blue-500/30 bg-blue-500/5 px-4 py-2 text-blue-400">
+                        {t.game}
+                      </span>
+                      <span className={summary.valueClass}>{summary.value}</span>
+                      {t.type && (
+                        <span className="text-slate-300">{t.type}</span>
+                      )}
+                    </div>
+
+                    <h3 className="mb-7 text-[2.3rem] font-black uppercase leading-[0.95] tracking-[-0.03em] text-slate-100 sm:text-[3rem]">
+                      {t.name}
+                    </h3>
+
+                    <div className="flex flex-wrap gap-x-10 gap-y-5">
+                      {tournamentMeta(t).map((item) => {
+                        const Icon = item.icon;
+                        return (
+                          <div key={`${t.firestoreId || t.id}-${item.label}`} className="flex items-center gap-3 text-sm uppercase tracking-[0.08em]">
+                            <Icon className={`h-4 w-4 ${item.iconClass}`} />
+                            <span className="text-slate-400">{item.label}:</span>
+                            <span className="font-semibold text-slate-100">{item.value}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {t.description && (
+                      <p className="mt-5 max-w-4xl text-sm leading-relaxed text-slate-400">
+                        {t.description}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex w-full flex-col gap-5 sm:flex-row sm:items-center sm:justify-between xl:w-auto xl:min-w-[360px] xl:justify-end">
+                    <div className="sm:text-right">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">{summary.label}</p>
+                      <p className={`mt-2 text-2xl font-black uppercase leading-none ${summary.valueClass}`}>
+                        {summary.value}
+                      </p>
+                    </div>
+
+                    {t.watchUrl ? (
+                      <a href={t.watchUrl} target="_blank" rel="noopener noreferrer" className={watchTournamentAction}>
+                        Watch Live
+                      </a>
+                    ) : t.status === 'Completed' ? (
+                      <button className={disabledTournamentAction} disabled>
+                        Match Ended
+                      </button>
+                    ) : (
+                      <button className={disabledTournamentAction} disabled>
+                        Stream Soon
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {registerModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4" onClick={() => !submitting && setRegisterModal(null)}>
+          <div className="bg-slate-900 border border-yellow-500/40 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg flex flex-col" style={{ maxHeight: '92dvh' }} onClick={e => e.stopPropagation()}>
+            {submitDone ? (
+              <div className="p-8 text-center">
+                <div className="text-5xl mb-4">🎉</div>
+                <h3 className="text-xl font-black mb-2 text-green-400">{editRegId ? 'Registration Updated!' : 'Registration Submitted!'}</h3>
+                <p className="text-slate-400 text-sm mb-2">Your team <span className="text-white font-bold">"{form.teamName}"</span> has been {editRegId ? 'updated for' : 'registered for'}</p>
+                <p className="text-yellow-400 font-bold mb-6">{registerModal.name}</p>
+                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 mb-6 text-sm text-slate-300">
+                  Your registration is <span className="text-yellow-400 font-bold">pending approval</span>. The admin will review and confirm within 24 hours.
+                </div>
+                <button onClick={() => setRegisterModal(null)} className="bg-yellow-500 hover:bg-yellow-400 text-black font-black px-8 py-3 rounded-xl transition-all">
+                  Done
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="p-5 pb-0 flex-shrink-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <h3 className="text-lg font-black">{editRegId ? 'Edit Registration' : 'Team Registration'}</h3>
+                    <button onClick={() => setRegisterModal(null)} className="text-slate-500 hover:text-white text-xl leading-none">✕</button>
+                  </div>
+                  <p className="text-yellow-400 font-bold text-sm mb-4">{registerModal.name}</p>
+
+                  <div className="flex items-center gap-2 mb-4">
+                    {[1, 2].map(s => (
+                      <React.Fragment key={s}>
+                        <div className={`flex items-center gap-1.5 text-xs font-bold ${formStep === s ? 'text-yellow-400' : formStep > s ? 'text-green-400' : 'text-slate-600'}`}>
+                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${formStep === s ? 'bg-yellow-500 text-black' : formStep > s ? 'bg-green-500 text-white' : 'bg-slate-700 text-slate-500'}`}>
+                            {formStep > s ? '✓' : s}
+                          </div>
+                          {s === 1 ? 'Team Info' : 'Players'}
+                        </div>
+                        {s < 2 && <div className={`flex-1 h-0.5 rounded ${formStep > s ? 'bg-green-500' : 'bg-slate-700'}`}/>}
+                      </React.Fragment>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="overflow-y-auto flex-1 px-5 pb-3">
+                  {formStep === 1 ? (
+                    <div className="space-y-3 py-3">
+                      <input value={form.teamName} onChange={e => setForm(p => ({ ...p, teamName: e.target.value }))}
+                        placeholder="Team name *" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
+                      <input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
+                        placeholder="Contact phone number *" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
+                      <input value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
+                        placeholder="Contact email *" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 py-3">
+                      <p className="text-xs text-slate-500">Enter real name and in-game name for each player</p>
+                      {form.players.map((p, i) => (
+                        <div key={i} className="bg-slate-800/60 rounded-xl p-3 space-y-2">
+                          <p className="text-xs text-yellow-400 font-bold">Player {i + 1}{i === 0 ? ' - Captain' : ''}</p>
+                          <div className="flex gap-2">
+                            <input value={p.realName} onChange={e => {
+                              const updated = [...form.players];
+                              updated[i] = { ...updated[i], realName: e.target.value };
+                              setForm(prev => ({ ...prev, players: updated }));
+                            }} placeholder="Real name *" className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
+                            <input value={p.ign} onChange={e => {
+                              const updated = [...form.players];
+                              updated[i] = { ...updated[i], ign: e.target.value };
+                              setForm(prev => ({ ...prev, players: updated }));
+                            }} placeholder="In-game name *" className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-5 pt-3 border-t border-slate-800 flex gap-3 flex-shrink-0">
+                  {formStep === 1 ? (
+                    <>
+                      <button onClick={() => setRegisterModal(null)}
+                        className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-400 font-bold hover:bg-slate-700 transition-colors text-sm">
+                        Cancel
+                      </button>
+                      <button onClick={() => setFormStep(2)} disabled={!form.teamName.trim() || !form.phone.trim() || !form.email.trim()}
+                        className="flex-1 py-3 rounded-xl bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 text-black font-black transition-all text-sm">
+                        Next Players
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => setFormStep(1)}
+                        className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-400 font-bold hover:bg-slate-700 transition-colors text-sm">
+                        Back
+                      </button>
+                      <button onClick={handleSubmit} disabled={submitting || form.players.some(p => !p.realName.trim() || !p.ign.trim())}
+                        className="flex-1 py-3 rounded-xl bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 text-black font-black transition-all text-sm">
+                        {submitting ? 'Submitting...' : 'Submit'}
+                      </button>
+                    </>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div className="container mx-auto px-6 py-16">
@@ -3705,7 +4210,7 @@ function TournamentsPage({ navigateTo }) {
         </button>
         <button onClick={() => setTab('watch')}
           className={`px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${tab === 'watch' ? 'bg-blue-500 text-white' : 'text-slate-400 hover:text-white'}`}>
-          Watch Only
+          Watch
         </button>
       </div>
 
