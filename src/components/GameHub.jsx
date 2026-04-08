@@ -5247,6 +5247,148 @@ function AdminPage({ navigateTo }) {
     await deleteDoc(doc(db, 'tournaments', id));
   };
 
+  const renderTournamentForm = (className = 'mb-6') => (
+    <div className={`bg-slate-900 border border-yellow-500/40 rounded-2xl p-6 ${className}`.trim()}>
+      <h3 className="font-black text-lg mb-5">{editTId ? '✏️ Edit Tournament' : '+ New Tournament'}</h3>
+
+      <style>{`.tf-input { width:100%; background:#1e293b; border:1px solid #334155; border-radius:10px; padding:10px 14px; font-size:14px; color:#f1f5f9; outline:none; transition:border-color .2s; }
+      .tf-input:focus { border-color:#eab308; }
+      .tf-label { font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px; display:block; }`}</style>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+        <div className="sm:col-span-2">
+          <label className="tf-label">Tournament Name *</label>
+          <input value={tForm.name} onChange={e => setTForm(p=>({...p,name:e.target.value}))}
+            placeholder="e.g. GameHub Valorant Cup Season 1" className="tf-input"/>
+        </div>
+
+        <div>
+          <label className="tf-label">Game *</label>
+          <select value={tForm.game} onChange={e => setTForm(p=>({...p,game:e.target.value}))} className="tf-input">
+            <option value="">— Select game —</option>
+            {GAMES_DATA.map(g => <option key={g.id} value={g.title}>{g.title}</option>)}
+          </select>
+        </div>
+
+        <div>
+          <label className="tf-label">Platform</label>
+          <select value={tForm.platform || ''} onChange={e => setTForm(p=>({...p,platform:e.target.value}))} className="tf-input">
+            <option value="">— Select platform —</option>
+            <option>PC</option>
+            <option>Mobile</option>
+            <option>PC / Mobile</option>
+            <option>Console</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="tf-label">Start Date *</label>
+          <input type="date" value={tForm.dateRaw || ''} onChange={e => {
+            const d = new Date(e.target.value);
+            const formatted = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+            setTForm(p=>({...p, dateRaw: e.target.value, date: formatted}));
+          }} className="tf-input" style={{ colorScheme: 'dark' }}/>
+        </div>
+
+        <div>
+          <label className="tf-label">End Date (optional)</label>
+          <input type="date" value={tForm.dateEndRaw || ''} onChange={e => {
+            const d = new Date(e.target.value);
+            const formatted = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+            setTForm(p=>({...p, dateEndRaw: e.target.value, dateEnd: formatted}));
+          }} className="tf-input" style={{ colorScheme: 'dark' }}/>
+        </div>
+
+        <div>
+          <label className="tf-label">Prize Pool</label>
+          <input value={tForm.prize} onChange={e => setTForm(p=>({...p,prize:e.target.value}))}
+            placeholder="e.g. $500 or ฿5,000" className="tf-input"/>
+        </div>
+
+        <div>
+          <label className="tf-label">Max Teams</label>
+          <select value={tForm.maxTeams} onChange={e => setTForm(p=>({...p,maxTeams:Number(e.target.value)}))} className="tf-input">
+            {[8,16,32,64,128].map(n => <option key={n} value={n}>{n} teams</option>)}
+          </select>
+        </div>
+
+        <div>
+          <label className="tf-label">Region</label>
+          <select value={tForm.region} onChange={e => setTForm(p=>({...p,region:e.target.value}))} className="tf-input">
+            <option>Southeast Asia</option>
+            <option>Thailand</option>
+            <option>Asia-Pacific</option>
+            <option>International</option>
+            <option>North America</option>
+            <option>Europe</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="tf-label">Tournament Type</label>
+          <select value={tForm.type} onChange={e => setTForm(p=>({...p,type:e.target.value}))} className="tf-input">
+            <option>Online</option>
+            <option>LAN</option>
+            <option>LAN Finals</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="tf-label">Status</label>
+          <select value={tForm.status} onChange={e => setTForm(p=>({...p,status:e.target.value}))} className="tf-input">
+            <option>Registration Open</option>
+            <option>Coming Soon</option>
+            <option>Live Now</option>
+            <option>Upcoming</option>
+            <option>Ended</option>
+          </select>
+        </div>
+
+        <div className="sm:col-span-2">
+          <label className="flex items-center gap-3 cursor-pointer bg-slate-800 rounded-xl px-4 py-3 border border-slate-700">
+            <div onClick={() => setTForm(p=>({...p,joinable:!p.joinable}))}
+              className={`w-10 h-6 rounded-full transition-colors flex items-center ${tForm.joinable ? 'bg-yellow-500' : 'bg-slate-600'}`}>
+              <div className={`w-4 h-4 bg-white rounded-full mx-1 transition-transform ${tForm.joinable ? 'translate-x-4' : 'translate-x-0'}`}/>
+            </div>
+            <div>
+              <p className="text-sm font-bold text-white">{tForm.joinable ? 'Open for Registration' : 'Watch Only'}</p>
+              <p className="text-xs text-slate-400">{tForm.joinable ? 'Users can join and register their team' : 'Spectator/pro tournament — no public registration'}</p>
+            </div>
+          </label>
+        </div>
+
+        {!tForm.joinable && (
+          <div className="sm:col-span-2">
+            <label className="tf-label">Watch URL (Twitch / YouTube)</label>
+            <input value={tForm.watchUrl} onChange={e => setTForm(p=>({...p,watchUrl:e.target.value}))}
+              placeholder="https://twitch.tv/..." className="tf-input"/>
+          </div>
+        )}
+
+        <div className="sm:col-span-2">
+          <label className="tf-label">Requirements</label>
+          <input value={tForm.requirements} onChange={e => setTForm(p=>({...p,requirements:e.target.value}))}
+            placeholder="e.g. 5-player team • Gold+ rank • PC only" className="tf-input"/>
+        </div>
+
+        <div className="sm:col-span-2">
+          <label className="tf-label">Description</label>
+          <textarea value={tForm.description} onChange={e => setTForm(p=>({...p,description:e.target.value}))}
+            placeholder="Describe the tournament..." rows={3}
+            className="tf-input" style={{ resize: 'vertical' }}/>
+        </div>
+      </div>
+
+      <div className="flex gap-3">
+        <button onClick={resetTForm} className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-400 font-bold text-sm hover:bg-slate-700 transition-colors">Cancel</button>
+        <button onClick={handleSaveTournament} disabled={tSaving || !tForm.name.trim() || !tForm.game.trim() || !tForm.date.trim()}
+          className="flex-1 py-3 rounded-xl bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 text-black font-black text-sm transition-all">
+          {tSaving ? 'Saving...' : editTId ? 'Save Changes' : '🏆 Create Tournament'}
+        </button>
+      </div>
+    </div>
+  );
+
   if (!user) return <div className="container mx-auto px-6 py-20 text-center"><p className="text-slate-400">Please sign in.</p></div>;
   if (!isAdmin) return <div className="container mx-auto px-6 py-20 text-center"><p className="text-4xl mb-4">🚫</p><p className="text-slate-400">No permission.</p></div>;
 
@@ -5418,164 +5560,7 @@ function AdminPage({ navigateTo }) {
             </button>
           </div>
 
-          {/* Create/Edit Form */}
-          {showTForm && (
-            <div className="bg-slate-900 border border-yellow-500/40 rounded-2xl p-6 mb-6">
-              <h3 className="font-black text-lg mb-5">{editTId ? '✏️ Edit Tournament' : '+ New Tournament'}</h3>
-
-              {/* Style shared across all inputs */}
-              <style>{`.tf-input { width:100%; background:#1e293b; border:1px solid #334155; border-radius:10px; padding:10px 14px; font-size:14px; color:#f1f5f9; outline:none; transition:border-color .2s; }
-              .tf-input:focus { border-color:#eab308; }
-              .tf-label { font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px; display:block; }`}</style>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-
-                {/* Tournament Name */}
-                <div className="sm:col-span-2">
-                  <label className="tf-label">Tournament Name *</label>
-                  <input value={tForm.name} onChange={e => setTForm(p=>({...p,name:e.target.value}))}
-                    placeholder="e.g. GameHub Valorant Cup Season 1" className="tf-input"/>
-                </div>
-
-                {/* Game - dropdown from GAMES_DATA */}
-                <div>
-                  <label className="tf-label">Game *</label>
-                  <select value={tForm.game} onChange={e => setTForm(p=>({...p,game:e.target.value}))} className="tf-input">
-                    <option value="">— Select game —</option>
-                    {GAMES_DATA.map(g => <option key={g.id} value={g.title}>{g.title}</option>)}
-                  </select>
-                </div>
-
-                {/* Platform */}
-                <div>
-                  <label className="tf-label">Platform</label>
-                  <select value={tForm.platform || ''} onChange={e => setTForm(p=>({...p,platform:e.target.value}))} className="tf-input">
-                    <option value="">— Select platform —</option>
-                    <option>PC</option>
-                    <option>Mobile</option>
-                    <option>PC / Mobile</option>
-                    <option>Console</option>
-                  </select>
-                </div>
-
-                {/* Date picker */}
-                <div>
-                  <label className="tf-label">Start Date *</label>
-                  <input type="date" value={tForm.dateRaw || ''} onChange={e => {
-                    const d = new Date(e.target.value);
-                    const formatted = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-                    setTForm(p=>({...p, dateRaw: e.target.value, date: formatted}));
-                  }} className="tf-input" style={{ colorScheme: 'dark' }}/>
-                </div>
-
-                {/* End Date */}
-                <div>
-                  <label className="tf-label">End Date (optional)</label>
-                  <input type="date" value={tForm.dateEndRaw || ''} onChange={e => {
-                    const d = new Date(e.target.value);
-                    const formatted = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-                    setTForm(p=>({...p, dateEndRaw: e.target.value, dateEnd: formatted}));
-                  }} className="tf-input" style={{ colorScheme: 'dark' }}/>
-                </div>
-
-                {/* Prize */}
-                <div>
-                  <label className="tf-label">Prize Pool</label>
-                  <input value={tForm.prize} onChange={e => setTForm(p=>({...p,prize:e.target.value}))}
-                    placeholder="e.g. $500 or ฿5,000" className="tf-input"/>
-                </div>
-
-                {/* Max Teams */}
-                <div>
-                  <label className="tf-label">Max Teams</label>
-                  <select value={tForm.maxTeams} onChange={e => setTForm(p=>({...p,maxTeams:Number(e.target.value)}))} className="tf-input">
-                    {[8,16,32,64,128].map(n => <option key={n} value={n}>{n} teams</option>)}
-                  </select>
-                </div>
-
-                {/* Region */}
-                <div>
-                  <label className="tf-label">Region</label>
-                  <select value={tForm.region} onChange={e => setTForm(p=>({...p,region:e.target.value}))} className="tf-input">
-                    <option>Southeast Asia</option>
-                    <option>Thailand</option>
-                    <option>Asia-Pacific</option>
-                    <option>International</option>
-                    <option>North America</option>
-                    <option>Europe</option>
-                  </select>
-                </div>
-
-                {/* Type */}
-                <div>
-                  <label className="tf-label">Tournament Type</label>
-                  <select value={tForm.type} onChange={e => setTForm(p=>({...p,type:e.target.value}))} className="tf-input">
-                    <option>Online</option>
-                    <option>LAN</option>
-                    <option>LAN Finals</option>
-                  </select>
-                </div>
-
-                {/* Status */}
-                <div>
-                  <label className="tf-label">Status</label>
-                  <select value={tForm.status} onChange={e => setTForm(p=>({...p,status:e.target.value}))} className="tf-input">
-                    <option>Registration Open</option>
-                    <option>Coming Soon</option>
-                    <option>Live Now</option>
-                    <option>Upcoming</option>
-                    <option>Ended</option>
-                  </select>
-                </div>
-
-                {/* Joinable toggle */}
-                <div className="sm:col-span-2">
-                  <label className="flex items-center gap-3 cursor-pointer bg-slate-800 rounded-xl px-4 py-3 border border-slate-700">
-                    <div onClick={() => setTForm(p=>({...p,joinable:!p.joinable}))}
-                      className={`w-10 h-6 rounded-full transition-colors flex items-center ${tForm.joinable ? 'bg-yellow-500' : 'bg-slate-600'}`}>
-                      <div className={`w-4 h-4 bg-white rounded-full mx-1 transition-transform ${tForm.joinable ? 'translate-x-4' : 'translate-x-0'}`}/>
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-white">{tForm.joinable ? 'Open for Registration' : 'Watch Only'}</p>
-                      <p className="text-xs text-slate-400">{tForm.joinable ? 'Users can join and register their team' : 'Spectator/pro tournament — no public registration'}</p>
-                    </div>
-                  </label>
-                </div>
-
-                {/* Watch URL if not joinable */}
-                {!tForm.joinable && (
-                  <div className="sm:col-span-2">
-                    <label className="tf-label">Watch URL (Twitch / YouTube)</label>
-                    <input value={tForm.watchUrl} onChange={e => setTForm(p=>({...p,watchUrl:e.target.value}))}
-                      placeholder="https://twitch.tv/..." className="tf-input"/>
-                  </div>
-                )}
-
-                {/* Requirements */}
-                <div className="sm:col-span-2">
-                  <label className="tf-label">Requirements</label>
-                  <input value={tForm.requirements} onChange={e => setTForm(p=>({...p,requirements:e.target.value}))}
-                    placeholder="e.g. 5-player team • Gold+ rank • PC only" className="tf-input"/>
-                </div>
-
-                {/* Description */}
-                <div className="sm:col-span-2">
-                  <label className="tf-label">Description</label>
-                  <textarea value={tForm.description} onChange={e => setTForm(p=>({...p,description:e.target.value}))}
-                    placeholder="Describe the tournament..." rows={3}
-                    className="tf-input" style={{ resize: 'vertical' }}/>
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <button onClick={resetTForm} className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-400 font-bold text-sm hover:bg-slate-700 transition-colors">Cancel</button>
-                <button onClick={handleSaveTournament} disabled={tSaving || !tForm.name.trim() || !tForm.game.trim() || !tForm.date.trim()}
-                  className="flex-1 py-3 rounded-xl bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 text-black font-black text-sm transition-all">
-                  {tSaving ? 'Saving...' : editTId ? 'Save Changes' : '🏆 Create Tournament'}
-                </button>
-              </div>
-            </div>
-          )}
+          {showTForm && !editTId && renderTournamentForm()}
 
           {/* Tournament list */}
           {tLoading ? (
@@ -5588,27 +5573,30 @@ function AdminPage({ navigateTo }) {
           ) : (
             <div className="space-y-3">
               {tournaments.map(t => (
-                <div key={t.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex items-center justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${t.joinable ? 'bg-yellow-500/20 text-yellow-400' : 'bg-blue-500/20 text-blue-400'}`}>
-                        {t.joinable ? '🎮 Joinable' : '👁️ Watch Only'}
-                      </span>
-                      <span className="text-xs text-slate-500">{t.status}</span>
+                <div key={t.id}>
+                  <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${t.joinable ? 'bg-yellow-500/20 text-yellow-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                          {t.joinable ? '🎮 Joinable' : '👁️ Watch Only'}
+                        </span>
+                        <span className="text-xs text-slate-500">{t.status}</span>
+                      </div>
+                      <p className="font-black truncate">{t.name}</p>
+                      <p className="text-xs text-slate-500">{t.game} · {t.date} · Prize: {t.prize}</p>
                     </div>
-                    <p className="font-black truncate">{t.name}</p>
-                    <p className="text-xs text-slate-500">{t.game} · {t.date} · Prize: {t.prize}</p>
+                    <div className="flex gap-2 flex-shrink-0">
+                      <button onClick={() => handleEditTournament(t)}
+                        className="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold transition-colors">
+                        ✏️ Edit
+                      </button>
+                      <button onClick={() => handleDeleteTournament(t.id)}
+                        className="px-3 py-1.5 rounded-lg bg-red-600/20 hover:bg-red-600/40 text-red-400 text-xs font-bold transition-colors border border-red-600/30">
+                        🗑️ Delete
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex gap-2 flex-shrink-0">
-                    <button onClick={() => handleEditTournament(t)}
-                      className="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold transition-colors">
-                      ✏️ Edit
-                    </button>
-                    <button onClick={() => handleDeleteTournament(t.id)}
-                      className="px-3 py-1.5 rounded-lg bg-red-600/20 hover:bg-red-600/40 text-red-400 text-xs font-bold transition-colors border border-red-600/30">
-                      🗑️ Delete
-                    </button>
-                  </div>
+                  {showTForm && editTId === t.id && renderTournamentForm('mt-3')}
                 </div>
               ))}
             </div>
