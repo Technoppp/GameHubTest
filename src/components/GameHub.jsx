@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { ChevronRight, ChevronLeft, Trophy, Calendar, Zap, Gamepad2, Newspaper, Info, Target, Swords, Users, Laugh, Crown, Brain, Car, Shield, Globe, HelpCircle, Home, Joystick, Search, X, MapPin, User, Heart, Settings, LogOut } from 'lucide-react';
+﻿import React, { useState, useEffect, useRef } from 'react';
+import { ChevronRight, ChevronLeft, Trophy, Calendar, Zap, Gamepad2, Newspaper, Info, Target, Swords, Users, Laugh, Crown, Brain, Car, Shield, Globe, HelpCircle, Home, Joystick, Search, X, MapPin, Settings, LogOut, User, Heart } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs, onSnapshot, orderBy, query, where, writeBatch, updateDoc, arrayUnion, arrayRemove, deleteDoc, serverTimestamp } from 'firebase/firestore';
@@ -833,29 +833,52 @@ function normalizeNewsItem(news, index = 0) {
   };
 }
 
-function useNewsFeed(limit = null) {
-  const fallbackItems = React.useMemo(() => NEWS_DATA.map(normalizeNewsItem), []);
-  const [items, setItems] = useState(limit ? fallbackItems.slice(0, limit) : fallbackItems);
-  const [loading, setLoading] = useState(true);
+function canUseSessionStorage() {
+  try {
+    return typeof window !== 'undefined' && typeof window.sessionStorage !== 'undefined';
+  } catch (_) {
+    return false;
+  }
+}
 
-  useEffect(() => {
-    const newsQuery = query(collection(db, 'news'), orderBy('publishedAt', 'desc'));
-    const unsub = onSnapshot(newsQuery, (snap) => {
-      const nextItems = snap.empty
-        ? fallbackItems
-        : snap.docs.map((docSnap, index) => normalizeNewsItem({ id: docSnap.id, ...docSnap.data() }, index));
+function readSessionFlag(key) {
+  if (!canUseSessionStorage()) return null;
+  try {
+    return window.sessionStorage.getItem(key);
+  } catch (_) {
+    return null;
+  }
+}
 
-      setItems(limit ? nextItems.slice(0, limit) : nextItems);
-      setLoading(false);
-    }, () => {
-      setItems(limit ? fallbackItems.slice(0, limit) : fallbackItems);
-      setLoading(false);
-    });
+function writeSessionFlag(key, value) {
+  if (!canUseSessionStorage()) return;
+  try {
+    window.sessionStorage.setItem(key, value);
+  } catch (_) {}
+}
 
-    return () => unsub();
-  }, [fallbackItems, limit]);
+async function copyText(text) {
+  try {
+    if (navigator?.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch (_) {}
 
-  return { items, loading };
+  try {
+    const input = document.createElement('input');
+    input.value = text;
+    input.setAttribute('readonly', '');
+    input.style.position = 'absolute';
+    input.style.left = '-9999px';
+    document.body.appendChild(input);
+    input.select();
+    const copied = document.execCommand('copy');
+    document.body.removeChild(input);
+    return copied;
+  } catch (_) {
+    return false;
+  }
 }
 
 const TOURNAMENTS_DATA = [
@@ -1221,7 +1244,7 @@ export default function GameHub() {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [showIntro, setShowIntro] = useState(() => !sessionStorage.getItem('introSeen'));
+  const [showIntro, setShowIntro] = useState(() => !readSessionFlag('introSeen'));
   const rawgImages = useRawgImages();
   const [navHistory, setNavHistory] = useState([]);
 
@@ -1249,7 +1272,7 @@ export default function GameHub() {
   }, []);
 
   const handleIntroComplete = () => {
-    sessionStorage.setItem('introSeen', '1');
+    writeSessionFlag('introSeen', '1');
     setShowIntro(false);
   };
 
@@ -1259,7 +1282,7 @@ export default function GameHub() {
   const [mobileAvatarPhoto, setMobileAvatarPhoto] = useState('');
 
   useEffect(() => {
-     if (!user) { setMobileAvatarEmoji(null); setMobileAvatarColor(0); setMobileAvatarPhoto(''); return; }
+    if (!user) { setMobileAvatarEmoji(null); setMobileAvatarColor(0); setMobileAvatarPhoto(''); return; }
     const unsub = onSnapshot(doc(db, 'avatars', user.uid), (snap) => {
       if (snap.exists()) {
         setMobileAvatarEmoji(snap.data().emoji || null);
@@ -1539,6 +1562,16 @@ export default function GameHub() {
                 <span className="text-base">♥</span>
                 Wishlist
               </button>
+              {/* Admin Panel in mobile menu */}
+              {isAdmin && (
+                <button onClick={() => navigateTo('admin')}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all text-left ${
+                    currentPage === 'admin' ? 'bg-yellow-500/15 text-yellow-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                  }`}>
+                  <span className="text-base">⚙️</span>
+                  Admin Panel
+                </button>
+              )}
               {/* Auth actions in mobile menu */}
               {!user ? (
                 <div className="flex gap-3 mt-3 pt-3 border-t border-slate-800">
@@ -1553,40 +1586,22 @@ export default function GameHub() {
                   >Sign Up</button>
                 </div>
               ) : (
-                <div className="mt-3 pt-3 border-t border-slate-800 space-y-2">
-                  {[
-                    { label: 'My Profile', page: 'profile' },
-                    { label: 'Wishlist', page: 'wishlist' },
-                    { label: 'Leaderboard', page: 'leaderboard' },
-                    ...(isAdmin ? [{ label: 'Admin Panel', page: 'admin' }] : []),
-                  ].map((item) => (
-                    <button
-                      key={item.page}
-                      onClick={() => navigateTo(item.page)}
-                      className={`w-full rounded-xl px-4 py-3 text-left text-sm font-semibold transition-all ${
-                        currentPage === item.page ? 'bg-blue-500/15 text-blue-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-                      }`}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
-                  <div className="flex items-center justify-between px-2 pt-2">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center font-black text-xs"
-                        style={mobileAvatarPhoto ? {
-                          backgroundImage: `url(${mobileAvatarPhoto})`,
-                          backgroundSize: 'cover',
-                          backgroundPosition: 'center',
-                        } : { background: `linear-gradient(135deg, ${AVATAR_COLORS[mobileAvatarColor % AVATAR_COLORS.length].from}, ${AVATAR_COLORS[mobileAvatarColor % AVATAR_COLORS.length].to})` }}>
-                        {!mobileAvatarPhoto && (mobileAvatarEmoji || (user.displayName ? user.displayName[0].toUpperCase() : user.email[0].toUpperCase()))}
-                      </div>
-                      <span className="text-sm font-bold text-white">{user.displayName || user.email.split('@')[0]}</span>
+                <div className="mt-3 pt-3 border-t border-slate-800 flex items-center justify-between px-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center font-black text-xs"
+                      style={mobileAvatarPhoto ? {
+                        backgroundImage: `url(${mobileAvatarPhoto})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                      } : { background: `linear-gradient(135deg, ${AVATAR_COLORS[mobileAvatarColor % AVATAR_COLORS.length].from}, ${AVATAR_COLORS[mobileAvatarColor % AVATAR_COLORS.length].to})` }}>
+                      {!mobileAvatarPhoto && (mobileAvatarEmoji || (user.displayName ? user.displayName[0].toUpperCase() : user.email[0].toUpperCase()))}
                     </div>
-                    <button
-                      onClick={() => { signOut(auth); navigateTo('home'); }}
-                      className="text-sm text-red-400 font-bold hover:text-red-300 transition-colors"
-                    >Sign Out</button>
+                    <span className="text-sm font-bold text-white">{user.displayName || user.email.split('@')[0]}</span>
                   </div>
+                  <button
+                    onClick={() => { signOut(auth); navigateTo('home'); }}
+                    className="text-sm text-red-400 font-bold hover:text-red-300 transition-colors"
+                  >Sign Out</button>
                 </div>
               )}
             </div>
@@ -1666,7 +1681,6 @@ function HomePage({ navigateTo }) {
   const [transitioning, setTransitioning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const rawgImages = React.useContext(RawgImagesContext);
-  const { items: homeNews } = useNewsFeed(4);
 
   const switchHero = (idx) => {
     if (idx === heroIndex || transitioning) return;
@@ -1692,7 +1706,6 @@ function HomePage({ navigateTo }) {
   const hero = FEATURED_GAMES[heroIndex];
   const heroCat = CATEGORIES.find(c => c.id === hero.category);
   const heroImage = rawgImages[hero.title] || hero.image;
-  const leadStory = homeNews[0];
 
   return (
     <div>
@@ -1981,48 +1994,52 @@ function HomePage({ navigateTo }) {
         {/* Big + small layout */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
           {/* Lead story */}
-          {leadStory && (
-            <div
-              className="lg:col-span-3 bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 hover:border-purple-500/40 transition-all cursor-pointer group fade-in-up"
-              onClick={() => navigateTo('news-detail', leadStory)}
-            >
-              <div className="relative h-52 overflow-hidden">
-                <img
-                  src={leadStory.imageUrl || rawgImages[leadStory.game] || GAMES_DATA.find(g => g.title === leadStory.game)?.image}
-                  alt={leadStory.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent" />
-                <span className="absolute top-4 left-4 bg-purple-500/90 text-white text-xs font-bold px-3 py-1.5 rounded-full">
-                  {leadStory.category}
-                </span>
-              </div>
-              <div className="p-6">
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="text-xs text-slate-500">{leadStory.dateLabel}</span>
-                  <span className="text-xs text-blue-400 font-bold">{leadStory.game}</span>
-                </div>
-                <h4 className="text-xl font-black mb-2 group-hover:text-purple-400 transition-colors">{leadStory.title}</h4>
-                <p className="text-sm text-slate-400 leading-relaxed">{leadStory.summary || leadStory.content}</p>
-              </div>
+          <div
+            className="lg:col-span-3 bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 hover:border-purple-500/40 transition-all cursor-pointer group fade-in-up"
+            onClick={() => {
+              const g = GAMES_DATA.find(gm => gm.title === NEWS_DATA[0].game);
+              if (g) navigateTo('game-detail', g);
+            }}
+          >
+            <div className="relative h-52 overflow-hidden">
+              <img
+                src={rawgImages[NEWS_DATA[0].game] || GAMES_DATA.find(g => g.title === NEWS_DATA[0].game)?.image}
+                alt={NEWS_DATA[0].title}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent" />
+              <span className="absolute top-4 left-4 bg-purple-500/90 text-white text-xs font-bold px-3 py-1.5 rounded-full">
+                {NEWS_DATA[0].category}
+              </span>
             </div>
-          )}
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-xs text-slate-500">{NEWS_DATA[0].date}</span>
+                <span className="text-xs text-blue-400 font-bold">{NEWS_DATA[0].game}</span>
+              </div>
+              <h4 className="text-xl font-black mb-2 group-hover:text-purple-400 transition-colors">{NEWS_DATA[0].title}</h4>
+              <p className="text-sm text-slate-400 leading-relaxed">{NEWS_DATA[0].content}</p>
+            </div>
+          </div>
 
           {/* Side stories */}
           <div className="lg:col-span-2 flex flex-col gap-4">
-            {homeNews.slice(1, 4).map((news, i) => (
+            {NEWS_DATA.slice(1, 4).map((news, i) => (
               <div
                 key={news.id}
                 className="flex-1 bg-slate-900 rounded-xl p-5 border border-slate-800 hover:border-purple-500/40 transition-all cursor-pointer slide-in-right"
                 style={{ animationDelay: `${i * 0.08}s` }}
-                onClick={() => navigateTo('news-detail', news)}
+                onClick={() => {
+                  const g = GAMES_DATA.find(gm => gm.title === news.game);
+                  if (g) navigateTo('game-detail', g);
+                }}
               >
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-purple-500/15 text-purple-400">{news.category}</span>
-                  <span className="text-xs text-slate-600">{news.dateLabel}</span>
+                  <span className="text-xs text-slate-600">{news.date}</span>
                 </div>
                 <h4 className="font-bold text-sm mb-1.5 hover:text-purple-400 transition-colors leading-snug">{news.title}</h4>
-                <p className="text-xs text-slate-500 line-clamp-2">{news.summary || news.content}</p>
+                <p className="text-xs text-slate-500 line-clamp-2">{news.content}</p>
               </div>
             ))}
           </div>
@@ -2078,8 +2095,7 @@ function GamesPage({ navigateTo }) {
             className="flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-sm transition-all duration-200"
             style={{ background: showSearch ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.05)', color: showSearch ? '#60a5fa' : '#94a3b8', border: '1px solid', borderColor: showSearch ? 'rgba(59,130,246,0.4)' : 'rgba(255,255,255,0.1)' }}
           >
-            <Search className="w-4 h-4" />
-            Search & Filter
+            🔍 Search & Filter
           </button>
         </div>
 
@@ -2088,21 +2104,6 @@ function GamesPage({ navigateTo }) {
           <div className="bg-slate-900 rounded-2xl p-5 border border-slate-800 fade-in-up space-y-4">
             {/* Search input */}
             <div className="relative">
-              <Search className="absolute left-5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-              <input
-                type="text"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="SEARCH GAMES BY TITLE OR TAG..."
-                className="w-full rounded-2xl border border-slate-700/80 bg-[#232329] pl-14 pr-12 py-4 text-sm font-semibold tracking-[0.08em] text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all"
-              />
-              {search && (
-                <button onClick={() => setSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors" aria-label="Clear search">
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-            <div className="relative hidden">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
               <input
                 type="text"
@@ -2257,7 +2258,9 @@ function CategoryPage({ category, navigateTo, goBack, navHistory }) {
   return (
     <div>
       {/* Category Hero */}
-      <div className="relative overflow-hidden">
+      <div className="relative overflow-hidden" style={{ background: `linear-gradient(135deg, ${category.color}18, transparent 60%)` }}>
+        <div className="absolute inset-0 grid-bg opacity-10"></div>
+        <div className="absolute top-0 left-0 w-96 h-96 rounded-full blur-3xl opacity-10" style={{ background: category.color, transform: 'translate(-30%, -30%)' }} />
         <div className="container mx-auto px-6 py-20 relative z-10">
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-sm text-slate-500 mb-8 fade-in-up">
@@ -2272,7 +2275,7 @@ function CategoryPage({ category, navigateTo, goBack, navHistory }) {
           </div>
 
           <div className="flex items-center gap-6 fade-in-up">
-            <div className="w-20 h-20 rounded-2xl flex items-center justify-center flex-shrink-0 bg-slate-900 border border-slate-800">
+            <div className="w-20 h-20 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: `${category.color}22`, border: `2px solid ${category.color}44` }}>
               <Icon className="w-10 h-10" style={{ color: category.color }} />
             </div>
             <div>
@@ -2490,11 +2493,8 @@ function GameDetailPage({ game, navigateTo, goBack, navHistory }) {
 
   const handleShare = () => {
     const url = `${window.location.origin}?game=${game.id}`;
-    navigator.clipboard.writeText(url).then(() => {
-      setShareCopied(true);
-      setTimeout(() => setShareCopied(false), 2000);
-    }).catch(() => {
-      // fallback
+    copyText(url).then((copied) => {
+      if (!copied) return;
       setShareCopied(true);
       setTimeout(() => setShareCopied(false), 2000);
     });
@@ -2974,7 +2974,7 @@ function RegisterPage({ navigateTo }) {
               onClick={handleRegister}
               disabled={loading}
               className="w-full py-3.5 rounded-xl font-black text-white transition-all disabled:opacity-50 text-sm tracking-wider"
-              style={{ background: 'linear-gradient(135deg, #3b82f6, #2563eb)' }}
+              style={{ background: 'linear-gradient(135deg, #3b82f6, #0ea5e9)' }}
             >
               {loading ? 'Creating account...' : 'CREATE ACCOUNT'}
             </button>
@@ -3586,6 +3586,11 @@ function TournamentsPage({ navigateTo }) {
   const [statusFilter, setStatusFilter] = useState('all');
   const [registerModal, setRegisterModal] = useState(null);
   const [myRegistrations, setMyRegistrations] = useState({});
+  const [registrationCounts, setRegistrationCounts] = useState({});
+  const [actioningRegId, setActioningRegId] = useState(null);
+  const [cancelModal, setCancelModal] = useState(null);
+  const [dismissedRegistrationIds, setDismissedRegistrationIds] = useState({});
+  const [rejectionDetail, setRejectionDetail] = useState(null);
   const [firestoreTournaments, setFirestoreTournaments] = useState([]);
   const [tLoading, setTLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -3612,6 +3617,7 @@ function TournamentsPage({ navigateTo }) {
 
   const [form, setForm] = useState({ teamName: '', phone: '', email: '', players: [] });
   const [editRegId, setEditRegId] = useState(null);
+  const [editRegStatus, setEditRegStatus] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitDone, setSubmitDone] = useState(false);
   const [formStep, setFormStep] = useState(1); // 1 = Team Info, 2 = Players
@@ -3626,6 +3632,7 @@ function TournamentsPage({ navigateTo }) {
       snap.docs.forEach(d => {
         const data = { id: d.id, ...d.data() };
         const tid = data.tournamentId;
+        if (data.status === 'cancelled') return;
         // Count rejects per tournament
         if (!rejectCounts[tid]) rejectCounts[tid] = 0;
         if (data.status === 'rejected') rejectCounts[tid]++;
@@ -3639,30 +3646,144 @@ function TournamentsPage({ navigateTo }) {
     return () => unsub();
   }, [user]);
 
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'tournament_registrations'), (snap) => {
+      const counts = {};
+      snap.docs.forEach((d) => {
+        const data = d.data();
+        const tid = data.tournamentId;
+        if (!tid || data.status !== 'approved') return;
+        counts[tid] = (counts[tid] || 0) + 1;
+      });
+      setRegistrationCounts(counts);
+    }, () => setRegistrationCounts({}));
+
+    return () => unsub();
+  }, []);
+
+  const getRegisteredCount = (tournament) => {
+    const tid = tournament.firestoreId || tournament.id;
+    return registrationCounts[tid] ?? tournament.registered ?? 0;
+  };
+
   const handleRegister = (tournament) => {
     if (!user) { navigateTo('login'); return; }
     const size = teamSize(tournament.game);
+    const tid = tournament.firestoreId || tournament.id;
     setForm({
       teamName: '', phone: '', email: user.email || '',
       players: Array.from({ length: size }, () => ({ realName: '', ign: '' }))
     });
+    setDismissedRegistrationIds((prev) => {
+      const next = { ...prev };
+      delete next[tid];
+      return next;
+    });
     setEditRegId(null);
+    setEditRegStatus(null);
     setSubmitDone(false);
     setFormStep(1);
     setRegisterModal(tournament);
   };
 
   const handleEdit = (tournament, reg) => {
+    const tid = tournament.firestoreId || tournament.id;
     setForm({
       teamName: reg.teamName,
       phone: reg.phone,
       email: reg.contactEmail,
-      players: reg.players || Array.from({ length: teamSize(tournament.game) }, () => ({ realName: '', ign: '' }))
+      players: reg.players || Array.from({ length: teamSize(tournament.game) }, () => ({ realName: '', ign: '' })),
+      _currentStatus: reg.status,
+    });
+    setDismissedRegistrationIds((prev) => {
+      const next = { ...prev };
+      delete next[tid];
+      return next;
     });
     setEditRegId(reg.id);
+    setEditRegStatus(reg.status || 'pending');
     setSubmitDone(false);
     setFormStep(1);
     setRegisterModal(tournament);
+  };
+
+  const handleStartResubmit = (tournament, reg) => {
+    const size = teamSize(tournament.game);
+    const tid = tournament.firestoreId || tournament.id;
+    setForm({
+      teamName: reg.teamName || '',
+      phone: reg.phone || '',
+      email: reg.contactEmail || user?.email || '',
+      players: reg.players || Array.from({ length: size }, () => ({ realName: '', ign: '' })),
+      _isResubmit: true,
+      _currentStatus: reg.status,
+    });
+    setDismissedRegistrationIds((prev) => {
+      const next = { ...prev };
+      delete next[tid];
+      return next;
+    });
+    setEditRegId(null);
+    setEditRegStatus(null);
+    setSubmitDone(false);
+    setFormStep(1);
+    setRegisterModal(tournament);
+  };
+
+  const handleCancelRegistration = async (reg) => {
+    setActioningRegId(reg.id);
+    try {
+      const tournamentKey = reg.tournamentId;
+      setDismissedRegistrationIds((prev) => ({ ...prev, [tournamentKey]: true }));
+      setMyRegistrations((prev) => {
+        const next = { ...prev };
+        delete next[tournamentKey];
+        return next;
+      });
+      const cleanupQuery = query(collection(db, 'tournament_registrations'), where('userId', '==', user.uid));
+      const cleanupSnap = await getDocs(cleanupQuery);
+      const docsToCancel = cleanupSnap.docs.filter((docSnap) => {
+        const data = docSnap.data();
+        return data.tournamentId === tournamentKey && ['pending', 'approved'].includes(data.status);
+      });
+      if (docsToCancel.length === 0) {
+        await updateDoc(doc(db, 'tournament_registrations', reg.id), {
+          status: 'cancelled',
+          cancelledAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+      } else {
+        const batch = writeBatch(db);
+        docsToCancel.forEach((docSnap) => batch.update(docSnap.ref, {
+          status: 'cancelled',
+          cancelledAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }));
+        await batch.commit();
+      }
+    } catch (e) {
+      console.error(e);
+      setDismissedRegistrationIds((prev) => {
+        const next = { ...prev };
+        delete next[reg.tournamentId];
+        return next;
+      });
+      const restoreQuery = query(collection(db, 'tournament_registrations'), where('userId', '==', user.uid));
+      const restoreSnap = await getDocs(restoreQuery);
+      const restoreMap = {};
+      const rejectCounts = {};
+      restoreSnap.docs.forEach((docSnap) => {
+        const data = { id: docSnap.id, ...docSnap.data() };
+        const tid = data.tournamentId;
+        if (!rejectCounts[tid]) rejectCounts[tid] = 0;
+        if (data.status === 'rejected') rejectCounts[tid]++;
+        if (!restoreMap[tid] || data.status !== 'rejected') restoreMap[tid] = data;
+      });
+      Object.keys(restoreMap).forEach((tid) => { restoreMap[tid].rejectCount = rejectCounts[tid] || 0; });
+      setMyRegistrations(restoreMap);
+    }
+    setActioningRegId(null);
+    setCancelModal(null);
   };
 
   const handleSubmit = async () => {
@@ -3671,14 +3792,24 @@ function TournamentsPage({ navigateTo }) {
     setSubmitting(true);
     try {
       if (editRegId && !form._isResubmit) {
-        // Edit existing pending registration
-        await updateDoc(doc(db, 'tournament_registrations', editRegId), {
+        // Edit existing registration
+        const payload = {
           teamName: form.teamName.trim(),
           phone: form.phone.trim(),
           contactEmail: form.email.trim(),
           players: form.players,
+          rulesUrl: registerModal.rulesUrl || '',
           updatedAt: serverTimestamp(),
-        });
+        };
+        if (editRegStatus === 'approved') {
+          payload.status = 'pending';
+        } else {
+          payload.status = editRegStatus || 'pending';
+        }
+        payload.rejectionReason = '';
+        payload.rejectionRulesUrl = '';
+        payload.reviewedAt = null;
+        await updateDoc(doc(db, 'tournament_registrations', editRegId), payload);
       } else {
         // New registration or resubmit after rejection
         await addDoc(collection(db, 'tournament_registrations'), {
@@ -3691,11 +3822,17 @@ function TournamentsPage({ navigateTo }) {
           contactEmail: form.email.trim(),
           players: form.players,
           status: 'pending',
+          rejectionReason: '',
+          rejectionRulesUrl: registerModal.rulesUrl || '',
+          rulesUrl: registerModal.rulesUrl || '',
+          reviewedAt: null,
           createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
         });
       }
       setSubmitDone(true);
       setEditRegId(null);
+      setEditRegStatus(null);
     } catch (e) { console.error(e); }
     setSubmitting(false);
   };
@@ -3726,31 +3863,14 @@ function TournamentsPage({ navigateTo }) {
 
   const matchesStatusFilter = (tournament) => {
     if (statusFilter === 'all') return true;
-
     if (statusFilter === 'full') {
-      return Boolean(tournament.joinable && tournament.maxTeams && tournament.registered >= tournament.maxTeams);
+      return Boolean(tournament.joinable && tournament.maxTeams && getRegisteredCount(tournament) >= tournament.maxTeams);
     }
-
-    if (statusFilter === 'registration-open') {
-      return tournament.status === 'Registration Open';
-    }
-
-    if (statusFilter === 'coming-soon') {
-      return tournament.status === 'Coming Soon';
-    }
-
-    if (statusFilter === 'live-now') {
-      return tournament.status === 'Live Now';
-    }
-
-    if (statusFilter === 'upcoming') {
-      return tournament.status === 'Upcoming' || tournament.status === 'Coming Soon';
-    }
-
-    if (statusFilter === 'completed') {
-      return tournament.status === 'Completed';
-    }
-
+    if (statusFilter === 'registration-open') return tournament.status === 'Registration Open';
+    if (statusFilter === 'coming-soon') return tournament.status === 'Coming Soon';
+    if (statusFilter === 'live-now') return tournament.status === 'Live Now';
+    if (statusFilter === 'upcoming') return tournament.status === 'Upcoming' || tournament.status === 'Coming Soon';
+    if (statusFilter === 'completed') return tournament.status === 'Completed';
     return true;
   };
 
@@ -3764,27 +3884,8 @@ function TournamentsPage({ navigateTo }) {
     return 'bg-blue-500/20 text-blue-400';
   };
 
-  const tournamentStatusChipClass = (status) => {
-    if (status === 'Registration Open') return 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300';
-    if (status === 'Live Now') return 'border-red-500/30 bg-red-500/10 text-red-300';
-    if (status === 'Coming Soon') return 'border-slate-600 bg-slate-800/80 text-slate-300';
-    return 'border-blue-500/30 bg-blue-500/10 text-blue-300';
-  };
-
-  const tournamentActionBase = 'inline-flex min-h-[60px] w-full items-center justify-center rounded-2xl px-8 text-sm font-black uppercase tracking-[0.28em] transition-all duration-200 sm:w-[210px]';
-  const neutralTournamentAction = `${tournamentActionBase} border border-slate-700 bg-slate-800 text-slate-100 hover:border-slate-500 hover:bg-slate-700`;
-  const joinTournamentAction = `${tournamentActionBase} bg-yellow-500 text-black hover:bg-yellow-400`;
-  const watchTournamentAction = `${tournamentActionBase} bg-red-600 text-white hover:bg-red-500`;
-  const disabledTournamentAction = `${tournamentActionBase} border border-slate-700 bg-slate-800/70 text-slate-500 cursor-not-allowed`;
-
-  const tournamentMeta = (tournament) => ([
-    { label: 'Prize Pool', value: tournament.prize || 'TBA', icon: Trophy, iconClass: 'text-yellow-400' },
-    { label: 'Region', value: tournament.region || 'Global', icon: MapPin, iconClass: 'text-blue-300' },
-    { label: 'Schedule', value: tournament.date || 'TBA', icon: Calendar, iconClass: 'text-slate-200' },
-  ]);
-
   const registrationSummary = (tournament, myReg, full) => {
-    if (myReg?.status === 'approved') return { label: 'Status', value: 'Registered', valueClass: 'text-green-400' };
+    if (myReg?.status === 'approved') return { label: 'Registration', value: 'Registered', valueClass: 'text-green-400' };
     if (myReg?.status === 'pending') return { label: 'Registration', value: 'Pending Approval', valueClass: 'text-yellow-400' };
     if (myReg?.status === 'rejected') return { label: 'Registration', value: `Rejected ${myReg.rejectCount || 0}/3`, valueClass: 'text-red-400' };
     if (full) return { label: 'Registration', value: 'Full', valueClass: 'text-red-400' };
@@ -3798,6 +3899,18 @@ function TournamentsPage({ navigateTo }) {
     if (tournament.watchUrl) return { label: 'Broadcast', value: 'Stream Ready', valueClass: 'text-blue-400' };
     return { label: 'Broadcast', value: 'Stream Soon', valueClass: 'text-amber-400' };
   };
+
+  const tournamentActionBase = 'inline-flex min-h-[60px] w-full items-center justify-center rounded-2xl px-8 text-sm font-black uppercase tracking-[0.28em] transition-all duration-200 sm:w-[210px]';
+  const neutralTournamentAction = `${tournamentActionBase} border border-slate-700 bg-slate-800 text-slate-100 hover:border-slate-500 hover:bg-slate-700`;
+  const joinTournamentAction = `${tournamentActionBase} bg-yellow-500 text-black hover:bg-yellow-400`;
+  const watchTournamentAction = `${tournamentActionBase} bg-red-600 text-white hover:bg-red-500`;
+  const disabledTournamentAction = `${tournamentActionBase} border border-slate-700 bg-slate-800/70 text-slate-500 cursor-not-allowed`;
+
+  const tournamentMeta = (tournament) => ([
+    { label: 'Prize Pool', value: tournament.prize || 'TBA', icon: Trophy, iconClass: 'text-yellow-400' },
+    { label: 'Region', value: tournament.region || 'Global', icon: MapPin, iconClass: 'text-blue-300' },
+    { label: 'Schedule', value: tournament.date || 'TBA', icon: Calendar, iconClass: 'text-slate-200' },
+  ]);
 
   const joinFilterOptions = [
     { id: 'all', label: 'All' },
@@ -3817,6 +3930,7 @@ function TournamentsPage({ navigateTo }) {
 
   return (
     <div className="container mx-auto px-6 py-16">
+      {/* Header */}
       <div className="mb-10 fade-in-up">
         <h2 className="text-4xl font-black mb-3" style={{ fontFamily: "'Orbitron', sans-serif" }}>
           <span className="text-yellow-400">TOURNAMENTS</span> & COMPETITIONS
@@ -3825,16 +3939,12 @@ function TournamentsPage({ navigateTo }) {
       </div>
 
       <div className="flex gap-2 mb-8 bg-slate-900 p-1 rounded-xl w-fit">
-        <button
-          onClick={() => setTab('join')}
-          className={`px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${tab === 'join' ? 'bg-yellow-500 text-black' : 'text-slate-400 hover:text-white'}`}
-        >
+        <button onClick={() => setTab('join')}
+          className={`px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${tab === 'join' ? 'bg-yellow-500 text-black' : 'text-slate-400 hover:text-white'}`}>
           Joinable
         </button>
-        <button
-          onClick={() => setTab('watch')}
-          className={`px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${tab === 'watch' ? 'bg-blue-500 text-white' : 'text-slate-400 hover:text-white'}`}
-        >
+        <button onClick={() => setTab('watch')}
+          className={`px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${tab === 'watch' ? 'bg-blue-500 text-white' : 'text-slate-400 hover:text-white'}`}>
           Watch
         </button>
       </div>
@@ -3879,6 +3989,7 @@ function TournamentsPage({ navigateTo }) {
         </div>
       </div>
 
+      {/* JOINABLE TAB */}
       {tab === 'join' && (
         <div className="space-y-5">
           {tLoading ? (
@@ -3891,31 +4002,23 @@ function TournamentsPage({ navigateTo }) {
               <p>No joinable tournaments match your search.</p>
             </div>
           ) : filteredJoinable.map((t, i) => {
-            const full = t.maxTeams ? t.registered >= t.maxTeams : false;
-            const myReg = myRegistrations[t.firestoreId || t.id];
+            const registeredCount = getRegisteredCount(t);
+            const full = t.maxTeams ? registeredCount >= t.maxTeams : false;
+            const tournamentKey = t.firestoreId || t.id;
+            const myReg = dismissedRegistrationIds[tournamentKey] ? undefined : myRegistrations[tournamentKey];
             const summary = registrationSummary(t, myReg, full);
-
             return (
-              <div
-                key={t.firestoreId || t.id}
-                className="relative overflow-hidden rounded-2xl border border-slate-800 bg-[#0f172a] px-8 py-8 transition-all hover:border-blue-500/30 fade-in-up"
-                style={{ animationDelay: `${i * 0.08}s` }}
-              >
+              <div key={t.firestoreId || t.id} className="relative overflow-hidden rounded-2xl border border-slate-800 bg-[#0f172a] px-8 py-8 transition-all hover:border-blue-500/30 fade-in-up" style={{ animationDelay: `${i*0.08}s` }}>
                 <div className="absolute left-0 top-4 h-[calc(100%-2rem)] w-[3px] rounded-r-full bg-yellow-500" />
                 <div className="flex flex-col gap-8 xl:flex-row xl:items-center xl:justify-between">
                   <div className="min-w-0 flex-1">
                     <div className="mb-5 flex flex-wrap items-center gap-4 text-[10px] font-black uppercase tracking-[0.24em]">
-                      <span className="border border-yellow-500/30 bg-yellow-500/5 px-4 py-2 text-yellow-400">
-                        {t.game}
-                      </span>
-                      <span className="text-slate-300">{t.registered || 0} / {t.maxTeams || 0} Teams</span>
-                      <span className={summary.valueClass}>{summary.value}</span>
+                      <span className="border border-yellow-500/30 bg-yellow-500/5 px-4 py-2 text-yellow-400">{t.game}</span>
+                      <span className="text-slate-300">{registeredCount} / {t.maxTeams || 0} Teams</span>
                     </div>
-
                     <h3 className="mb-7 text-[2.3rem] font-black uppercase leading-[0.95] tracking-[-0.03em] text-slate-100 sm:text-[3rem]">
                       {t.name}
                     </h3>
-
                     <div className="flex flex-wrap gap-x-10 gap-y-5">
                       {tournamentMeta(t).map((item) => {
                         const Icon = item.icon;
@@ -3927,7 +4030,6 @@ function TournamentsPage({ navigateTo }) {
                           </div>
                         );
                       })}
-
                       {t.requirements && (
                         <div className="flex items-center gap-3 text-sm uppercase tracking-[0.08em]">
                           <Users className="h-4 w-4 text-slate-300" />
@@ -3935,441 +4037,68 @@ function TournamentsPage({ navigateTo }) {
                           <span className="font-semibold text-slate-100">{t.requirements}</span>
                         </div>
                       )}
-
-                      {myReg && (
-                        <div className="flex items-center gap-3 text-sm uppercase tracking-[0.08em]">
-                          <Shield className={`h-4 w-4 ${summary.valueClass}`} />
-                          <span className="text-slate-400">Status:</span>
-                          <span className={`font-semibold ${summary.valueClass}`}>{summary.value}</span>
-                        </div>
-                      )}
                     </div>
-
                     {t.description && (
-                      <p className="mt-5 max-w-4xl text-sm leading-relaxed text-slate-400">
-                        {t.description}
-                      </p>
+                      <p className="mt-5 max-w-4xl text-sm leading-relaxed text-slate-400">{t.description}</p>
+                    )}
+                    {myReg?.status === 'rejected' && (myReg.rejectionReason || myReg.rejectionRulesUrl) && (
+                      <div className="mt-5">
+                        <button
+                          onClick={() => setRejectionDetail({
+                            tournamentName: t.name,
+                            reason: myReg.rejectionReason,
+                            rulesUrl: myReg.rejectionRulesUrl || myReg.rulesUrl || t.rulesUrl || '',
+                          })}
+                          className="inline-flex items-center gap-2 rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-red-300 transition-colors hover:bg-red-500/20"
+                        >
+                          <Info className="h-4 w-4" />
+                          View Rejection Details
+                        </button>
+                      </div>
                     )}
                   </div>
-
                   <div className="flex w-full flex-col gap-5 sm:flex-row sm:items-center sm:justify-between xl:w-auto xl:min-w-[360px] xl:justify-end">
                     <div className="sm:text-right">
                       <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">{summary.label}</p>
-                      <p className={`mt-2 text-2xl font-black uppercase leading-none ${summary.valueClass}`}>
-                        {summary.value}
-                      </p>
+                      <p className={`mt-2 text-2xl font-black uppercase leading-none ${summary.valueClass}`}>{summary.value}</p>
                     </div>
-
-                    {myReg ? (
-                      <>
-                        {myReg.status === 'pending' && (
-                          <button onClick={() => handleEdit(t, myReg)} className={neutralTournamentAction}>
-                            Edit
-                          </button>
-                        )}
-
-                        {myReg.status === 'rejected' && (
-                          myReg.rejectCount >= 3 ? (
-                            <button className={`${disabledTournamentAction} border-red-500/20 text-red-300`} disabled>
-                              Locked
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => {
-                                const size = teamSize(t.game);
-                                setForm({
-                                  teamName: myReg.teamName || '',
-                                  phone: myReg.phone || '',
-                                  email: myReg.contactEmail || user?.email || '',
-                                  players: myReg.players || Array.from({ length: size }, () => ({ realName: '', ign: '' })),
-                                  _isResubmit: true,
-                                });
-                                setEditRegId(null);
-                                setSubmitDone(false);
-                                setRegisterModal(t);
-                              }}
-                              className={joinTournamentAction}
-                            >
-                              Rejoin
-                            </button>
-                          )
-                        )}
-
-                        {myReg.status === 'approved' && (
-                          <button className={`${disabledTournamentAction} border-green-500/20 text-green-300`} disabled>
-                            Joined
-                          </button>
-                        )}
-                      </>
-                    ) : t.status === 'Registration Open' && !full ? (
-                      <button onClick={() => handleRegister(t)} className={joinTournamentAction}>
-                        Join Now
-                      </button>
-                    ) : t.status === 'Coming Soon' ? (
-                      <button className={disabledTournamentAction} disabled>
-                        Coming Soon
-                      </button>
-                    ) : full ? (
-                      <button className={`${disabledTournamentAction} border-red-500/20 text-red-300`} disabled>
-                        Full
-                      </button>
-                    ) : (
-                      <button className={disabledTournamentAction} disabled>
-                        Closed
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-      {tab === 'watch' && (
-        <div className="space-y-5">
-          {tLoading ? (
-            <div className="rounded-[24px] border border-slate-800 bg-[#171b22] px-6 py-10 text-center text-slate-500">
-              Loading tournaments...
-            </div>
-          ) : filteredWatchable.length === 0 ? (
-            <div className="rounded-[24px] border border-slate-800 bg-[#171b22] px-6 py-12 text-center text-slate-500">
-              <Search className="mx-auto mb-4 h-8 w-8 text-slate-600" />
-              <p>No watch-only tournaments match your search.</p>
-            </div>
-          ) : filteredWatchable.map((t, i) => {
-            const summary = watchSummary(t);
-
-            return (
-              <div
-                key={t.firestoreId || t.id}
-                className="relative overflow-hidden rounded-2xl border border-slate-800 bg-[#0f172a] px-8 py-8 transition-all hover:border-blue-500/30 fade-in-up"
-                style={{ animationDelay: `${i * 0.08}s` }}
-              >
-                <div className="absolute left-0 top-4 h-[calc(100%-2rem)] w-[3px] rounded-r-full bg-blue-500" />
-                <div className="flex flex-col gap-8 xl:flex-row xl:items-center xl:justify-between">
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-5 flex flex-wrap items-center gap-4 text-[10px] font-black uppercase tracking-[0.24em]">
-                      <span className="border border-blue-500/30 bg-blue-500/5 px-4 py-2 text-blue-400">
-                        {t.game}
-                      </span>
-                      <span className={summary.valueClass}>{summary.value}</span>
-                      {t.type && (
-                        <span className="text-slate-300">{t.type}</span>
-                      )}
-                    </div>
-
-                    <h3 className="mb-7 text-[2.3rem] font-black uppercase leading-[0.95] tracking-[-0.03em] text-slate-100 sm:text-[3rem]">
-                      {t.name}
-                    </h3>
-
-                    <div className="flex flex-wrap gap-x-10 gap-y-5">
-                      {tournamentMeta(t).map((item) => {
-                        const Icon = item.icon;
-                        return (
-                          <div key={`${t.firestoreId || t.id}-${item.label}`} className="flex items-center gap-3 text-sm uppercase tracking-[0.08em]">
-                            <Icon className={`h-4 w-4 ${item.iconClass}`} />
-                            <span className="text-slate-400">{item.label}:</span>
-                            <span className="font-semibold text-slate-100">{item.value}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {t.description && (
-                      <p className="mt-5 max-w-4xl text-sm leading-relaxed text-slate-400">
-                        {t.description}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="flex w-full flex-col gap-5 sm:flex-row sm:items-center sm:justify-between xl:w-auto xl:min-w-[360px] xl:justify-end">
-                    <div className="sm:text-right">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">{summary.label}</p>
-                      <p className={`mt-2 text-2xl font-black uppercase leading-none ${summary.valueClass}`}>
-                        {summary.value}
-                      </p>
-                    </div>
-
-                    {t.watchUrl ? (
-                      <a href={t.watchUrl} target="_blank" rel="noopener noreferrer" className={watchTournamentAction}>
-                        Watch Live
-                      </a>
-                    ) : t.status === 'Completed' ? (
-                      <button className={disabledTournamentAction} disabled>
-                        Match Ended
-                      </button>
-                    ) : (
-                      <button className={disabledTournamentAction} disabled>
-                        Stream Soon
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {registerModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4" onClick={() => !submitting && setRegisterModal(null)}>
-          <div className="bg-slate-900 border border-yellow-500/40 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg flex flex-col" style={{ maxHeight: '92dvh' }} onClick={e => e.stopPropagation()}>
-            {submitDone ? (
-              <div className="p-8 text-center">
-                <div className="text-5xl mb-4">🎉</div>
-                <h3 className="text-xl font-black mb-2 text-green-400">{editRegId ? 'Registration Updated!' : 'Registration Submitted!'}</h3>
-                <p className="text-slate-400 text-sm mb-2">Your team <span className="text-white font-bold">"{form.teamName}"</span> has been {editRegId ? 'updated for' : 'registered for'}</p>
-                <p className="text-yellow-400 font-bold mb-6">{registerModal.name}</p>
-                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 mb-6 text-sm text-slate-300">
-                  Your registration is <span className="text-yellow-400 font-bold">pending approval</span>. The admin will review and confirm within 24 hours.
-                </div>
-                <button onClick={() => setRegisterModal(null)} className="bg-yellow-500 hover:bg-yellow-400 text-black font-black px-8 py-3 rounded-xl transition-all">
-                  Done
-                </button>
-              </div>
-            ) : (
-              <>
-                <div className="p-5 pb-0 flex-shrink-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="text-lg font-black">{editRegId ? 'Edit Registration' : 'Team Registration'}</h3>
-                    <button onClick={() => setRegisterModal(null)} className="text-slate-500 hover:text-white text-xl leading-none">✕</button>
-                  </div>
-                  <p className="text-yellow-400 font-bold text-sm mb-4">{registerModal.name}</p>
-
-                  <div className="flex items-center gap-2 mb-4">
-                    {[1, 2].map(s => (
-                      <React.Fragment key={s}>
-                        <div className={`flex items-center gap-1.5 text-xs font-bold ${formStep === s ? 'text-yellow-400' : formStep > s ? 'text-green-400' : 'text-slate-600'}`}>
-                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${formStep === s ? 'bg-yellow-500 text-black' : formStep > s ? 'bg-green-500 text-white' : 'bg-slate-700 text-slate-500'}`}>
-                            {formStep > s ? '✓' : s}
-                          </div>
-                          {s === 1 ? 'Team Info' : 'Players'}
-                        </div>
-                        {s < 2 && <div className={`flex-1 h-0.5 rounded ${formStep > s ? 'bg-green-500' : 'bg-slate-700'}`}/>}
-                      </React.Fragment>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="overflow-y-auto flex-1 px-5 pb-3">
-                  {formStep === 1 ? (
-                    <div className="space-y-3 py-3">
-                      <input value={form.teamName} onChange={e => setForm(p => ({ ...p, teamName: e.target.value }))}
-                        placeholder="Team name *" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
-                      <input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
-                        placeholder="Contact phone number *" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
-                      <input value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
-                        placeholder="Contact email *" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
-                    </div>
-                  ) : (
-                    <div className="space-y-3 py-3">
-                      <p className="text-xs text-slate-500">Enter real name and in-game name for each player</p>
-                      {form.players.map((p, i) => (
-                        <div key={i} className="bg-slate-800/60 rounded-xl p-3 space-y-2">
-                          <p className="text-xs text-yellow-400 font-bold">Player {i + 1}{i === 0 ? ' - Captain' : ''}</p>
-                          <div className="flex gap-2">
-                            <input value={p.realName} onChange={e => {
-                              const updated = [...form.players];
-                              updated[i] = { ...updated[i], realName: e.target.value };
-                              setForm(prev => ({ ...prev, players: updated }));
-                            }} placeholder="Real name *" className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
-                            <input value={p.ign} onChange={e => {
-                              const updated = [...form.players];
-                              updated[i] = { ...updated[i], ign: e.target.value };
-                              setForm(prev => ({ ...prev, players: updated }));
-                            }} placeholder="In-game name *" className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"/>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="p-5 pt-3 border-t border-slate-800 flex gap-3 flex-shrink-0">
-                  {formStep === 1 ? (
-                    <>
-                      <button onClick={() => setRegisterModal(null)}
-                        className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-400 font-bold hover:bg-slate-700 transition-colors text-sm">
-                        Cancel
-                      </button>
-                      <button onClick={() => setFormStep(2)} disabled={!form.teamName.trim() || !form.phone.trim() || !form.email.trim()}
-                        className="flex-1 py-3 rounded-xl bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 text-black font-black transition-all text-sm">
-                        Next Players
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button onClick={() => setFormStep(1)}
-                        className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-400 font-bold hover:bg-slate-700 transition-colors text-sm">
-                        Back
-                      </button>
-                      <button onClick={handleSubmit} disabled={submitting || form.players.some(p => !p.realName.trim() || !p.ign.trim())}
-                        className="flex-1 py-3 rounded-xl bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 text-black font-black transition-all text-sm">
-                        {submitting ? 'Submitting...' : 'Submit'}
-                      </button>
-                    </>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
-  return (
-    <div className="container mx-auto px-6 py-16">
-      {/* Header */}
-      <div className="mb-10 fade-in-up">
-        <h2 className="text-4xl font-black mb-3" style={{ fontFamily: "'Orbitron', sans-serif" }}>
-          <span className="text-yellow-400">TOURNAMENTS</span> & COMPETITIONS
-        </h2>
-        <p className="text-slate-400">Watch pro-level tournaments or join open competitions</p>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-2 mb-8 bg-slate-900 p-1 rounded-xl w-fit">
-        <button onClick={() => setTab('join')}
-          className={`px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${tab === 'join' ? 'bg-yellow-500 text-black' : 'text-slate-400 hover:text-white'}`}>
-          Joinable
-        </button>
-        <button onClick={() => setTab('watch')}
-          className={`px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${tab === 'watch' ? 'bg-blue-500 text-white' : 'text-slate-400 hover:text-white'}`}>
-          Watch
-        </button>
-      </div>
-
-      <div className="mb-8 bg-slate-900 border border-slate-800 rounded-2xl p-4 fade-in-up">
-        <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm">🔍</span>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            placeholder={tab === 'watch' ? 'Search watch tournaments, games, or regions...' : 'Search joinable tournaments, games, or regions...'}
-            className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-10 pr-12 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 text-lg leading-none"
-            >
-              ×
-            </button>
-          )}
-        </div>
-        <p className="mt-3 text-xs text-slate-500">
-          {tab === 'watch'
-            ? `${filteredWatchable.length} watch-only tournament${filteredWatchable.length !== 1 ? 's' : ''} found`
-            : `${filteredJoinable.length} joinable tournament${filteredJoinable.length !== 1 ? 's' : ''} found`}
-        </p>
-      </div>
-
-      {/* JOINABLE TAB */}
-      {tab === 'join' && (
-        <div className="space-y-5">
-          {filteredJoinable.length === 0 ? (
-            <div className="text-center py-16 text-slate-500 bg-slate-900 border border-slate-800 rounded-2xl">
-              <p className="text-3xl mb-3">🔎</p>
-              <p>No joinable tournaments match your search.</p>
-            </div>
-          ) : filteredJoinable.map((t, i) => {
-            const pct = Math.round((t.registered / t.maxTeams) * 100);
-            const full = t.registered >= t.maxTeams;
-            const myReg = myRegistrations[t.firestoreId || t.id];
-            return (
-              <div key={t.firestoreId || t.id} className="bg-slate-900 border-2 border-slate-800 rounded-2xl overflow-hidden hover:border-yellow-500/40 transition-all fade-in-up" style={{ animationDelay: `${i*0.08}s` }}>
-                <div className="p-6 lg:p-8">
-                  <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
-                    <div className="flex-1">
-                      <div className="flex flex-wrap items-center gap-2 mb-3">
-                        <span className="text-xs font-bold px-3 py-1 rounded-full bg-yellow-500/15 text-yellow-400">Open Tournament</span>
-                        <span className="text-xs font-bold px-3 py-1 rounded-full bg-blue-500/15 text-blue-300">{t.game}</span>
-                        <span className={`text-xs font-bold px-3 py-1 rounded-full ${statusColor(t.status)}`}>{t.status}</span>
-                      </div>
-                      <h3 className="text-xl font-black mb-2">{t.name}</h3>
-                      <p className="text-slate-400 text-sm mb-4">{t.description}</p>
-                      <div className="flex flex-wrap gap-4 text-sm mb-4">
-                        <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4 text-blue-400"/>{t.date}</span>
-                        <span className="flex items-center gap-1.5"><Globe className="w-4 h-4 text-purple-400"/>{t.type}</span>
-                        <span className="flex items-center gap-1.5 text-slate-400">🌏 {t.region}</span>
-                      </div>
-                      <div className="bg-slate-800/60 rounded-lg px-4 py-2.5 text-xs text-slate-300 mb-4 inline-block">
-                        📋 {t.requirements}
-                      </div>
-                      {/* My registration status */}
-                      {myReg && (
-                        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold mb-3 ${
-                          myReg.status === 'approved' ? 'bg-green-500/15 text-green-400 border border-green-500/30' :
-                          myReg.status === 'rejected' ? 'bg-red-500/15 text-red-400 border border-red-500/30' :
-                          'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30'
-                        }`}>
-                          {myReg.status === 'approved' ? '✅ Registered' : myReg.status === 'rejected' ? `❌ Rejected (${myReg.rejectCount}/3)` : '⏳ Pending approval'}
-                          {myReg.status === 'pending' && <span className="font-normal">— Team: {myReg.teamName}</span>}
-                        </div>
-                      )}
-                      {/* Slots bar */}
-                      <div>
-                        <div className="flex justify-between text-xs text-slate-400 mb-1.5">
-                          <span>Teams Registered</span>
-                          <span className={full ? 'text-red-400 font-bold' : 'text-green-400 font-bold'}>{t.registered} / {t.maxTeams} teams{full ? ' — Full' : ''}</span>
-                        </div>
-                        <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
-                          <div className={`h-full rounded-full transition-all ${full ? 'bg-red-500' : pct > 70 ? 'bg-yellow-500' : 'bg-green-500'}`} style={{ width: `${pct}%` }}/>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-start lg:items-end gap-3 lg:min-w-[160px]">
-                      <div>
-                        <p className="text-xs text-slate-500 mb-0.5">Prize Pool</p>
-                        <p className="text-3xl font-black text-yellow-400">{t.prize}</p>
-                      </div>
+                    <div className="flex flex-col gap-3">
                       {myReg ? (
-                        <div className="flex flex-col gap-2 w-full lg:w-auto">
-                          {myReg.status === 'pending' && (
-                            <button onClick={() => handleEdit(t, myReg)}
-                              className="w-full lg:w-auto bg-slate-700 hover:bg-slate-600 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-all">
-                              ✏️ Edit Registration
-                            </button>
+                        <>
+                          {(myReg.status === 'pending' || myReg.status === 'approved') && (
+                            <>
+                              <button onClick={() => handleEdit(t, myReg)} className={neutralTournamentAction} disabled={actioningRegId === myReg.id}>
+                                Edit Registration
+                              </button>
+                              <button
+                                onClick={() => setCancelModal(myReg)}
+                                className="inline-flex min-h-[60px] w-full items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10 px-8 text-sm font-black uppercase tracking-[0.28em] text-red-300 transition-all duration-200 hover:bg-red-500/20 hover:text-red-200 sm:w-[210px]"
+                                disabled={actioningRegId === myReg.id}
+                              >
+                                {actioningRegId === myReg.id ? 'Cancelling...' : 'Cancel Registration'}
+                              </button>
+                            </>
                           )}
                           {myReg.status === 'rejected' && (
                             myReg.rejectCount >= 3 ? (
-                              <div className="text-xs text-red-400 font-bold text-center px-3 py-2 bg-red-500/10 rounded-xl border border-red-500/20">
-                                ⛔ Max attempts reached
+                              <div className="rounded-2xl border border-red-500/20 bg-red-500/10 px-5 py-4 text-center text-sm font-bold uppercase tracking-[0.18em] text-red-300">
+                                Max attempts reached
                               </div>
                             ) : (
-                              <button onClick={() => {
-                                const size = teamSize(t.game);
-                                setForm({
-                                  teamName: myReg.teamName || '',
-                                  phone: myReg.phone || '',
-                                  email: myReg.contactEmail || user.email || '',
-                                  players: myReg.players || Array.from({ length: size }, () => ({ realName: '', ign: '' })),
-                                  _isResubmit: true,
-                                });
-                                setEditRegId(null);
-                                setSubmitDone(false);
-                                setRegisterModal(t);
-                              }}
-                                className="w-full lg:w-auto bg-yellow-500 hover:bg-yellow-400 text-black font-black px-5 py-2.5 rounded-xl text-sm transition-all">
-                                🔄 Resubmit ({3 - myReg.rejectCount} left)
+                              <button onClick={() => handleStartResubmit(t, myReg)} className={joinTournamentAction}>
+                                Resubmit
                               </button>
                             )
                           )}
-                          {myReg.status === 'approved' && (
-                            <div className="text-xs text-slate-500 text-right">Already registered</div>
-                          )}
-                        </div>
+                        </>
                       ) : t.status === 'Registration Open' && !full ? (
-                        <button onClick={() => handleRegister(t)}
-                          className="w-full lg:w-auto bg-yellow-500 hover:bg-yellow-400 text-black font-black px-6 py-3 rounded-xl transition-all hover:scale-105 text-sm">
-                          ✍️ Join Now
+                        <button onClick={() => handleRegister(t)} className={joinTournamentAction}>
+                          Join Now
                         </button>
                       ) : t.status === 'Coming Soon' ? (
-                        <button className="w-full lg:w-auto bg-slate-700 text-slate-400 font-bold px-6 py-3 rounded-xl text-sm cursor-not-allowed" disabled>Coming Soon</button>
+                        <button className={disabledTournamentAction} disabled>Coming Soon</button>
                       ) : full ? (
-                        <button className="w-full lg:w-auto bg-red-900/40 text-red-400 font-bold px-6 py-3 rounded-xl text-sm cursor-not-allowed" disabled>Full</button>
+                        <button className={disabledTournamentAction} disabled>Full</button>
                       ) : null}
                     </div>
                   </div>
@@ -4383,47 +4112,62 @@ function TournamentsPage({ navigateTo }) {
       {/* WATCHABLE TAB */}
       {tab === 'watch' && (
         <div className="space-y-5">
-          {filteredWatchable.length === 0 ? (
-            <div className="text-center py-16 text-slate-500 bg-slate-900 border border-slate-800 rounded-2xl">
-              <p className="text-3xl mb-3">🔎</p>
+          {tLoading ? (
+            <div className="rounded-[24px] border border-slate-800 bg-[#171b22] px-6 py-10 text-center text-slate-500">
+              Loading tournaments...
+            </div>
+          ) : filteredWatchable.length === 0 ? (
+            <div className="rounded-[24px] border border-slate-800 bg-[#171b22] px-6 py-12 text-center text-slate-500">
+              <Search className="mx-auto mb-4 h-8 w-8 text-slate-600" />
               <p>No watch-only tournaments match your search.</p>
             </div>
-          ) : filteredWatchable.map((t, i) => (
-            <div key={t.firestoreId || t.id} className="bg-slate-900 border-2 border-slate-800 rounded-2xl overflow-hidden hover:border-blue-500/40 transition-all fade-in-up" style={{ animationDelay: `${i*0.08}s` }}>
-              <div className="p-6 lg:p-8">
-                <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
-                  <div className="flex-1">
-                    <div className="flex flex-wrap items-center gap-2 mb-3">
-                      <span className="text-xs font-bold px-3 py-1 rounded-full bg-blue-500/15 text-blue-400">👁️ Pro / Invitational</span>
-                      <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-700 text-slate-300">{t.game}</span>
-                      <span className={`text-xs font-bold px-3 py-1 rounded-full ${statusColor(t.status)}`}>{t.status}</span>
+          ) : filteredWatchable.map((t, i) => {
+            const summary = watchSummary(t);
+            return (
+              <div key={t.firestoreId || t.id} className="rounded-2xl border border-slate-800 bg-[#0f172a] px-8 py-8 transition-all hover:border-blue-500/30 fade-in-up" style={{ animationDelay: `${i*0.08}s` }}>
+                <div className="flex flex-col gap-8 xl:flex-row xl:items-center xl:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-5 flex flex-wrap items-center gap-4 text-[10px] font-black uppercase tracking-[0.24em]">
+                      <span className="border border-blue-500/30 bg-blue-500/5 px-4 py-2 text-blue-400">{t.game}</span>
+                      <span className="text-slate-300">{t.teams || 0} Teams</span>
+                      <span className={summary.valueClass}>{summary.value}</span>
                     </div>
-                    <h3 className="text-xl font-black mb-2">{t.name}</h3>
-                    <p className="text-slate-400 text-sm mb-4">{t.description}</p>
-                    <div className="flex flex-wrap gap-4 text-sm mb-4">
-                      <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4 text-blue-400"/>{t.date}</span>
-                      <span className="flex items-center gap-1.5"><Globe className="w-4 h-4 text-purple-400"/>{t.type}</span>
-                      <span className="flex items-center gap-1.5 text-slate-400">🌏 {t.region}</span>
+                    <h3 className="mb-7 text-[2.3rem] font-black uppercase leading-[0.95] tracking-[-0.03em] text-slate-100 sm:text-[3rem]">
+                      {t.name}
+                    </h3>
+                    <div className="flex flex-wrap gap-x-10 gap-y-5">
+                      {tournamentMeta(t).map((item) => {
+                        const Icon = item.icon;
+                        return (
+                          <div key={`${t.firestoreId || t.id}-${item.label}`} className="flex items-center gap-3 text-sm uppercase tracking-[0.08em]">
+                            <Icon className={`h-4 w-4 ${item.iconClass}`} />
+                            <span className="text-slate-400">{item.label}:</span>
+                            <span className="font-semibold text-slate-100">{item.value}</span>
+                          </div>
+                        );
+                      })}
                     </div>
+                    {t.description && (
+                      <p className="mt-5 max-w-4xl text-sm leading-relaxed text-slate-400">{t.description}</p>
+                    )}
                   </div>
-                  <div className="flex flex-col items-start lg:items-end gap-3 lg:min-w-[160px]">
-                    <div>
-                      <p className="text-xs text-slate-500 mb-0.5">Prize Pool</p>
-                      <p className="text-3xl font-black text-yellow-400">{t.prize}</p>
+                  <div className="flex w-full flex-col gap-5 sm:flex-row sm:items-center sm:justify-between xl:w-auto xl:min-w-[360px] xl:justify-end">
+                    <div className="sm:text-right">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">{summary.label}</p>
+                      <p className={`mt-2 text-2xl font-black uppercase leading-none ${summary.valueClass}`}>{summary.value}</p>
                     </div>
-                    <div className="flex flex-col gap-2 w-full lg:w-auto">
-                      {t.watchUrl && (
-                        <a href={t.watchUrl} target="_blank" rel="noopener noreferrer"
-                          className="flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white font-bold px-6 py-3 rounded-xl transition-all hover:scale-105 text-sm">
-                          📺 Watch Live
-                        </a>
-                      )}
-                    </div>
+                    {t.watchUrl ? (
+                      <a href={t.watchUrl} target="_blank" rel="noopener noreferrer" className={watchTournamentAction}>
+                        Watch Live
+                      </a>
+                    ) : (
+                      <button className={disabledTournamentAction} disabled>Stream Soon</button>
+                    )}
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -4455,6 +4199,11 @@ function TournamentsPage({ navigateTo }) {
                     <button onClick={() => setRegisterModal(null)} className="text-slate-500 hover:text-white text-xl leading-none">✕</button>
                   </div>
                   <p className="text-yellow-400 font-bold text-sm mb-4">{registerModal.name}</p>
+                  {editRegStatus === 'approved' && (
+                    <div className="mb-4 rounded-xl border border-yellow-500/25 bg-yellow-500/10 px-4 py-3 text-xs text-yellow-100">
+                      Editing an approved team will send the updated registration back for admin review.
+                    </div>
+                  )}
 
                   {/* Step indicator */}
                   <div className="flex items-center gap-2 mb-4">
@@ -4540,6 +4289,66 @@ function TournamentsPage({ navigateTo }) {
           </div>
         </div>
       )}
+      {cancelModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={() => actioningRegId !== cancelModal.id && setCancelModal(null)}>
+          <div className="w-full max-w-md rounded-2xl border border-red-500/25 bg-slate-900 p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-4">
+              <p className="text-xs font-bold uppercase tracking-[0.25em] text-red-300">Cancel registration</p>
+              <h3 className="mt-2 text-lg font-black text-white">{cancelModal.teamName}</h3>
+              <p className="mt-1 text-sm text-slate-400">{cancelModal.tournamentName}</p>
+            </div>
+            <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4 text-sm text-slate-300">
+              {cancelModal.status === 'approved'
+                ? 'This will remove your approved team from the tournament.'
+                : 'This will remove your submission and return this card to the not-joined state.'}
+            </div>
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => setCancelModal(null)}
+                disabled={actioningRegId === cancelModal.id}
+                className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-400 font-bold hover:bg-slate-700 transition-colors"
+              >
+                Keep Registration
+              </button>
+              <button
+                onClick={() => handleCancelRegistration(cancelModal)}
+                disabled={actioningRegId === cancelModal.id}
+                className="flex-1 py-3 rounded-xl bg-red-500 hover:bg-red-400 text-white font-black transition-all disabled:opacity-50"
+              >
+                {actioningRegId === cancelModal.id ? 'Cancelling...' : 'Confirm Cancel'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {rejectionDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={() => setRejectionDetail(null)}>
+          <div className="w-full max-w-md rounded-2xl border border-red-500/30 bg-slate-900 p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.25em] text-red-300">Registration feedback</p>
+                <h3 className="mt-2 text-lg font-black text-white">{rejectionDetail.tournamentName}</h3>
+              </div>
+              <button onClick={() => setRejectionDetail(null)} className="text-slate-500 hover:text-white text-xl leading-none">✕</button>
+            </div>
+            <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4 text-sm text-slate-300">
+              <p className="mb-2 font-bold text-white">Reason from admin</p>
+              <p className="leading-relaxed">{rejectionDetail.reason || 'No rejection reason was provided.'}</p>
+            </div>
+            {rejectionDetail.rulesUrl && (
+              <a
+                href={rejectionDetail.rulesUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 inline-flex items-center gap-2 rounded-xl border border-blue-500/30 bg-blue-500/10 px-4 py-3 text-sm font-bold text-blue-300 transition-colors hover:bg-blue-500/20"
+              >
+                <Info className="w-4 h-4" />
+                Open related competition rules
+              </a>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -4570,6 +4379,9 @@ function CommunityPage({ navigateTo, tagGame }) {
     const q = query(collection(db, 'community_posts'), orderBy('createdAt', 'desc'));
     const unsub = onSnapshot(q, (snap) => {
       setPosts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setLoading(false);
+    }, () => {
+      setPosts([]);
       setLoading(false);
     });
     return () => unsub();
@@ -5315,6 +5127,9 @@ function AdminPage({ navigateTo }) {
   const [tournaments, setTournaments] = useState([]);
   const [tLoading, setTLoading] = useState(true);
   const [showTForm, setShowTForm] = useState(false);
+  const [rejectModal, setRejectModal] = useState(null);
+  const [rejectForm, setRejectForm] = useState({ reason: '', rulesUrl: '' });
+  const [rejectSaving, setRejectSaving] = useState(false);
   const [tForm, setTForm] = useState({
     name: '', game: '', date: '', prize: '', type: 'Online',
     region: 'Southeast Asia', description: '', requirements: '',
@@ -5322,13 +5137,15 @@ function AdminPage({ navigateTo }) {
   });
   const [tSaving, setTSaving] = useState(false);
   const [editTId, setEditTId] = useState(null);
-  const [editTAutoImported, setEditTAutoImported] = useState(false);
 
   useEffect(() => {
     if (!isAdmin) return;
     const q = query(collection(db, 'tournament_registrations'), orderBy('createdAt', 'desc'));
     const unsub = onSnapshot(q, snap => {
-      setRegistrations(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setRegistrations(snap.docs.map(d => ({ id: d.id, ...d.data() })).filter((reg) => reg.status !== 'cancelled'));
+      setRegLoading(false);
+    }, () => {
+      setRegistrations([]);
       setRegLoading(false);
     });
     return () => unsub();
@@ -5340,18 +5157,53 @@ function AdminPage({ navigateTo }) {
     const unsub = onSnapshot(q, snap => {
       setTournaments(snap.docs.map(d => ({ id: d.id, ...d.data() })));
       setTLoading(false);
+    }, () => {
+      setTournaments([]);
+      setTLoading(false);
     });
     return () => unsub();
   }, [isAdmin]);
 
   const handleAction = async (regId, action) => {
-    await updateDoc(doc(db, 'tournament_registrations', regId), { status: action });
+    await updateDoc(doc(db, 'tournament_registrations', regId), {
+      status: action,
+      rejectionReason: '',
+      rejectionRulesUrl: '',
+      reviewedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  };
+
+  const openRejectModal = (registration) => {
+    setRejectModal(registration);
+    setRejectForm({
+      reason: registration.rejectionReason || '',
+      rulesUrl: registration.rejectionRulesUrl || '',
+    });
+  };
+
+  const handleReject = async () => {
+    if (!rejectModal || !rejectForm.reason.trim()) return;
+    setRejectSaving(true);
+    try {
+      await updateDoc(doc(db, 'tournament_registrations', rejectModal.id), {
+        status: 'rejected',
+        rejectionReason: rejectForm.reason.trim(),
+        rejectionRulesUrl: rejectForm.rulesUrl.trim(),
+        reviewedAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      setRejectModal(null);
+      setRejectForm({ reason: '', rulesUrl: '' });
+    } catch (e) {
+      console.error(e);
+    }
+    setRejectSaving(false);
   };
 
   const resetTForm = () => {
     setTForm({ name: '', game: '', date: '', prize: '', type: 'Online', region: 'Southeast Asia', description: '', requirements: '', maxTeams: 32, joinable: true, status: 'Registration Open', watchUrl: '' });
     setEditTId(null);
-    setEditTAutoImported(false);
     setShowTForm(false);
   };
 
@@ -5366,9 +5218,6 @@ function AdminPage({ navigateTo }) {
         createdAt: editTId ? undefined : serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
-      if (editTId && editTAutoImported) {
-        data.manualOverride = true;
-      }
       if (!editTId) { data.registered = 0; }
       // remove undefined
       Object.keys(data).forEach(k => data[k] === undefined && delete data[k]);
@@ -5390,7 +5239,6 @@ function AdminPage({ navigateTo }) {
       joinable: t.joinable, status: t.status, watchUrl: t.watchUrl || '',
     });
     setEditTId(t.id);
-    setEditTAutoImported(Boolean(t.autoImported));
     setShowTForm(true);
   };
 
@@ -5466,15 +5314,32 @@ function AdminPage({ navigateTo }) {
                           </div>
                         ))}
                       </div>
+                      {reg.status === 'rejected' && (reg.rejectionReason || reg.rejectionRulesUrl) && (
+                        <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm">
+                          <p className="mb-1 font-bold text-red-300">Rejection reason</p>
+                          <p className="text-slate-200">{reg.rejectionReason || 'No reason provided.'}</p>
+                          {reg.rejectionRulesUrl && (
+                            <a
+                              href={reg.rejectionRulesUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-3 inline-flex items-center gap-2 text-xs font-bold text-blue-300 hover:text-blue-200"
+                            >
+                              <Info className="w-3.5 h-3.5" />
+                              Open linked rules
+                            </a>
+                          )}
+                        </div>
+                      )}
                     </div>
                     {reg.status === 'pending' && (
                       <div className="flex gap-2 flex-shrink-0">
-                        <button onClick={() => handleAction(reg.id, 'rejected')} className="px-4 py-2 rounded-xl bg-red-600/20 hover:bg-red-600/40 text-red-400 font-bold text-sm transition-colors border border-red-600/30">❌ Reject</button>
+                        <button onClick={() => openRejectModal(reg)} className="px-4 py-2 rounded-xl bg-red-600/20 hover:bg-red-600/40 text-red-400 font-bold text-sm transition-colors border border-red-600/30">❌ Reject</button>
                         <button onClick={() => handleAction(reg.id, 'approved')} className="px-4 py-2 rounded-xl bg-green-600/20 hover:bg-green-600/40 text-green-400 font-bold text-sm transition-colors border border-green-600/30">✅ Approve</button>
                       </div>
                     )}
                     {reg.status === 'approved' && (
-                      <button onClick={() => handleAction(reg.id, 'rejected')} className="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-400 font-bold text-xs transition-colors flex-shrink-0">Revoke</button>
+                      <button onClick={() => openRejectModal(reg)} className="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-400 font-bold text-xs transition-colors flex-shrink-0">Revoke</button>
                     )}
                   </div>
                 </div>
@@ -5482,6 +5347,64 @@ function AdminPage({ navigateTo }) {
             </div>
           )}
         </>
+      )}
+      {rejectModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={() => !rejectSaving && setRejectModal(null)}>
+          <div className="w-full max-w-lg rounded-2xl border border-red-500/30 bg-slate-900 p-6" onClick={(e) => e.stopPropagation()}>
+            <style>{`.reject-input { width:100%; background:#1e293b; border:1px solid #334155; border-radius:10px; padding:10px 14px; font-size:14px; color:#f1f5f9; outline:none; transition:border-color .2s,color .2s,background .2s; }
+            .reject-input::placeholder { color:#94a3b8; }
+            .reject-input:focus { border-color:#eab308; }
+            .reject-label { font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px; display:block; }`}</style>
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.25em] text-red-300">Reject registration</p>
+                <h3 className="mt-2 text-lg font-black text-white">{rejectModal.teamName}</h3>
+                <p className="mt-1 text-sm text-slate-400">{rejectModal.tournamentName}</p>
+              </div>
+              <button onClick={() => setRejectModal(null)} className="text-slate-500 hover:text-white text-xl leading-none">✕</button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="reject-label">Reason for rejection *</label>
+                <textarea
+                  value={rejectForm.reason}
+                  onChange={(e) => setRejectForm((prev) => ({ ...prev, reason: e.target.value }))}
+                  placeholder="Explain what the user should fix before applying again..."
+                  rows={4}
+                  className="reject-input"
+                  style={{ resize: 'vertical', colorScheme: 'dark' }}
+                />
+              </div>
+              <div>
+                <label className="reject-label">Related rules link (optional)</label>
+                <input
+                  value={rejectForm.rulesUrl}
+                  onChange={(e) => setRejectForm((prev) => ({ ...prev, rulesUrl: e.target.value }))}
+                  placeholder="https://..."
+                  className="reject-input"
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => setRejectModal(null)}
+                className="flex-1 py-3 rounded-xl bg-slate-800 text-slate-400 font-bold hover:bg-slate-700 transition-colors"
+                disabled={rejectSaving}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleReject}
+                disabled={rejectSaving || !rejectForm.reason.trim()}
+                className="flex-1 py-3 rounded-xl bg-red-500 hover:bg-red-400 disabled:opacity-40 text-white font-black transition-all"
+              >
+                {rejectSaving ? 'Saving...' : 'Send rejection'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* ── TOURNAMENTS TAB ── */}
@@ -5701,7 +5624,24 @@ function AdminPage({ navigateTo }) {
 // ─────────────────────────────────────────────
 
 function NewsPage({ navigateTo }) {
-  const { items, loading } = useNewsFeed();
+  const [items, setItems] = useState(NEWS_DATA.map(normalizeNewsItem));
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const newsQuery = query(collection(db, 'news'), orderBy('publishedAt', 'desc'));
+    const unsub = onSnapshot(newsQuery, (snap) => {
+      if (snap.empty) {
+        setItems(NEWS_DATA.map(normalizeNewsItem));
+      } else {
+        setItems(snap.docs.map((docSnap, index) => normalizeNewsItem({ id: docSnap.id, ...docSnap.data() }, index)));
+      }
+      setLoading(false);
+    }, () => {
+      setItems(NEWS_DATA.map(normalizeNewsItem));
+      setLoading(false);
+    });
+    return () => unsub();
+  }, []);
 
   return (
     <div className="container mx-auto px-6 py-20">
@@ -5868,8 +5808,8 @@ function AboutPage() {
             <p className="text-slate-300 mb-6">Need help? We're here for you. Reach out through any of the channels below.</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
-                { icon: '💬', title: 'Discord Community', desc: 'Join our Discord for live support and community discussion.', link: 'https://discord.gg/95r85Mmww8', label: 'Join Discord', external: true },
-                { icon: '📧', title: 'Email Support', desc: 'Send us an email for tournament or account help.', value: 'gamehubnnp@gmail.com' },
+                { icon: '💬', title: 'Discord Community', desc: 'Join our Discord for live support and community discussion.', link: 'https://discord.gg/95r85Mmww8', label: 'Join Discord' },
+                { icon: '📧', title: 'Email Support', desc: 'Send us an email for tournament or account help.', link: 'mailto:gamehubnnp@gmail.com', label: 'gamehubnnp@gmail.com' },
               ].map(item => (
                 <div key={item.title} className="bg-slate-800 rounded-xl p-5 flex flex-col gap-3">
                   <span className="text-2xl">{item.icon}</span>
@@ -5877,16 +5817,10 @@ function AboutPage() {
                     <h4 className="font-bold mb-1">{item.title}</h4>
                     <p className="text-slate-400 text-sm">{item.desc}</p>
                   </div>
-                  {item.link ? (
-                    <a href={item.link} target="_blank" rel="noopener noreferrer"
-                      className="text-xs font-bold text-blue-400 hover:text-blue-300 transition-colors mt-auto">
-                      {item.label} →
-                    </a>
-                  ) : (
-                    <p className="mt-auto break-all text-xs font-bold text-blue-400">
-                      {item.value}
-                    </p>
-                  )}
+                  <a href={item.link} target="_blank" rel="noopener noreferrer"
+                    className="text-xs font-bold text-blue-400 hover:text-blue-300 transition-colors mt-auto">
+                    {item.label} →
+                  </a>
                 </div>
               ))}
             </div>
