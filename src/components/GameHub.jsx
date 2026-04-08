@@ -1298,6 +1298,7 @@ export default function GameHub() {
   }, [user]);
 
   const [communityTagGame, setCommunityTagGame] = useState(null);
+  const [aboutScrollTarget, setAboutScrollTarget] = useState(null);
 
   const navigateTo = (page, data = null) => {
     setNavHistory(prev => [...prev, { page: currentPage, game: selectedGame, category: selectedCategory, news: selectedNews }]);
@@ -1311,6 +1312,8 @@ export default function GameHub() {
       if (data?.tagGame) setCommunityTagGame(data.tagGame);
       else setCommunityTagGame(null);
     }
+    if (page === 'about' && data?.section) setAboutScrollTarget(data.section);
+    else setAboutScrollTarget(null);
     if (page !== 'news-detail') setSelectedNews(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -1495,6 +1498,17 @@ export default function GameHub() {
 
             {/* Desktop Auth */}
             <div className="hidden md:flex items-center gap-3">
+              <button
+                onClick={() => navigateTo('about', { section: 'support' })}
+                className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-bold transition-all ${
+                  currentPage === 'about'
+                    ? 'border-blue-500/50 bg-blue-500/10 text-blue-300'
+                    : 'border-slate-700 bg-slate-900/70 text-slate-300 hover:border-slate-600 hover:text-white'
+                }`}
+              >
+                <HelpCircle className="h-4 w-4" />
+                Help
+              </button>
               <AuthNavButton navigateTo={navigateTo} currentPage={currentPage} user={user} authLoading={authLoading} isAdmin={isAdmin} />
             </div>
 
@@ -1621,7 +1635,7 @@ export default function GameHub() {
         {currentPage === 'community' && <CommunityPage navigateTo={navigateTo} tagGame={communityTagGame} />}
         {currentPage === 'news' && <NewsPage navigateTo={navigateTo} />}
         {currentPage === 'news-detail' && selectedNews && <NewsDetailPage news={selectedNews} navigateTo={navigateTo} goBack={goBack} />}
-        {currentPage === 'about' && <AboutPage />}
+        {currentPage === 'about' && <AboutPage scrollTarget={aboutScrollTarget} />}
         {currentPage === 'login' && <LoginPage navigateTo={navigateTo} />}
         {currentPage === 'register' && <RegisterPage navigateTo={navigateTo} />}
         {currentPage === 'profile' && <ProfilePage navigateTo={navigateTo} />}
@@ -5754,7 +5768,16 @@ function NewsDetailPage({ news, navigateTo, goBack }) {
 // ABOUT PAGE
 // ─────────────────────────────────────────────
 
-function AboutPage() {
+function AboutPage({ scrollTarget }) {
+  useEffect(() => {
+    if (scrollTarget !== 'support') return;
+    const timer = setTimeout(() => {
+      const supportSection = document.getElementById('about-support');
+      supportSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 120);
+    return () => clearTimeout(timer);
+  }, [scrollTarget]);
+
   return (
     <div className="container mx-auto px-6 py-20">
       <div className="max-w-4xl mx-auto">
@@ -5789,7 +5812,7 @@ function AboutPage() {
               ))}
             </div>
           </div>
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-8">
+          <div id="about-support" className="bg-slate-900 border border-slate-800 rounded-xl p-8">
             <h3 className="text-2xl font-bold mb-6 text-green-400 flex items-center gap-2">
               <HelpCircle className="w-6 h-6"/> Help & Support
             </h3>
