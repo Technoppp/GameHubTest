@@ -3947,9 +3947,9 @@ function TournamentsPage({ navigateTo }) {
       {/* Header */}
       <div className="mb-10 fade-in-up">
         <h2 className="text-4xl font-black mb-3" style={{ fontFamily: "'Orbitron', sans-serif" }}>
-          <span className="text-yellow-400">TOURNAMENTS</span> & COMPETITIONS
+          <span className="text-yellow-400">TOURNAMENTS</span> & WATCH LIVE
         </h2>
-        <p className="text-slate-400">Watch pro-level tournaments or join open competitions</p>
+        <p className="text-slate-400">Join open tournaments or watch pro-level matches live</p>
       </div>
 
       <div className="flex gap-2 mb-8 bg-slate-900 p-1 rounded-xl w-fit">
