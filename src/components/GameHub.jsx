@@ -1478,7 +1478,7 @@ export default function GameHub() {
               {[
                 { name: 'Home', icon: Home, page: 'home' },
                 { name: 'Games', icon: Gamepad2, page: 'games' },
-                { name: 'Tournaments + Watch', icon: Trophy, page: 'tournaments' },
+                { name: 'Tournaments & Watch', icon: Trophy, page: 'tournaments' },
                 { name: 'Leaderboard', icon: Crown, page: 'leaderboard' },
                 { name: 'Community', icon: Users, page: 'community' },
                 { name: 'News', icon: Newspaper, page: 'news' },
@@ -1547,7 +1547,7 @@ export default function GameHub() {
               {[
                 { name: 'Home', icon: Home, page: 'home' },
                 { name: 'Games', icon: Gamepad2, page: 'games' },
-                { name: 'Tournaments + Watch', icon: Trophy, page: 'tournaments' },
+                { name: 'Tournaments & Watch', icon: Trophy, page: 'tournaments' },
                 { name: 'Leaderboard', icon: Crown, page: 'leaderboard' },
                 { name: 'Community', icon: Users, page: 'community' },
                 { name: 'News', icon: Newspaper, page: 'news' },
